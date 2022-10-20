@@ -12,6 +12,7 @@
 #install samest
 #remotes::install_git('https://github.com/Pacific-salmon-assess/samEst')
 
+here::here()
 library(samEst)
 library(samSim)
 library(ggplot2)
@@ -19,29 +20,13 @@ library(devtools)
 library(gridExtra)
 library(dplyr)
 library(here)
-#source("sgen_functions.R")
-source("utils.R")
-#TODO estimate only for 40 yrs of data.
+source(here("code/utils.R"))
 
-#here::here()
 ## Load relevant input data
 # Simulation run parameters describing different scenarios
-#simPar <- read.csv("../data/samsimIFcoho/cohoSimPars_test.csv")
-simPar <- read.csv("../data/samsimHarCk/harcnkSimPars.csv")
+simPar <- read.csv(here("data/harck/harcnkSimPars.csv"))
 # CU-specific parameters
-#cuPar <- read.csv("../data/samsimIFcoho/cohoCUPars_test.csv")
-cuPar <- read.csv("../data/samsimHarCk/harcnkCUPars.csv")
-
-# Stock-recruit and catch data that are used to populate the simulation priming
-# period
-#srDat  <- read.csv("../data/samsimIFcoho/cohoRecDatTrim.csv")
- 
-# Posterior values of  CU-specific stock recruitment parameters for Ricker and
-# Larkin models; when available, passed and used to calculate alpha, beta and
-# sigma parameters rather than passing point values 
-#ricPars <- read.csv("../data/samsimIFcoho/cohoRickerpars.csv")
-
-#corrmat <- read.csv("../data/samsimIFcoho/cohoCorrMat.csv", header=F)
+cuPar <- read.csv(here("data/harck/harcnkCUPars.csv"))
 
 ## Store relevant object names to help run simulation 
 scenNames <- unique(simPar$scenario)
@@ -53,9 +38,16 @@ plotscn <- TRUE
 p <- list()
 simData <- list()
 
-genericRecoverySim(simPar=simPar[1,], cuPar=cuPar, catchDat=NULL, srDat=NULL,
+#Run and save simulated data
+
+for(a in seq_len(nrow(simPar))){
+  
+   genericRecoverySim(simPar=simPar[a,], cuPar=cuPar, catchDat=NULL, srDat=NULL,
             variableCU=FALSE, ricPars=NULL , larkPars=NULL,cuCustomCorrMat= NULL,
-            outDir="test", nTrials=100, makeSubDirs=TRUE, random=FALSE)
+            outDir="outs", nTrials=100, makeSubDirs=TRUE, random=FALSE)
+
+}
+
 
 simData <- readRDS(paste0("../test/SamSimOutputs/simData/", simPar$nameOM[1],"/",simPar$scenario[1],"/",
                          paste(simPar$nameOM[1],"_", simPar$nameMP[1], "_", "CUsrDat.RData",sep="")))$srDatout
