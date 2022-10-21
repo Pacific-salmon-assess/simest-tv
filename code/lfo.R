@@ -1,10 +1,14 @@
 #=============================================================
-#Run samSim simulations 
-#using the harrison chinook data as example
+#Example use of samsim for time varying simulation evaluation
+#using the coho data as it is compliant with the most recent
 #samSim updates
 #Catarina Wor
-#October 2022 
+# March 2022 
 #=============================================================
+
+#TODO
+#add estimation routines
+#
 
 #install samsim 
 #remotes::install_github("Pacific-salmon-assess/samSim", ref="timevar", force=TRUE)
@@ -12,22 +16,23 @@
 #install samest
 #remotes::install_git('https://github.com/Pacific-salmon-assess/samEst')
 
-here::here()
 library(samEst)
 library(samSim)
-
 library(ggplot2)
 library(devtools)
 library(gridExtra)
 library(dplyr)
 library(here)
-source(here("code/utils.R"))
+#source("sgen_functions.R")
+source("utils.R")
+#TODO estimate only for 40 yrs of data.
 
+#here::here()
 ## Load relevant input data
 # Simulation run parameters describing different scenarios
-simPar <- read.csv(here("data/harck/harcnkSimPars.csv"))
-# CU-specific parameters
-cuPar <- read.csv(here("data/harck/harcnkCUPars.csv"))
+#simPar <- read.csv("../data/samsimIFcoho/cohoSimPars_test.csv")
+simPar <- read.csv("../data/samsimHarCk/harcnkSimPars.csv")
+mat <- read.csv("../data/samsimIFcoho/cohoCorrMat.csv", header=F)
 
 ## Store relevant object names to help run simulation 
 scenNames <- unique(simPar$scenario)
@@ -39,30 +44,57 @@ plotscn <- TRUE
 p <- list()
 simData <- list()
 
-#Run and save simulated data
-
 for(a in seq_len(nrow(simPar))){
-   a<-6
-   genericRecoverySim(simPar=simPar[a,], cuPar=cuPar, catchDat=NULL, srDat=NULL,
-            variableCU=FALSE, ricPars=NULL, larkPars=NULL, cuCustomCorrMat= NULL,
-            outDir="outs", nTrials=100, makeSubDirs=TRUE, random=FALSE, uniqueProd=TRUE,
-                               uniqueSurv=FALSE)
 
-}
+a=1
 
+  simData <- readRDS(paste0("../test/SamSimOutputs/simData/", simPar$nameOM[a],"/",simPar$scenario[a],"/",
+                         paste(simPar$nameOM[a],"_", simPar$nameMP[a], "_", "CUsrDat.RData",sep="")))$srDatout
 
-simData <- readRDS(paste0("../test/SamSimOutputs/simData/", simPar$nameOM[1],"/",simPar$scenario[1],"/",
-                         paste(simPar$nameOM[1],"_", simPar$nameMP[1], "_", "CUsrDat.RData",sep="")))$srDatout
-  
-
-simData<-simData[simData$CU==1,]
-
-lfodf<-matrix(NA,nrow=length(unique(simData$iteration)),ncol=14,
+  lfodf<-matrix(NA,nrow=length(unique(simData$iteration)),ncol=14,
   dimnames = list(unique(simData$iteration),
     c("simple", "autocorr", "rwa_lastparam","rwa_last3paramavg","rwa_last5paramavg",
       "rwb_lastparam","rwb_last3paramavg","rwb_last5paramavg",
       "hmm_regime_pick","hmm_regime_average","hmma_regime_pick",
-      "hmma_regime_average","hmmb_regime_pick","hmmb_regime_average")))
+      "hmma_regime_average","hmmb_regime_pick","hmmb_regime_average",
+      )))
+ 
+  for(u in unique(simData$iteration)){
+    dat<-simData[simData$iteration==u,]
+    dat<-dat[dat$year>(max(dat$year)-46),]
+
+    dat <- dat[!is.na(dat$obsRecruits),]
+    length(unique(dat$year))
+    df <- data.frame(by=dat$year,
+                  S=dat$obsSpawners,
+                  R=dat$obsRecruits,
+                  logRS=log(dat$obsRecruits/dat$obsSpawners))
+
+    #=======================
+    #lfo comparison
+    lfostatic<-tmb_mod_lfo_cv(data=df,model='static')
+    lfoac <- tmb_mod_lfo_cv(data=df,model='staticAC')
+    lfoalpha <- tmb_mod_lfo_cv(data=df,model='alpha', siglfo="obs")
+    lfobeta <- tmb_mod_lfo_cv(data=df,model='beta', siglfo="obs")
+    lfohmm <- tmb_mod_lfo_cv(data=df,model='HMM')
+    lfohmma <- tmb_mod_lfo_cv(data=df,model='HMM_a')
+    lfohmmb <- tmb_mod_lfo_cv(data=df,model='HMM_b')
+
+  lfodf[u,] <- c(sum(lfostatic), sum(lfoac), 
+    sum(lfoalpha$lastparam), sum(lfoalpha$last3paramavg), sum(lfoalpha$last5paramavg), 
+    sum(lfobeta$lastparam), sum(lfobeta$last3paramavg), sum(lfobeta$last5paramavg),
+    sum(lfohmm$regime_pick),sum(lfohmm$regime_average),
+    sum(lfohmma$regime_pick),sum(lfohmma$regime_average),
+    sum(lfohmmb$regime_pick),sum(lfohmmb$regime_average))
+
+
+}
+
+
+
+
+
+
 
 simest<-list()
 rmse<-list()
