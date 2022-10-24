@@ -24,15 +24,14 @@ library(gridExtra)
 library(dplyr)
 library(here)
 #source("sgen_functions.R")
-source("utils.R")
+source("code/utils.R")
 #TODO estimate only for 40 yrs of data.
 
 #here::here()
 ## Load relevant input data
 # Simulation run parameters describing different scenarios
 #simPar <- read.csv("../data/samsimIFcoho/cohoSimPars_test.csv")
-simPar <- read.csv("../data/samsimHarCk/harcnkSimPars.csv")
-mat <- read.csv("../data/samsimIFcoho/cohoCorrMat.csv", header=F)
+simPar <- read.csv("data/HarCk/harcnkSimPars.csv")
 
 ## Store relevant object names to help run simulation 
 scenNames <- unique(simPar$scenario)
@@ -43,26 +42,6 @@ dirNames <- sapply(scenNames, function(x) paste(x, unique(simPar$species),sep = 
 plotscn <- TRUE
 p <- list()
 simData <- list()
-
-for(a in seq_len(nrow(simPar))){
-
-  simData <- readRDS(paste0("../test/SamSimOutputs/simData/", simPar$nameOM[a],"/",simPar$scenario[a],"/",
-                         paste(simPar$nameOM[a],"_", simPar$nameMP[a], "_", "CUsrDat.RData",sep="")))$srDatout
-  
-
-}
-
-simData<-simData[simData$CU==1,]
-
-lfodf<-matrix(NA,nrow=length(unique(simData$iteration)),ncol=14,
-  dimnames = list(unique(simData$iteration),
-    c("simple", "autocorr", "rwa_lastparam","rwa_last3paramavg","rwa_last5paramavg",
-      "rwb_lastparam","rwb_last3paramavg","rwb_last5paramavg",
-      "hmm_regime_pick","hmm_regime_average","hmma_regime_pick",
-      "hmma_regime_average","hmmb_regime_pick","hmmb_regime_average")))
-
-simest<-list()
-rmse<-list()
 
 #compiled Bayesian models
 simple_mod <- sr_mod(type='static', ac=FALSE, par='n', loglik=FALSE, modelcode=TRUE)
@@ -75,6 +54,16 @@ hmmb_mod<-sr_mod(type='hmm',ac=FALSE,par="b",loglik=FALSE, modelcode=TRUE)
 hmmab_mod<-sr_mod(type='hmm',ac=FALSE,par="both",loglik=FALSE, modelcode=TRUE)
 hmmabcaphi_mod<-sr_mod(type='hmm',ac=FALSE,par="both",loglik=FALSE, modelcode=TRUE,caphigh=TRUE)
 
+
+
+for(a in seq_len(nrow(simPar))){
+  a<-2
+  simData[[a]] <- readRDS(paste0("../test/SamSimOutputs/simData/", simPar$nameOM[a],"/",simPar$scenario[a],"/",
+                         paste(simPar$nameOM[a],"_", simPar$nameMP[a], "_", "CUsrDat.RData",sep="")))$srDatout
+  
+
+  simest<-list()
+  rmse<-list()
 
 
 for(u in unique(simData$iteration)){
@@ -748,7 +737,7 @@ for(u in unique(simData$iteration)){
    simest[[u]]<-rbind(dfa,dfb,dfsig,dfsmsy,dfsgen,dfumsy)
 }
    
-
+}
 
   
 

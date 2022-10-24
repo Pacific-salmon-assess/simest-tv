@@ -24,17 +24,17 @@ library(gridExtra)
 library(dplyr)
 library(here)
 #source("sgen_functions.R")
-source("utils.R")
+source("code/utils.R")
 #TODO estimate only for 40 yrs of data.
 
 #here::here()
 ## Load relevant input data
-# Simulation run parameters describing different scenarios
-#simPar <- read.csv("../data/samsimIFcoho/cohoSimPars_test.csv")
-simPar <- read.csv("../data/samsimHarCk/harcnkSimPars.csv")
-mat <- read.csv("../data/samsimIFcoho/cohoCorrMat.csv", header=F)
-
+# Simulation run parameters describing different scenario
+simPar <- read.csv(("data/harck/harcnkSimPars.csv"))
+# CU-specific parameters
+cuPar <- read.csv(("data/harck/harcnkCUPars.csv"))
 ## Store relevant object names to help run simulation 
+
 scenNames <- unique(simPar$scenario)
 dirNames <- sapply(scenNames, function(x) paste(x, unique(simPar$species),sep = "_"))
 
@@ -47,7 +47,7 @@ lfoTMB <- list()
 for(a in seq_len(nrow(simPar))){
    #a=1
  
-  simData <- readRDS(paste0("../test/SamSimOutputs/simData/", simPar$nameOM[a],"/",simPar$scenario[a],"/",
+  simData <- readRDS(paste0("outs/SamSimOutputs/simData/", simPar$nameOM[a],"/",simPar$scenario[a],"/",
                          paste(simPar$nameOM[a],"_", simPar$nameMP[a], "_", "CUsrDat.RData",sep="")))$srDatout
 
   lfodf<-matrix(NA,nrow=length(unique(simData$iteration)),ncol=14,
@@ -55,11 +55,12 @@ for(a in seq_len(nrow(simPar))){
     c("simple", "autocorr", "rwa_lastparam","rwa_last3paramavg","rwa_last5paramavg",
       "rwb_lastparam","rwb_last3paramavg","rwb_last5paramavg",
       "hmm_regime_pick","hmm_regime_average","hmma_regime_pick",
-      "hmma_regime_average","hmmb_regime_pick","hmmb_regime_average",
+      "hmma_regime_average","hmmb_regime_pick","hmmb_regime_average"
       )))
  
   for(u in unique(simData$iteration)){
     dat<-simData[simData$iteration==u,]
+
     dat<-dat[dat$year>(max(dat$year)-46),]
 
     dat <- dat[!is.na(dat$obsRecruits),]
@@ -73,8 +74,9 @@ for(a in seq_len(nrow(simPar))){
     #lfo comparison
     lfostatic<-tmb_mod_lfo_cv(data=df,model='static')
     lfoac <- tmb_mod_lfo_cv(data=df,model='staticAC')
-    lfoalpha <- tmb_mod_lfo_cv(data=df,model='alpha', siglfo="obs")
-    lfobeta <- tmb_mod_lfo_cv(data=df,model='beta', siglfo="obs")
+    lfoalpha <- tmb_mod_lfo_cv(data=df,model='rw_a', siglfo="obs")
+    lfobeta <- tmb_mod_lfo_cv(data=df,model='rw_b', siglfo="obs")
+    lfoalphabeta <- tmb_mod_lfo_cv(data=df,model='rw_both', siglfo="obs")
     lfohmm <- tmb_mod_lfo_cv(data=df,model='HMM')
     lfohmma <- tmb_mod_lfo_cv(data=df,model='HMM_a')
     lfohmmb <- tmb_mod_lfo_cv(data=df,model='HMM_b')
