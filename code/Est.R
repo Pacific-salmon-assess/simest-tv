@@ -55,6 +55,9 @@ hmmab_mod<-sr_mod(type='hmm',ac=FALSE,par="both",loglik=FALSE, modelcode=TRUE)
 hmmabcaphi_mod<-sr_mod(type='hmm',ac=FALSE,par="both",loglik=FALSE, modelcode=TRUE,caphigh=TRUE)
 
 
+allrmse<-list()
+
+allsimest<-list()
 
 for(a in seq_len(nrow(simPar))){
   #a<-2
@@ -623,14 +626,14 @@ for(a in seq_len(nrow(simPar))){
       sum(as.numeric(abs(bhmmabcaphi$mcmcsummary[grep("^b\\[",rownames(bhmmabcaphi$mcmcsummary)),"Rhat"]-1)>.1))+
       sumpair(as.numeric(abs(bhmmabcaphi$mcmcsummary[grep("^gamma\\[",rownames(bhmmabcaphi$mcmcsummary)),"Rhat"]-1)>.1))
       ))
+  
+    dfsgen$pbias<- ((dfsgen$est-dfsgen$sim)/dfsgen$sim)*100
 
-   
-
-   rmsesgen<-aggregate((dfsgen$est-dfsgen$sim)^2, list(model=dfsgen$model,method=dfsgen$method),
-    function(x)sqrt(mean(x)))
-   rmsesgen$iteration<-u
-   rmsesgen$parameter<-"sgen"
-   rmsesgen$convergence <- aggregate(dfsgen$convergence, list(model=dfsgen$model,method=dfsgen$method),
+    rmsesgen<-aggregate((dfsgen$est-dfsgen$sim)^2, list(model=dfsgen$model,method=dfsgen$method),
+      function(x)sqrt(mean(x)))
+    rmsesgen$iteration<-u
+    rmsesgen$parameter<-"sgen"
+    rmsesgen$convergence <- aggregate(dfsgen$convergence, list(model=dfsgen$model,method=dfsgen$method),
     function(x)sum(x,na.rm=T))$x
          
 
@@ -719,10 +722,14 @@ for(a in seq_len(nrow(simPar))){
     function(x)sum(x,na.rm=T))$x
 
    
-   rmse[[u]]<-rbind(rmsea,rmseb,rmsesig,rmsesmsy,rmsesgen,rmseumsy)
-   simest[[u]]<-rbind(dfa,dfb,dfsig,dfsmsy,dfsgen,dfumsy)
+   rmse[[u]]<-rbind(rmsea,rmsesmax,rmsesig,rmsesmsy,rmsesgen,rmseumsy)
+   simest[[u]]<-rbind(dfa,dfsmax,dfsig,dfsmsy,dfsgen,dfumsy)
+
+  
 }
    
+ allrmse[[a]]<- rmse
+  allsimest[[a]]<-simest
 }
 
   
