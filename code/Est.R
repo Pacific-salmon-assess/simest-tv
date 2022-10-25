@@ -68,9 +68,9 @@ for(a in seq_len(nrow(simPar))){
   rmse<-list()
 
 
-  for(u in unique(simData$iteration)){
-    #u=1
-    dat<-simData[simData$iteration==u,]
+  for(u in unique(simData[[a]]$iteration)){
+    #u=1    
+    dat<-simData[[a]][simData[[a]]$iteration==u,]
     dat<-dat[dat$year>(max(dat$year)-46),]
   
     dat <- dat[!is.na(dat$obsRecruits),]
