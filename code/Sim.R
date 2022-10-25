@@ -12,7 +12,6 @@
 #install samest
 #remotes::install_git('https://github.com/Pacific-salmon-assess/samEst')
 
-here::here()
 library(samSim)
 library(ggplot2)
 library(devtools)
@@ -23,9 +22,9 @@ source("code/utils.R")
 
 ## Load relevant input data
 # Simulation run parameters describing different scenarios
-simPar <- read.csv(("data/harck/harcnkSimPars.csv"))
+simPar <- read.csv("data/harck/harcnkSimPars.csv")
 # CU-specific parameters
-cuPar <- read.csv(("data/harck/harcnkCUPars.csv"))
+cuPar <- read.csv("data/harck/harcnkCUPars.csv")
 
 ## Store relevant object names to help run simulation 
 scenNames <- unique(simPar$scenario)
@@ -37,7 +36,6 @@ dirNames <- sapply(scenNames, function(x) paste(x, unique(simPar$species),sep = 
 #Run and save simulated data
 
 for(a in seq_len(nrow(simPar))){
-
   
    genericRecoverySim(simPar=simPar[a,], cuPar=cuPar, catchDat=NULL, srDat=NULL,
             variableCU=FALSE, ricPars=NULL, larkPars=NULL, cuCustomCorrMat= NULL,
@@ -47,69 +45,104 @@ for(a in seq_len(nrow(simPar))){
 }
 
 
-simData <- readRDS(paste0("../test/SamSimOutputs/simData/", simPar$nameOM[a],"/",simPar$scenario[1],"/",
-                         paste(simPar$nameOM[1],"_", simPar$nameMP[1], "_", "CUsrDat.RData",sep="")))$srDatout
+simData<-list()
+srplot<-list()
+recplot<-list()
+spnplot<-list()
+erplot<-list()
+
+
+for(a in seq_len(nrow(simPar))){
+
+  simData[[a]] <- readRDS(paste0("outs/SamSimOutputs/simData/", simPar$nameOM[a],"/",simPar$scenario[a],"/",
+                         paste(simPar$nameOM[a],"_", simPar$nameMP[a], "_", "CUsrDat.RData",sep="")))$srDatout
   
 
-simData<-simData[simData$CU==1,]
 
-lfodf<-matrix(NA,nrow=length(unique(simData$iteration)),ncol=14,
-  dimnames = list(unique(simData$iteration),
-    c("simple", "autocorr", "rwa_lastparam","rwa_last3paramavg","rwa_last5paramavg",
-      "rwb_lastparam","rwb_last3paramavg","rwb_last5paramavg",
-      "hmm_regime_pick","hmm_regime_average","hmma_regime_pick",
-      "hmma_regime_average","hmmb_regime_pick","hmmb_regime_average")))
+  dat<-simData[[a]] 
+  dat<-dat[dat$year>(max(dat$year)-46),]
+  dat <- dat[!is.na(dat$obsRecruits),]
+    
 
-simest<-list()
-rmse<-list()
+    
+  
+    
+  S<-seq(0,max(dat$spawners),by=1000)
+  R<-matrix(NA, ncol=length(unique(dat$year)),nrow=length(S))
+  for(i in seq_along(unique(dat$year))){
+    alpha<- mean(dat$alpha[dat$year==unique(dat$year)[i]])
 
-#compiled Bayesian models
-simple_mod <- sr_mod(type='static', ac=FALSE, par='n', loglik=FALSE, modelcode=TRUE)
-simpleac_mod <- sr_mod(type='static', ac=TRUE, par='n', loglik=FALSE, modelcode=TRUE)
-rwa_mod <- sr_mod(type='rw',ac=FALSE,par="a",loglik=FALSE, modelcode=TRUE)
-rwb_mod <- sr_mod(type='rw',ac=FALSE,par="b",loglik=FALSE, modelcode=TRUE)
-rwab_mod <- sr_mod(type='rw',ac=FALSE,par="both",loglik=FALSE, modelcode=TRUE)
-hmma_mod<-sr_mod(type='hmm',ac=FALSE,par="a",loglik=FALSE, modelcode=TRUE)
-hmmb_mod<-sr_mod(type='hmm',ac=FALSE,par="b",loglik=FALSE, modelcode=TRUE)
-hmmab_mod<-sr_mod(type='hmm',ac=FALSE,par="both",loglik=FALSE, modelcode=TRUE)
-hmmabcaphi_mod<-sr_mod(type='hmm',ac=FALSE,par="both",loglik=FALSE, modelcode=TRUE,caphigh=TRUE)
+    beta<- unique(dat$beta[dat$year==unique(dat$year)[i]])
+    R[,i]<-S*exp(alpha-beta*S)
+  }
+    
+  actualSR<-data.frame(year=rep(unique(dat$year),each=length(S)),
+      spawners=S,
+      recruits=c(R))
+  
+ 
 
+  srplot[[a]]<-ggplot( actualSR) +
+    geom_line(aes(x=spawners,y=recruits, col=as.factor(year)),size=2)+
+    theme_bw(14) + scale_colour_viridis_d(end=.7)+
+    geom_point(data=dat,aes(x=spawners,y=recruits),alpha=.5)+
+    labs(title = simPar$nameOM[a])
 
   
+  
+   
 
-  if(plotscn ==TRUE){
-    df<-simData[[i]] 
-    df<-df[df$iteration==1,]
-    stackcu1<-cbind(df[,-c(9,10,11)],stack(df[,9:11]))
+  recplot[[a]]<-ggplot(dat) +
+    geom_boxplot(aes(x=as.factor(year),y=recruits),alpha=.5)+
+    theme_bw(14)+ xlab("year")+
+      labs(title = simPar$nameOM[a])
 
-    p[[i]] <- ggplot(stackcu1) +
-      geom_line(aes(x=year,y=values, col=as.factor(CU)))+
-      geom_point(aes(x=year,y=values, col=as.factor(CU)))+
-      theme_bw(14)+ theme(legend.position="none")+
-      facet_wrap(~ind, scales="free_y")+
-      scale_colour_viridis_d() +
-      labs(title = simPar$nameOM[i])
+   
+  spnplot[[a]]<-ggplot(dat) +
+      geom_boxplot(aes(x=as.factor(year),y=spawners),alpha=.5)+
+      geom_hline(data=dat,aes(yintercept=sMSY, col=as.factor(year)))+
+      theme_bw(14)+ xlab("year")+ scale_color_discrete(name = "Smsy")+
+      labs(title = simPar$nameOM[a])
+
+  erplot[[a]]<-ggplot(dat) +
+      geom_boxplot(aes(x=as.factor(year),y=ER),alpha=.5)+
+      geom_hline(data=dat,aes(yintercept=uMSY, col=as.factor(year)))+
+      theme_bw(14)+ xlab("year")+ scale_color_discrete(name = "Umsy")+
+      labs(title = simPar$nameOM[a])
+
+
+
+   
 
     
   }
 
-  simData[[i]] <- simData[[i]] %>% 
-    filter(CU == 1, year %in% (nyr-50+1):nyr) %>% 
-    filter(!is.na(obsRecruits))%>%
-    mutate() %>% 
-    rename(byr=year, spwn=spawners, rec=recruits, alpha_true=alpha, beta_true=beta) %>% 
-    mutate(scenario = scenNames[i], alpha=99., beta=99., alpha_se=99., beta_se=99.) %>% # cols for output
-    select(scenario, everything())  #reorder cols
+ 
 
-
-#ggsave(
-#      filename = "../plots/scenarios.pdf", 
-#      plot = marrangeGrob(p, nrow=1, ncol=1), 
-#      width = 12, height = 5
-#    )
+ggsave(
+      filename = "outs/SamSimOutputs/plotcheck/srplots.pdf", 
+      plot = marrangeGrob(srplot, nrow=1, ncol=1), 
+      width = 12, height = 5
+    )
   
+ggsave(
+      filename = "outs/SamSimOutputs/plotcheck/recplots.pdf", 
+      plot = marrangeGrob(recplot, nrow=1, ncol=1), 
+      width = 12, height = 5
+    )
+
+ggsave(
+      filename = "outs/SamSimOutputs/plotcheck/spnplots.pdf", 
+      plot = marrangeGrob(spnplot, nrow=1, ncol=1), 
+      width = 12, height = 5
+    )
 
 
+ggsave(
+      filename = "outs/SamSimOutputs/plotcheck/erplots.pdf", 
+      plot = marrangeGrob(erplot, nrow=1, ncol=1), 
+      width = 12, height = 5
+    )
 
 #==========================
 #todo
