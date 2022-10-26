@@ -6,9 +6,9 @@
 # March 2022 
 #=============================================================
 
-#TODO
-#add estimation routines
+
 #
+# run these if first time running script or if updates were implemented. 
 
 #install samsim 
 #remotes::install_github("Pacific-salmon-assess/samSim", ref="timevar", force=TRUE)
@@ -26,7 +26,9 @@ library(here)
 #source("sgen_functions.R")
 source("code/utils.R")
 #TODO estimate only for 40 yrs of data.
+?smsyCalc
 
+smsyCalc()
 #here::here()
 ## Load relevant input data
 # Simulation run parameters describing different scenarios
