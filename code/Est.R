@@ -26,9 +26,7 @@ library(here)
 #source("sgen_functions.R")
 source("code/utils.R")
 #TODO estimate only for 40 yrs of data.
-?smsyCalc
 
-smsyCalc()
 #here::here()
 ## Load relevant input data
 # Simulation run parameters describing different scenarios
