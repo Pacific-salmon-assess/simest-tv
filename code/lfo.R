@@ -65,7 +65,7 @@ for(a in seq_len(nrow(simPar))){
       "rwb_last","rwb_last3","rwb_last5",
       "rwab_last","rwab_last3","rwab_last5",
       "hmma_last_pick","hmma_last3_pick","hmma_last5_pick",
-      "hmma_last_average","hmma_last3_average","hmma_last3_average",
+      "hmma_last_average","hmma_last3_average","hmma_last5_average",
       "hmmb_last_pick","hmmb_last3_pick","hmmb_last5_pick",
       "hmmb_last_average","hmmb_last3_average","hmmb_last5_average",
       "hmm_last_pick", "hmm_last3_pick", "hmm_last5_pick",
@@ -160,6 +160,12 @@ for(a in seq_len(nrow(simPar))){
   lfomwTMB[[a]] <- lfomwdf
 }
 
+  
+if(!file.exists("outs/simestlfo")){
+  dir.create("outs/simestlfo") 
+}
+
+save(lfoTMB, lfomwTMB,file="outs/simest/simestlfo_prodcapscenarios.Rdata")
 
 
 
@@ -168,13 +174,26 @@ for(a in seq_len(nrow(simPar))){
 #processing of lfo output
 
 head(lfodf)
-dimnames(lfodf)[[2]]
-lfo<-apply(lfodf,1,which.max)
+dimnames(lfomwdf)[[2]]
+lfo<-apply(lfomwdf,1,which.max)
 
 lfochoice<-data.frame(
-  chsnmod=dimnames(lfodf)[[2]][apply(lfodf,1,which.max)])
+  chsnmod=dimnames(lfomwdf)[[2]][apply(lfomwdf,1,which.max)])
 
-lfochoice$chsnmod<-factor(lfochoice$chsnmod, levels=c("simple", "autocorr", "rwa_lastparam", "rwa_last3paramavg", "rwa_last5paramavg",
+lfochoice$chsnmod<-factor(lfochoice$chsnmod, levels=c("simple", "autocorr", 
+      "rwa_last","rwa_last3","rwa_last5",
+      "rwb_last","rwb_last3","rwb_last5",
+      "rwab_last","rwab_last3","rwab_last5",
+      "hmma_last_pick","hmma_last3_pick","hmma_last5_pick",
+      "hmma_last_average","hmma_last3_average","hmma_last5_average",
+      "hmmb_last_pick","hmmb_last3_pick","hmmb_last5_pick",
+      "hmmb_last_average","hmmb_last3_average","hmmb_last5_average",
+      "hmm_last_pick", "hmm_last3_pick", "hmm_last5_pick",
+      "hmm_last_average","hmm_last3_average","hmm_last5_average"
+      ))
+
+
+  c("simple", "autocorr", "rwa_lastparam", "rwa_last3paramavg", "rwa_last5paramavg",
  "rwb_lastparam", "rwb_last3paramavg", "rwb_last5paramavg", "hmm_regime_pick", "hmm_regime_average", 
  "hmma_regime_pick", "hmma_regime_average", "hmmb_regime_pick", "hmmb_regime_average"))
 
