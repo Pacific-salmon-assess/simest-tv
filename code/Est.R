@@ -16,6 +16,7 @@
 #install samest
 #remotes::install_git('https://github.com/Pacific-salmon-assess/samEst', force=TRUE)
 
+
 library(samEst)
 library(samSim)
 library(ggplot2)
@@ -23,9 +24,14 @@ library(devtools)
 library(gridExtra)
 library(dplyr)
 library(here)
+library(rstan)
 #source("sgen_functions.R")
 source("code/utils.R")
 #TODO estimate only for 40 yrs of data.
+
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+
 
 #here::here()
 ## Load relevant input data
@@ -59,7 +65,8 @@ allrmse<-list()
 
 allsimest<-list()
 
-for(a in seq_len(nrow(simPar))){
+#for(a in seq_len(nrow(simPar))){
+for(a in 5:11){
   #a<-2
   simData[[a]] <- readRDS(paste0("outs/SamSimOutputs/simData/", simPar$nameOM[a],"/",simPar$scenario[a],"/",
                          paste(simPar$nameOM[a],"_", simPar$nameMP[a], "_", "CUsrDat.RData",sep="")))$srDatout

@@ -45,11 +45,14 @@ for(a in seq_len(nrow(simPar))){
 }
 
 
+
+
 simData<-list()
 srplot<-list()
 recplot<-list()
 spnplot<-list()
 erplot<-list()
+paramplot<-list()
 
 
 for(a in seq_len(nrow(simPar))){
@@ -62,10 +65,19 @@ for(a in seq_len(nrow(simPar))){
   dat<-simData[[a]] 
   dat<-dat[dat$year>(max(dat$year)-46),]
   dat <- dat[!is.na(dat$obsRecruits),]
-    
-
-    
   
+
+
+  stackcu1<-cbind(dat[,-c(9,10,11)],stack(dat[,9:11]))
+
+  paramplot[[i]] <- ggplot(stackcu1) +
+    geom_line(aes(x=year,y=values, col=as.factor(CU)))+
+    geom_point(aes(x=year,y=values, col=as.factor(CU)))+
+    theme_bw(14)+ theme(legend.position="none")+
+    facet_wrap(~ind, scales="free_y")+
+    scale_colour_viridis_d() +
+    labs(title = simPar$nameOM[i])
+
     
   S<-seq(0,max(dat$spawners),by=1000)
   R<-matrix(NA, ncol=length(unique(dat$year)),nrow=length(S))
@@ -117,7 +129,11 @@ for(a in seq_len(nrow(simPar))){
     
   }
 
- 
+ggsave(
+      filename = "outs/SamSimOutputs/plotcheck/paramplots.pdf", 
+      plot = marrangeGrob(paramplot, nrow=1, ncol=1), 
+      width = 12, height = 5
+    )
 
 ggsave(
       filename = "outs/SamSimOutputs/plotcheck/srplots.pdf", 
