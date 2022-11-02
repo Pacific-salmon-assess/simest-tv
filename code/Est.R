@@ -50,15 +50,15 @@ p <- list()
 simData <- list()
 
 #compiled Bayesian models
-simple_mod <- sr_mod(type='static', ac=FALSE, par='n', loglik=FALSE, modelcode=TRUE)
-simpleac_mod <- sr_mod(type='static', ac=TRUE, par='n', loglik=FALSE, modelcode=TRUE)
-rwa_mod <- sr_mod(type='rw',ac=FALSE,par="a",loglik=FALSE, modelcode=TRUE)
-rwb_mod <- sr_mod(type='rw',ac=FALSE,par="b",loglik=FALSE, modelcode=TRUE)
-rwab_mod <- sr_mod(type='rw',ac=FALSE,par="both",loglik=FALSE, modelcode=TRUE)
-hmma_mod<-sr_mod(type='hmm',ac=FALSE,par="a",loglik=FALSE, modelcode=TRUE)
-hmmb_mod<-sr_mod(type='hmm',ac=FALSE,par="b",loglik=FALSE, modelcode=TRUE)
-hmmab_mod<-sr_mod(type='hmm',ac=FALSE,par="both",loglik=FALSE, modelcode=TRUE)
-hmmabcaphi_mod<-sr_mod(type='hmm',ac=FALSE,par="both",loglik=FALSE, modelcode=TRUE,caphigh=TRUE)
+simple_mod <- compile_code(type='static', ac=FALSE, par='n')
+simpleac_mod <- compile_code(type='static', ac=TRUE, par='n')
+rwa_mod <- compile_code(type='rw',ac=FALSE,par="a")
+rwb_mod <- compile_code(type='rw',ac=FALSE,par="b")
+rwab_mod <- compile_code(type='rw',ac=FALSE,par="both")
+hmma_mod <- compile_code(type='hmm',ac=FALSE,par="a")
+hmmb_mod <- compile_code(type='hmm',ac=FALSE,par="b")
+hmmab_mod <- compile_code(type='hmm',ac=FALSE,par="both")
+hmmabcaphi_mod <- compile_code(type='hmm',ac=FALSE,par="both",caphigh=TRUE)
 
 
 allrmse<-list()
@@ -96,23 +96,23 @@ for(a in 5:11){
     phmmb <- ricker_hmm_TMB(data=df, tv.par='b')
     phmm  <- ricker_hmm_TMB(data=df, tv.par='both')
 
-    b <- ricker_stan(data=df,iter = 2000,sm_ext=simple_mod)
+    b <- ricker_stan(data=df,iter = 800, mod=simple_mod)
     #ricker autocorr
-    bac <- ricker_stan(data=df,iter = 2000, AC=TRUE, sm_ext=simpleac_mod)
+    bac <- ricker_stan(data=df,iter = 800, AC=TRUE, mod=simpleac_mod)
     #ricker tva
-    btva <- ricker_rw_stan(data=df, par="a",iter = 2000, sm_ext=rwa_mod)
+    btva <- ricker_rw_stan(data=df, par="a",iter = 800, mod=rwa_mod)
     #ricker tvb
-    btvb <- ricker_rw_stan(data=df, par="b",iter = 2000, sm_ext=rwb_mod)
+    btvb <- ricker_rw_stan(data=df, par="b",iter = 800, mod=rwb_mod)
     #ricker tvab
-    btvab <- ricker_rw_stan(data=df, par="both",iter = 2000, sm_ext=rwab_mod) 
+    btvab <- ricker_rw_stan(data=df, par="both",iter = 800, mod=rwab_mod) 
     #ricker tvhmma
-    bhmma <- ricker_hmm_stan(data=df, par="a",iter = 2000, sm_ext=hmma_mod)
+    bhmma <- ricker_hmm_stan(data=df, par="a",iter = 800, mod=hmma_mod)
     #ricker tvhmmb
-    bhmmb <- ricker_hmm_stan(data=df, par="b",iter = 2000, sm_ext=hmmb_mod)
+    bhmmb <- ricker_hmm_stan(data=df, par="b",iter = 800, mod=hmmb_mod)
     #ricker tvhmmab
-    bhmmab <- ricker_hmm_stan(data=df, par="both",iter = 2000, sm_ext=hmmab_mod) 
+    bhmmab <- ricker_hmm_stan(data=df, par="both",iter = 800, mod=hmmab_mod) 
     #ricker tvhmmab capacity high
-    bhmmabcaphi <- ricker_hmm_stan(data=df, par="both",iter = 2000, sm_ext=hmmabcaphi_mod,)
+    bhmmabcaphi <- ricker_hmm_stan(data=df, par="both",iter = 800, mod=hmmabcaphi_mod)
   
     #a estimates
     dfa<- data.frame(parameter="alpha",

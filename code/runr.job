@@ -1,0 +1,24 @@
+#! /bin/bash
+#
+#simest.job
+#$ -N hello
+#
+#$ -P nrc_aero
+#
+#$ -j y
+#$ -o $HOME/simest.out
+#
+#$ -pe dev 1
+#$ -l res_cpus=8
+#$ -l res_mem=4000
+#$ -l res_tmpfs=200
+#
+#$ -l res_image=nrc/nrc_all_default_ubuntu-18.04-amd64_latest
+#
+#-l h_rt=600
+#
+for i in {1..12};
+do
+    echo "$i"
+    Rscript test_cluster.R $i
+done
