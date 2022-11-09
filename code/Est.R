@@ -736,11 +736,38 @@ if(!file.exists("outs/simest")){
   dir.create("outs/simest") 
 }
 
-save(allrmse, allsimest,file="outs/simest/simest_prodcapscenarios.Rdata")
+save(allrmse, allsimest,file="outs/simest/simest_prodcapscenarios5_11.Rdata")
 
 #=================================
 #plots
+pbiasplot<-list()
+for(a in 5:11){
+  scna<-allsimest[[a]]
+  dfpbias<-do.call("rbind",scna)
+  dfpbias<- dfpbias[dfpbias$convergence==0,]
+  dfpbias$model <- factor(dfpbias$model, levels=c("simple","autocorr","rwa",
+  "rwb","rwab","hmma_regime","hmma_average","hmmb_regime", "hmmb_average",
+  "hmmab_regime", "hmmab_average",  "hmmabhc_regime","hmmabhc_average" ))
+  dfpbias$method <- factor(dfpbias$method, levels=c("MLE","MCMC"))
+  dfpbias<-dfpbias[!is.na(dfpbias$pbias),] 
 
+  pbiasplot[[a]] <-  ggplot(dfpbias,aes(x=model,y=pbias)) +
+      geom_boxplot(aes(fill=method)) +
+      coord_cartesian(ylim = c(-100,100))+
+      geom_hline(yintercept=0) +
+      theme_bw(14)+ #theme(legend.position="none")+
+      facet_wrap(~parameter, scales="free_y")+
+      scale_fill_viridis_d(begin=.3, end=.9) +
+      stat_summary(fun.data = give.n, geom = "text", hjust = 0.5,
+          vjust = -2)+ labs(title = simPar$nameOM[a])+
+      theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
+}
+
+ggsave(
+      filename = "outs/SamSimOutputs/plotcheck/pbias5_11.pdf", 
+      plot = marrangeGrob(pbiasplot, nrow=1, ncol=1), 
+      width = 12, height = 5
+    )
 dfpbias<-do.call("rbind",simest)
 dfpbias<- dfpbias[dfpbias$convergence==0,]
 dfpbias$model <- factor(dfpbias$model, levels=c("simple","simple_b", "autocorr", "rwa", "rwb",
