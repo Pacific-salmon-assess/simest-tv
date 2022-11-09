@@ -69,7 +69,8 @@ if(!file.exists("outs/simest")){
   dir.create("outs/simest/lfostan/stationary")
 }
 
-
+full_loglik=list()
+mod_loglik=list()
 for(a in 1:nrow(simPar)){
   simData[[a]] <- readRDS(paste0("outs/SamSimOutputs/simData/", simPar$nameOM[a],"/",simPar$scenario[a],"/",
                                  paste(simPar$nameOM[a],"_", simPar$nameMP[a], "_", "CUsrDat.RData",sep="")))$srDatout
@@ -104,8 +105,8 @@ for(a in 1:nrow(simPar)){
     #model 8 - productivity and capacity regime shift
     ll8_2<- stan_lfo_cv(mod=m8_2,type='regime',df=df,L=12,K=2)
     
-    full_loglik[[i]]=rbind(ll1,ll2,ll3,ll4,ll5,ll6,ll7,ll8_1,ll8_2)
-    rownames(full_loglik[[i]])=c('m1',paste('m2',c(1,3,5),sep="_"),paste('m3',c(1,3,5),sep="_"),paste('m4',c(1,3,5),sep="_"),paste('m5',c(1,3,5),sep="_"),paste('m6',c(1,3,5,'1w','3w','5w'),sep="_"),paste('m7',c(1,3,5,'1w','3w','5w'),sep="_"),paste('m8_1',c(1,3,5,'1w','3w','5w'),sep="_"),paste('m8_2',c(1,3,5,'1w','3w','5w'),sep="_"))
+    full_loglik[[u]]=rbind(ll1,ll2,ll3,ll4,ll5,ll6,ll7,ll8_1,ll8_2)
+    rownames(full_loglik[[u]])=c('m1',paste('m2',c(1,3,5),sep="_"),paste('m3',c(1,3,5),sep="_"),paste('m4',c(1,3,5),sep="_"),paste('m5',c(1,3,5),sep="_"),paste('m6',c(1,3,5,'1w','3w','5w'),sep="_"),paste('m7',c(1,3,5,'1w','3w','5w'),sep="_"),paste('m8_1',c(1,3,5,'1w','3w','5w'),sep="_"),paste('m8_2',c(1,3,5,'1w','3w','5w'),sep="_"))
     wm2=which.max(apply(ll2,1,sum)) #select best likelihood from different timeframes (1-y back, 3-y back, 5-y back)
     wm3=which.max(apply(ll3,1,sum))#best fit for model 3
     wm4=which.max(apply(ll4,1,sum))#best fit for model 4
@@ -114,15 +115,15 @@ for(a in 1:nrow(simPar)){
     wm7=which.max(apply(ll7,1,sum)) #best fit for model 7
     wm8=which.max(apply(rbind(ll8_1,ll8_2),1,sum)) #best fit for model 8 (two combinations of higher alpha, lower cap; higher alpha, higher cap)
     if(wm8<=6){
-      mod_loglik[[i]]=rbind(ll1,ll2[wm2,],ll3[wm3,],ll4[wm4,],ll5[wm5,],ll6[wm6,],ll7[wm7,],ll8_1[wm8,])
-      rownames(mod_loglik[[i]])[1:8]=paste('m',seq(1:8),sep='');rownames(mod_loglik[[i]])[8]='m8_1'
+      mod_loglik[[u]]=rbind(ll1,ll2[wm2,],ll3[wm3,],ll4[wm4,],ll5[wm5,],ll6[wm6,],ll7[wm7,],ll8_1[wm8,])
+      rownames(mod_loglik[[u]])[1:8]=paste('m',seq(1:8),sep='');rownames(mod_loglik[[u]])[8]='m8_1'
     }
     if(wm8>6){
-      mod_loglik[[i]]=rbind(ll1,ll2[wm2,],ll3[wm3,],ll4[wm4,],ll5[wm5,],ll6[wm6,],ll7[wm7,],ll8_2[wm8-6,])
-      rownames(mod_loglik[[i]])[1:8]=paste('m',seq(1:8),sep='');rownames(mod_loglik[[i]])[8]='m8_2'
+      mod_loglik[[u]]=rbind(ll1,ll2[wm2,],ll3[wm3,],ll4[wm4,],ll5[wm5,],ll6[wm6,],ll7[wm7,],ll8_2[wm8-6,])
+      rownames(mod_loglik[[u]])[1:8]=paste('m',seq(1:8),sep='');rownames(mod_loglik[[u]])[8]='m8_2'
     }
-    write.csv(full_loglik[[i]],here('outs','simest','lfostan',simPar$scenario[a],paste(u,'full_loglik.csv',sep='')))
-    write.csv(mod_loglik[[i]],here('outs','simest','lfostan',simPar$scenario[a],paste(u,'mod_loglik.csv',sep='')))
+    write.csv(full_loglik[[u]],here('outs','simest','lfostan',simPar$scenario[a],paste(u,'full_loglik.csv',sep='')))
+    write.csv(mod_loglik[[u]],here('outs','simest','lfostan',simPar$scenario[a],paste(u,'mod_loglik.csv',sep='')))
     
   }
 }
