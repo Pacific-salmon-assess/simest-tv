@@ -1,7 +1,16 @@
 
 
-packages <- c("ggplot2", "remotes", "dplyr", "here", "rstan", "TMB")
+packages <- c("remotes", "dplyr", "here", "rstan", "TMB")
 install.packages(setdiff(packages, rownames(installed.packages()))) 
+
+for(package.i in packages){
+  suppressPackageStartupMessages(
+    library(
+      package.i, 
+      character.only = TRUE
+      )
+    )
+}
 
 #install samsim
 #load samsim
