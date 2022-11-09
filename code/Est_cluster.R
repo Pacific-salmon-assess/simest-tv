@@ -1,5 +1,4 @@
-#!/usr/local/bin/Rscript --slave
-args <- commandArgs(trailingOnly=TRUE)
+
 
 packages <- c("ggplot2", "remotes", "dplyr", "here", "rstan", "TMB")
 install.packages(setdiff(packages, rownames(installed.packages()))) 
