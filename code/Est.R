@@ -736,12 +736,13 @@ if(!file.exists("outs/simest")){
   dir.create("outs/simest") 
 }
 
-save(allrmse, allsimest,file="outs/simest/simest_prodcapscenarios5_11.Rdata")
+
+save(allrmse, allsimest,file="outs/simest/simest_prodcapscenarios1_4.Rdata")
 
 #=================================
 #plots
 pbiasplot<-list()
-for(a in 5:11){
+for(a in 1:4){
   scna<-allsimest[[a]]
   dfpbias<-do.call("rbind",scna)
   dfpbias<- dfpbias[dfpbias$convergence==0,]
@@ -764,7 +765,7 @@ for(a in 5:11){
 }
 
 ggsave(
-      filename = "outs/SamSimOutputs/plotcheck/pbias5_11.pdf", 
+      filename = "outs/SamSimOutputs/plotcheck/pbias1_4.pdf", 
       plot = marrangeGrob(pbiasplot, nrow=1, ncol=1), 
       width = 12, height = 5
     )

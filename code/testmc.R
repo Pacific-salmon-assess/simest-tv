@@ -34,7 +34,7 @@ list_df<-function(x){
   doi_l=list()
   for(p in length(x)){
    for(l in length(x[[1]])){
-     df=dplyr::bind_rows(lapply(result[[p]][[l]],data.frame, stringsAsFactors = FALSE))
+     df=dplyr::bind_rows(lapply(x[[p]][[l]],data.frame, stringsAsFactors = FALSE))
      um_l[[l]]=df[,grepl('um',colnames(df))]
      doi_l[[l]]=df[,grepl('dois',colnames(df))]
    } 
