@@ -17,8 +17,7 @@ ncores<-1
 result<-mclapply(mc.cores=ncores,
   X=1:5,
   FUN=function(a){
-   
-    
+       
     out<-mclapply(mc.cores=ncores,
       X=1:20,
       FUN=function(u){
@@ -28,6 +27,8 @@ result<-mclapply(mc.cores=ncores,
     })
     return(list(out))
 })
+
+
 
 list_df<-function(x){
   um_l=list()

@@ -94,7 +94,7 @@ for(a in seq_along(scenNames)){
    theme_bw(14)+ 
    facet_wrap(~parameter, scales="free_y")+
    scale_fill_viridis_d(begin=.3, end=.9)+
-   ylab("RMSE")+
+   ylab("RMSE")+ labs(title = simPar$nameOM[a])+
    stat_summary(fun.data = give.n, geom = "text", hjust = 0.5,
        vjust = -2)+
    theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
