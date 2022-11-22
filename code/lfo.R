@@ -118,14 +118,14 @@ for(a in seq_len(nrow(simPar))){
     lfohmmb <- tmb_mod_lfo_cv(data=df,model='HMM_b', L=round((2/3)*nrow(dat)))
     lfohmm <- tmb_mod_lfo_cv(data=df,model='HMM', L=round((2/3)*nrow(dat)))
     
-    TMBstatic <- ricker_TMB(data=df)
-    TMBac <- ricker_TMB(data=df, AC=TRUE)
-    TMBtva <- ricker_rw_TMB(data=df,tv.par='a')
-    TMBtvb <- ricker_rw_TMB(data=df, tv.par='b')
-    TMBtvab <- ricker_rw_TMB(data=df, tv.par='both')
-    TMBhmma <- ricker_hmm_TMB(data=df, tv.par='a')
-    TMBhmmb <- ricker_hmm_TMB(data=df, tv.par='b')
-    TMBhmm  <- ricker_hmm_TMB(data=df, tv.par='both')
+    TMBstatic <- ricker_TMB(data=df, priors=0)
+    TMBac <- ricker_TMB(data=df, AC=TRUE,priors=0)
+    TMBtva <- ricker_rw_TMB(data=df,tv.par='a',priors=0)
+    TMBtvb <- ricker_rw_TMB(data=df, tv.par='b'priors=0)
+    TMBtvab <- ricker_rw_TMB(data=df, tv.par='both',priors=0)
+    TMBhmma <- ricker_hmm_TMB(data=df, tv.par='a'priors=0)
+    TMBhmmb <- ricker_hmm_TMB(data=df, tv.par='b'priors=0)
+    TMBhmm  <- ricker_hmm_TMB(data=df, tv.par='both'priors=0)
 
     LLdf<-rbind(lfostatic$lastparam,lfoac$lastparam,
       lfoalpha$lastparam,lfoalpha$last3param,lfoalpha$last5param,
@@ -219,7 +219,7 @@ if(!file.exists("outs/simestlfo")){
   dir.create("outs/simestlfo") 
 }
 
-save(lfoTMB, lfomwTMB,file="outs/simest/simestlfo_prodcapscenarios.Rdata")
+save(lfoTMB, lfomwTMB,aicTMB,bicTMB,file="outs/simest/simestlfo_prodcapscenarios.Rdata")
 
 
 
@@ -227,6 +227,9 @@ save(lfoTMB, lfomwTMB,file="outs/simest/simestlfo_prodcapscenarios.Rdata")
 #todo
 #processing of lfo output
 lfochoicel<-list()
+aicchoicel<-list()
+bicchoicel<-list()
+
 
 for(a in seq_len(nrow(simPar))){
 
@@ -250,31 +253,105 @@ for(a in seq_len(nrow(simPar))){
 
   
   lfochoice<-data.frame(
-    chsnmod=dimnames(lfomwdf)[[2]][apply(lfomwdf,1,which.max)])
+    chsnmodorig=dimnames(lfomwdf)[[2]][apply(lfomwdf,1,which.max)])
+  
+  lfochoice$chsnmod <- dplyr::recode(lfochoice$chsnmodorig, 
+      "rwa_last"="rwa","rwa_last3" ="rwa","rwa_last5"="rwa",
+      "rwb_last"="rwb","rwb_last3"="rwb","rwb_last5"="rwb",
+      "rwab_last"="rwab","rwab_last3"="rwab","rwab_last5"="rwab",
+      "hmma_last_pick"="hmma","hmma_last3_pick"="hmma","hmma_last5_pick"="hmma",
+      "hmma_last_average"="hmma","hmma_last3_average"="hmma","hmma_last5_average"="hmma",
+      "hmmb_last_pick"="hmmb","hmmb_last3_pick"="hmmb","hmmb_last5_pick"="hmmb",
+      "hmmb_last_average"="hmmb","hmmb_last3_average"="hmmb","hmmb_last5_average"="hmmb",
+      "hmm_last_pick"="hmm", "hmm_last3_pick"="hmm", "hmm_last5_pick"="hmm",
+      "hmm_last_average"="hmm","hmm_last3_average"="hmm","hmm_last5_average"="hmm")    
+
+  
 
   lfochoice$chsnmod<-factor(lfochoice$chsnmod, levels=c("simple", "autocorr", 
-      "rwa_last","rwa_last3","rwa_last5",
-      "rwb_last","rwb_last3","rwb_last5",
-      "rwab_last","rwab_last3","rwab_last5",
-      "hmma_last_pick","hmma_last3_pick","hmma_last5_pick",
-      "hmma_last_average","hmma_last3_average","hmma_last5_average",
-      "hmmb_last_pick","hmmb_last3_pick","hmmb_last5_pick",
-      "hmmb_last_average","hmmb_last3_average","hmmb_last5_average",
-      "hmm_last_pick", "hmm_last3_pick", "hmm_last5_pick",
-      "hmm_last_average","hmm_last3_average","hmm_last5_average"
+      "rwa",
+      "rwb",
+      "rwab",
+      "hmma",
+      "hmmb",
+      "hmm"
       ))
   lfochoice$scenario<- simPar$nameOM[a]
-
+  lfochoice$method <-"LFO"
   lfochoicel[[a]]<-lfochoice
+
+  aicdf<-aicTMB[[a]]
+  
+  dimnames(aicdf)[[2]]<-c("simple", "autocorr", 
+      "rwa",
+      "rwb",
+      "rwab",
+      "hmma",
+      "hmmb",
+      "hmm"
+      )
+
+  
+  aicchoice<-data.frame(
+    chsnmod=dimnames(aicdf)[[2]][apply(aicdf,1,which.min)])
+
+  aicchoice$chsnmod<-factor(aicchoice$chsnmod, levels=c("simple", "autocorr", 
+      "rwa",
+      "rwb",
+      "rwab",
+      "hmma",
+      "hmmb",
+      "hmm"
+      ))
+  aicchoice$scenario<- simPar$nameOM[a]
+  aicchoice$method<- "AICc"
+   aicchoice$chsnmodorig<-NA
+  aicchoicel[[a]]<-aicchoice
+
+  bicdf<-bicTMB[[a]]
+  
+  dimnames(bicdf)[[2]]<-c("simple", "autocorr", 
+      "rwa",
+      "rwb",
+      "rwab",
+      "hmma",
+      "hmmb",
+      "hmm"
+      )
+
+  
+  bicchoice<-data.frame(
+    chsnmod=dimnames(bicdf)[[2]][apply(bicdf,1,which.min)])
+  bicchoice$chsnmodorig<-NA
+  bicchoice$chsnmod<-factor(bicchoice$chsnmod, levels=c("simple", "autocorr", 
+      "rwa",
+      "rwb",
+      "rwab",
+      "hmma",
+      "hmmb",
+      "hmm"
+      ))
+  bicchoice$scenario<- simPar$nameOM[a]
+  bicchoice$method<- "BIC"
+
+  bicchoicel[[a]]<-bicchoice
+
 }
 
-df <- do.call("rbind", lfochoicel)
+dflfo <- do.call("rbind", lfochoicel)
+dfaic <- do.call("rbind", aicchoicel)
+dfbic <- do.call("rbind", bicchoicel)
+
+df<-rbind(dflfo,dfaic,dfbic)
 
 
 ggplot(df) +  
- geom_bar(aes(chsnmod))+
- facet_wrap(~scenario)+theme_bw(14) +
-  theme(axis.text.x = element_text(angle = 90))
+ geom_bar(aes(chsnmod,fill=method), 
+    position = position_dodge(width = 0.9, preserve = "single"))+
+ facet_wrap(~scenario)+ 
+ theme_bw(14) +
+ theme(axis.text.x = element_text(angle = 90))+
+ scale_fill_viridis_d(begin=.3, end=.9) 
 
 
 
