@@ -38,6 +38,8 @@ plotscn <- TRUE
 p <- list()
 lfoTMB <- list()
 lfomwTMB <- list()
+aicTMB <- list()
+bicTMB <- list()
 
 for(a in seq_len(nrow(simPar))){
    #a=2
@@ -72,8 +74,30 @@ for(a in seq_len(nrow(simPar))){
       "hmm_last_average","hmm_last3_average","hmm_last5_average"
       )))
  
- 
+   aicdf<-matrix(NA,nrow=length(unique(simData$iteration)),ncol=8,
+  dimnames = list(unique(simData$iteration),
+    c("simple", "autocorr", 
+      "rwa",
+      "rwb",
+      "rwab",
+      "hmma",
+      "hmmb",
+      "hmm"
+      )))
+
+   bicdf<-matrix(NA,nrow=length(unique(simData$iteration)),ncol=8,
+  dimnames = list(unique(simData$iteration),
+    c("simple", "autocorr", 
+      "rwa",
+      "rwb",
+      "rwab",
+      "hmma",
+      "hmmb",
+      "hmm"
+      )))
+  
   for(u in unique(simData$iteration)){
+    #u=1
     dat<-simData[simData$iteration==u,]
     dat<-dat[dat$year>(max(dat$year)-46),]
     dat <- dat[!is.na(dat$obsRecruits),]
@@ -94,6 +118,14 @@ for(a in seq_len(nrow(simPar))){
     lfohmmb <- tmb_mod_lfo_cv(data=df,model='HMM_b', L=round((2/3)*nrow(dat)))
     lfohmm <- tmb_mod_lfo_cv(data=df,model='HMM', L=round((2/3)*nrow(dat)))
     
+    TMBstatic <- ricker_TMB(data=df)
+    TMBac <- ricker_TMB(data=df, AC=TRUE)
+    TMBtva <- ricker_rw_TMB(data=df,tv.par='a')
+    TMBtvb <- ricker_rw_TMB(data=df, tv.par='b')
+    TMBtvab <- ricker_rw_TMB(data=df, tv.par='both')
+    TMBhmma <- ricker_hmm_TMB(data=df, tv.par='a')
+    TMBhmmb <- ricker_hmm_TMB(data=df, tv.par='b')
+    TMBhmm  <- ricker_hmm_TMB(data=df, tv.par='both')
 
     LLdf<-rbind(lfostatic$lastparam,lfoac$lastparam,
       lfoalpha$lastparam,lfoalpha$last3param,lfoalpha$last5param,
@@ -154,10 +186,32 @@ for(a in seq_len(nrow(simPar))){
       ifelse(sum(lfohmm$conv_problem)>0,999,sum(lfohmm$last3regime_average)),
       ifelse(sum(lfohmm$conv_problem)>0,999,sum(lfohmm$last5regime_average))
       )
+
+    aicdf[u,]<-c(ifelse(TMBstatic$conv_problem,999,TMBstatic$AICc),
+      ifelse(TMBac$conv_problem,999,TMBac$AICc),
+      ifelse(TMBtva$conv_problem,999,TMBtva$AICc),
+      ifelse(TMBtvb$conv_problem,999,TMBtvb$AICc),
+      ifelse(TMBtvab$conv_problem,999,TMBtvab$AICc),
+      ifelse(TMBhmma$conv_problem,999,TMBhmma$AICc),
+      ifelse(TMBhmmb$conv_problem,999,TMBhmmb$AICc),
+      ifelse(TMBhmm$conv_problem,999,TMBhmm$AICc))
+
+    bicdf[u,]<-c(ifelse(TMBstatic$conv_problem,999,TMBstatic$BIC),
+      ifelse(TMBac$conv_problem,999,TMBac$BIC),
+      ifelse(TMBtva$conv_problem,999,TMBtva$BIC),
+      ifelse(TMBtvb$conv_problem,999,TMBtvb$BIC),
+      ifelse(TMBtvab$conv_problem,999,TMBtvab$BIC),
+      ifelse(TMBhmma$conv_problem,999,TMBhmma$BIC),
+      ifelse(TMBhmmb$conv_problem,999,TMBhmmb$BIC),
+      ifelse(TMBhmm$conv_problem,999,TMBhmm$BIC))
+    
+
   }
 
   lfoTMB[[a]] <- lfodf
   lfomwTMB[[a]] <- lfomwdf
+  aicTMB[[a]] <- aicdf
+  bicTMB[[a]] <- bicdf
 }
 
   
