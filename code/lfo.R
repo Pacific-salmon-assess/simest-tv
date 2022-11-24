@@ -97,7 +97,7 @@ for(a in seq_len(nrow(simPar))){
       )))
   
   for(u in unique(simData$iteration)){
-    #u=1
+    #u=30
     dat<-simData[simData$iteration==u,]
     dat<-dat[dat$year>(max(dat$year)-46),]
     dat <- dat[!is.na(dat$obsRecruits),]
@@ -118,15 +118,17 @@ for(a in seq_len(nrow(simPar))){
     lfohmmb <- tmb_mod_lfo_cv(data=df,model='HMM_b', L=round((2/3)*nrow(dat)))
     lfohmm <- tmb_mod_lfo_cv(data=df,model='HMM', L=round((2/3)*nrow(dat)))
     
-    TMBstatic <- ricker_TMB(data=df, priors=0)
-    TMBac <- ricker_TMB(data=df, AC=TRUE,priors=0)
-    TMBtva <- ricker_rw_TMB(data=df,tv.par='a',priors=0)
-    TMBtvb <- ricker_rw_TMB(data=df, tv.par='b'priors=0)
-    TMBtvab <- ricker_rw_TMB(data=df, tv.par='both',priors=0)
-    TMBhmma <- ricker_hmm_TMB(data=df, tv.par='a'priors=0)
-    TMBhmmb <- ricker_hmm_TMB(data=df, tv.par='b'priors=0)
-    TMBhmm  <- ricker_hmm_TMB(data=df, tv.par='both'priors=0)
+    TMBstatic <- ricker_TMB(data=df, priors=1)
+    TMBac <- ricker_TMB(data=df, AC=TRUE,priors=1)
+    TMBtva <- ricker_rw_TMB(data=df,tv.par='a',priors=1)
+    TMBtvb <- ricker_rw_TMB(data=df, tv.par='b',priors=1)
+    TMBtvab <- ricker_rw_TMB(data=df, tv.par='both',priors=1)
+    TMBhmma <- ricker_hmm_TMB(data=df, tv.par='a',priors=1)
+    TMBhmmb <- ricker_hmm_TMB(data=df, tv.par='b',priors=1)
+    TMBhmm  <- ricker_hmm_TMB(data=df, tv.par='both',priors=1)
 
+  
+    
     LLdf<-rbind(lfostatic$lastparam,lfoac$lastparam,
       lfoalpha$lastparam,lfoalpha$last3param,lfoalpha$last5param,
       lfobeta$lastparam,lfobeta$last3param,lfobeta$last5param,
@@ -156,7 +158,7 @@ for(a in seq_len(nrow(simPar))){
     mw<-model_weights(LLdf)
     mw[as.logical(apply(convdf,1,sum))]<-0
     lfomwdf[u,] <- mw
-    lfodf[u,] <- c(ifelse(sum(lfostatic$conv_problem)>0,0,sum(lfostatic$lastparam)), 
+    lfodf[u,] <- c(ifelse(sum(lfostatic$conv_problem)>0,999,sum(lfostatic$lastparam)), 
       ifelse(sum(lfoac$conv_problem)>0,999,sum(lfoac$lastparam)), 
       ifelse(sum(lfoalpha$conv_problem)>0,999,sum(lfoalpha$lastparam)), 
       ifelse(sum(lfoalpha$conv_problem)>0,999,sum(lfoalpha$last3paramavg)), 
@@ -345,7 +347,7 @@ dfbic <- do.call("rbind", bicchoicel)
 df<-rbind(dflfo,dfaic,dfbic)
 
 
-ggplot(df) +  
+modsel<-ggplot(df) +  
  geom_bar(aes(chsnmod,fill=method), 
     position = position_dodge(width = 0.9, preserve = "single"))+
  facet_wrap(~scenario)+ 
@@ -355,6 +357,11 @@ ggplot(df) +
 
 
 
+ggsave(
+      filename = "outs/SamSimOutputs/plotcheck/model_selectionLFOallopt.pdf", 
+      plot = modsel, 
+      width = 12, height = 5
+    )
 
 
 #==========================
