@@ -9,15 +9,13 @@
 #install samsim 
 #remotes::install_github("Pacific-salmon-assess/samSim", ref="timevar", force=TRUE)
 
-#install samest
-#remotes::install_git('https://github.com/Pacific-salmon-assess/samEst')
 
 library(samSim)
 library(ggplot2)
 library(devtools)
 library(gridExtra)
 library(dplyr)
-
+library(here)
 ## Load relevant input data
 # Simulation run parameters describing different scenarios
 simPar <- read.csv("data/harckER/harcnkSimPars_ER.csv")
@@ -35,10 +33,20 @@ dirNames <- sapply(scenNames, function(x) paste(x, unique(simPar$species),sep = 
 
 for(a in seq_len(nrow(simPar))){
   
-   genericRecoverySim(simPar=simPar[a,], cuPar=cuPar, catchDat=NULL, srDat=NULL,
-            variableCU=FALSE, ricPars=NULL, larkPars=NULL, cuCustomCorrMat= NULL,
-            outDir="outs", nTrials=100, makeSubDirs=TRUE, random=FALSE, uniqueProd=TRUE,
-                               uniqueSurv=FALSE)
+   genericRecoverySim(simPar=simPar[a,], 
+    cuPar=cuPar, 
+    catchDat=NULL, 
+    srDat=NULL,
+    variableCU=FALSE, 
+    ricPars=NULL, 
+    larkPars=NULL,
+    cuCustomCorrMat= NULL,
+    outDir="outs", 
+    nTrials=100, 
+    makeSubDirs=TRUE, 
+    random=FALSE, 
+    uniqueProd=TRUE,
+    uniqueSurv=FALSE)
 
 }
 
