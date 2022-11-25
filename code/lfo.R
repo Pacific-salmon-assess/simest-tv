@@ -109,14 +109,14 @@ for(a in seq_len(nrow(simPar))){
 
     #=======================
     #lfo comparison
-    lfostatic<-tmb_mod_lfo_cv(data=df,model='static', L=round((2/3)*nrow(dat)))
-    lfoac <- tmb_mod_lfo_cv(data=df,model='staticAC', L=round((2/3)*nrow(dat)))
-    lfoalpha <- tmb_mod_lfo_cv(data=df,model='rw_a', siglfo="obs", L=round((2/3)*nrow(dat)))
-    lfobeta <- tmb_mod_lfo_cv(data=df,model='rw_b', siglfo="obs", L=round((2/3)*nrow(dat)))
-    lfoalphabeta <- tmb_mod_lfo_cv(data=df,model='rw_both', siglfo="obs", L=round((2/3)*nrow(dat)))
-    lfohmma <- tmb_mod_lfo_cv(data=df,model='HMM_a', L=round((2/3)*nrow(dat)))
-    lfohmmb <- tmb_mod_lfo_cv(data=df,model='HMM_b', L=round((2/3)*nrow(dat)))
-    lfohmm <- tmb_mod_lfo_cv(data=df,model='HMM', L=round((2/3)*nrow(dat)))
+    lfostatic<-tmb_mod_lfo_cv(data=df,model='static', L=10)
+    lfoac <- tmb_mod_lfo_cv(data=df,model='staticAC', L=10)
+    lfoalpha <- tmb_mod_lfo_cv(data=df,model='rw_a', siglfo="obs", L=10)
+    lfobeta <- tmb_mod_lfo_cv(data=df,model='rw_b', siglfo="obs", L=10)
+    lfoalphabeta <- tmb_mod_lfo_cv(data=df,model='rw_both', siglfo="obs", L=10)
+    lfohmma <- tmb_mod_lfo_cv(data=df,model='HMM_a', L=10)
+    lfohmmb <- tmb_mod_lfo_cv(data=df,model='HMM_b', L=10)
+    lfohmm <- tmb_mod_lfo_cv(data=df,model='HMM', L=10)
     
     TMBstatic <- ricker_TMB(data=df, priors=1)
     TMBac <- ricker_TMB(data=df, AC=TRUE,priors=1)
