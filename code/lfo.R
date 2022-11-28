@@ -47,31 +47,25 @@ for(a in seq_len(nrow(simPar))){
   simData <- readRDS(paste0("outs/SamSimOutputs/simData/", simPar$nameOM[a],"/",simPar$scenario[a],"/",
                          paste(simPar$nameOM[a],"_", simPar$nameMP[a], "_", "CUsrDat.RData",sep="")))$srDatout
 
-  lfodf<-matrix(NA,nrow=length(unique(simData$iteration)),ncol=29,
+  lfodf<-matrix(NA,nrow=length(unique(simData$iteration)),ncol=20,
   dimnames = list(unique(simData$iteration),
     c("simple", "autocorr", 
       "rwa_last","rwa_last3","rwa_last5",
       "rwb_last","rwb_last3","rwb_last5",
       "rwab_last","rwab_last3","rwab_last5",
-      "hmma_last_pick","hmma_last3_pick","hmma_last5_pick",
-      "hmma_last_average","hmma_last3_average","hmma_last3_average",
-      "hmmb_last_pick","hmmb_last3_pick","hmmb_last5_pick",
-      "hmmb_last_average","hmmb_last3_average","hmmb_last5_average",
-      "hmm_last_pick", "hmm_last3_pick", "hmm_last5_pick",
-      "hmm_last_average","hmm_last3_average","hmm_last5_average"
+      "hmma_last","hmma_last3","hmma_last5",
+      "hmmb_last","hmmb_last3","hmmb_last5",
+      "hmm_last", "hmm_last3", "hmm_last5"
       )))
-  lfomwdf<-matrix(NA,nrow=length(unique(simData$iteration)),ncol=29,
+  lfomwdf<-matrix(NA,nrow=length(unique(simData$iteration)),ncol=20,
   dimnames = list(unique(simData$iteration),
     c("simple", "autocorr", 
       "rwa_last","rwa_last3","rwa_last5",
       "rwb_last","rwb_last3","rwb_last5",
       "rwab_last","rwab_last3","rwab_last5",
-      "hmma_last_pick","hmma_last3_pick","hmma_last5_pick",
-      "hmma_last_average","hmma_last3_average","hmma_last5_average",
-      "hmmb_last_pick","hmmb_last3_pick","hmmb_last5_pick",
-      "hmmb_last_average","hmmb_last3_average","hmmb_last5_average",
-      "hmm_last_pick", "hmm_last3_pick", "hmm_last5_pick",
-      "hmm_last_average","hmm_last3_average","hmm_last5_average"
+      "hmma_last","hmma_last3","hmma_last5",
+      "hmmb_last","hmmb_last3","hmmb_last5",
+      "hmm_last", "hmm_last3", "hmm_last5"
       )))
  
    aicdf<-matrix(NA,nrow=length(unique(simData$iteration)),ncol=8,
@@ -129,16 +123,14 @@ for(a in seq_len(nrow(simPar))){
 
   
     
-    LLdf<-rbind(lfostatic$lastparam,lfoac$lastparam,
+    LLdf<-rbind(lfostatic$lastparam,
+      lfoac$lastparam,
       lfoalpha$lastparam,lfoalpha$last3param,lfoalpha$last5param,
       lfobeta$lastparam,lfobeta$last3param,lfobeta$last5param,
       lfoalphabeta$lastparam,lfoalphabeta$last3param,lfoalphabeta$last5param,
       lfohmma$lastregime_pick,lfohmma$last3regime_pick,lfohmma$last5regime_pick,
-      lfohmma$lastregime_average,lfohmma$last3regime_average,lfohmma$last5regime_average,
       lfohmmb$lastregime_pick,lfohmmb$last3regime_pick,lfohmmb$last5regime_pick,
-      lfohmmb$lastregime_average,lfohmmb$last3regime_average,lfohmmb$last5regime_average,
-      lfohmm$lastregime_pick,lfohmm$last3regime_pick,lfohmm$last5regime_pick,
-      lfohmm$lastregime_average,lfohmm$last3regime_average,lfohmm$last5regime_average
+      lfohmm$lastregime_pick,lfohmm$last3regime_pick,lfohmm$last5regime_pick
       )
     rownames(LLdf)<-colnames(lfodf)
     
@@ -148,14 +140,11 @@ for(a in seq_len(nrow(simPar))){
       lfobeta$conv_problem,lfobeta$conv_problem,lfobeta$conv_problem,
       lfoalphabeta$conv_problem,lfoalphabeta$conv_problem,lfoalphabeta$conv_problem,
       lfohmma$conv_problem,lfohmma$conv_problem,lfohmma$conv_problem,
-      lfohmma$conv_problem,lfohmma$conv_problem,lfohmma$conv_problem,
       lfohmmb$conv_problem,lfohmmb$conv_problem,lfohmmb$conv_problem,
-      lfohmmb$conv_problem,lfohmmb$conv_problem,lfohmmb$conv_problem,
-      lfohmm$conv_problem,lfohmm$conv_problem,lfohmm$conv_problem,
       lfohmm$conv_problem,lfohmm$conv_problem,lfohmm$conv_problem
       )
 
-    mw<-model_weights(LLdf)
+    mw<-model_weights(LLdf, form='PBMA',type='full')
     mw[as.logical(apply(convdf,1,sum))]<-0
     lfomwdf[u,] <- mw
     lfodf[u,] <- c(ifelse(sum(lfostatic$conv_problem)>0,999,sum(lfostatic$lastparam)), 
@@ -172,21 +161,12 @@ for(a in seq_len(nrow(simPar))){
       ifelse(sum(lfohmma$conv_problem)>0,999,sum(lfohmma$lastregime_pick)),
       ifelse(sum(lfohmma$conv_problem)>0,999,sum(lfohmma$last3regime_pick)),
       ifelse(sum(lfohmma$conv_problem)>0,999,sum(lfohmma$last5regime_pick)),
-      ifelse(sum(lfohmma$conv_problem)>0,999,sum(lfohmma$lastregime_average)),
-      ifelse(sum(lfohmma$conv_problem)>0,999,sum(lfohmma$last3regime_average)),
-      ifelse(sum(lfohmma$conv_problem)>0,999,sum(lfohmma$last5regime_average)),     
       ifelse(sum(lfohmmb$conv_problem)>0,999,sum(lfohmmb$lastregime_pick)),
       ifelse(sum(lfohmmb$conv_problem)>0,999,sum(lfohmmb$last3regime_pick)),
       ifelse(sum(lfohmmb$conv_problem)>0,999,sum(lfohmmb$last5regime_pick)),
-      ifelse(sum(lfohmmb$conv_problem)>0,999,sum(lfohmmb$lastregime_average)),
-      ifelse(sum(lfohmmb$conv_problem)>0,999,sum(lfohmmb$last3regime_average)),
-      ifelse(sum(lfohmmb$conv_problem)>0,999,sum(lfohmmb$last5regime_average)),
       ifelse(sum(lfohmm$conv_problem)>0,999,sum(lfohmm$lastregime_pick)),
       ifelse(sum(lfohmm$conv_problem)>0,999,sum(lfohmm$last3regime_pick)),
-      ifelse(sum(lfohmm$conv_problem)>0,999,sum(lfohmm$last5regime_pick)),
-      ifelse(sum(lfohmm$conv_problem)>0,999,sum(lfohmm$lastregime_average)),
-      ifelse(sum(lfohmm$conv_problem)>0,999,sum(lfohmm$last3regime_average)),
-      ifelse(sum(lfohmm$conv_problem)>0,999,sum(lfohmm$last5regime_average))
+      ifelse(sum(lfohmm$conv_problem)>0,999,sum(lfohmm$last5regime_pick))
       )
 
     aicdf[u,]<-c(ifelse(TMBstatic$conv_problem,999,TMBstatic$AICc),
