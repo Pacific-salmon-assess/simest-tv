@@ -103,7 +103,7 @@ for(a in seq_len(nrow(simPar))){
 
     #=======================
     #lfo comparison
-    lfostatic<-tmb_mod_lfo_cv(data=df,model='static', L=10)
+    lfostatic <- tmb_mod_lfo_cv(data=df,model='static', L=10)
     lfoac <- tmb_mod_lfo_cv(data=df,model='staticAC', L=10)
     lfoalpha <- tmb_mod_lfo_cv(data=df,model='rw_a', siglfo="obs", L=10)
     lfobeta <- tmb_mod_lfo_cv(data=df,model='rw_b', siglfo="obs", L=10)
@@ -123,28 +123,54 @@ for(a in seq_len(nrow(simPar))){
 
   
     
-    LLdf<-rbind(lfostatic$lastparam,
-      lfoac$lastparam,
-      lfoalpha$lastparam,lfoalpha$last3param,lfoalpha$last5param,
-      lfobeta$lastparam,lfobeta$last3param,lfobeta$last5param,
-      lfoalphabeta$lastparam,lfoalphabeta$last3param,lfoalphabeta$last5param,
-      lfohmma$lastregime_pick,lfohmma$last3regime_pick,lfohmma$last5regime_pick,
-      lfohmmb$lastregime_pick,lfohmmb$last3regime_pick,lfohmmb$last5regime_pick,
-      lfohmm$lastregime_pick,lfohmm$last3regime_pick,lfohmm$last5regime_pick
+    LLdf<-rbind(ifelse(is.na(lfostatic$lastparam),-999,lfostatic$lastparam),
+      ifelse(is.na(lfoac$lastparam),-999,lfoac$lastparam),
+      ifelse(is.na(lfoalpha$lastparam),-999,lfoalpha$lastparam),
+      ifelse(is.na(lfoalpha$last3param),-999,lfoalpha$last3param),
+      ifelse(is.na(lfoalpha$last5param),-999,lfoalpha$last5param),
+      ifelse(is.na(lfobeta$lastparam),-999,lfobeta$lastparam),
+      ifelse(is.na(lfobeta$last3param),-999,lfobeta$last3param),
+      ifelse(is.na(lfobeta$last5param),-999,lfobeta$last5param),
+      ifelse(is.na(lfoalphabeta$lastparam),-999,lfoalphabeta$lastparam),
+      ifelse(is.na(lfoalphabeta$last3param),-999,lfoalphabeta$last3param),
+      ifelse(is.na(lfoalphabeta$last5param),-999,lfoalphabeta$last5param),
+      ifelse(is.na(lfohmma$lastregime_pick),-999,lfohmma$lastregime_pick),
+      ifelse(is.na(lfohmma$last3regime_pick),-999,lfohmma$last3regime_pick),
+      ifelse(is.na(lfohmma$last5regime_pick),-999,lfohmma$last5regime_pick),
+      ifelse(is.na(lfohmmb$lastregime_pick),-999,lfohmmb$lastregime_pick),
+      ifelse(is.na(lfohmmb$last3regime_pick),-999,lfohmmb$last3regime_pick),
+      ifelse(is.na(lfohmmb$last5regime_pick),-999,lfohmmb$last5regime_pick),
+      ifelse(is.na(lfohmm$lastregime_pick),-999,lfohmm$lastregime_pick),
+      ifelse(is.na(lfohmm$last3regime_pick),-999,lfohmm$last3regime_pick),
+      ifelse(is.na(lfohmm$last5regime_pick),-999,lfohmm$last5regime_pick)
       )
     rownames(LLdf)<-colnames(lfodf)
     
     
-    convdf<-rbind(lfostatic$conv_problem,lfoac$conv_problem,
-      lfoalpha$conv_problem,lfoalpha$conv_problem,lfoalpha$conv_problem,
-      lfobeta$conv_problem,lfobeta$conv_problem,lfobeta$conv_problem,
-      lfoalphabeta$conv_problem,lfoalphabeta$conv_problem,lfoalphabeta$conv_problem,
-      lfohmma$conv_problem,lfohmma$conv_problem,lfohmma$conv_problem,
-      lfohmmb$conv_problem,lfohmmb$conv_problem,lfohmmb$conv_problem,
-      lfohmm$conv_problem,lfohmm$conv_problem,lfohmm$conv_problem
+    convdf<-rbind(lfostatic$conv_problem,
+      lfoac$conv_problem,
+      lfoalpha$conv_problem,
+      lfoalpha$conv_problem,
+      lfoalpha$conv_problem,
+      lfobeta$conv_problem,
+      lfobeta$conv_problem,
+      lfobeta$conv_problem,
+      lfoalphabeta$conv_problem,
+      lfoalphabeta$conv_problem,
+      lfoalphabeta$conv_problem,
+      lfohmma$conv_problem,
+      lfohmma$conv_problem,
+      lfohmma$conv_problem,
+      lfohmmb$conv_problem,
+      lfohmmb$conv_problem,
+      lfohmmb$conv_problem,
+      lfohmm$conv_problem,
+      lfohmm$conv_problem,
+      lfohmm$conv_problem
       )
 
-    mw<-model_weights(LLdf, form='PBMA',type='full')
+    
+    mw <- model_weights(LLdf, form='PBMA',type='full')
     mw[as.logical(apply(convdf,1,sum))]<-0
     lfomwdf[u,] <- mw
     lfodf[u,] <- c(ifelse(sum(lfostatic$conv_problem)>0,999,sum(lfostatic$lastparam)), 
