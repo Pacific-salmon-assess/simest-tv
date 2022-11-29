@@ -242,19 +242,15 @@ bicchoicel<-list()
 for(a in seq_len(nrow(simPar))){
 
   lfomwdf<- lfomwTMB[[a]] 
-  
-  
+   
   #fix a bug in the naming
   dimnames(lfomwdf)[[2]]<-c("simple", "autocorr", 
       "rwa_last","rwa_last3","rwa_last5",
       "rwb_last","rwb_last3","rwb_last5",
       "rwab_last","rwab_last3","rwab_last5",
       "hmma_last_pick","hmma_last3_pick","hmma_last5_pick",
-      "hmma_last_average","hmma_last3_average","hmma_last5_average",
       "hmmb_last_pick","hmmb_last3_pick","hmmb_last5_pick",
-      "hmmb_last_average","hmmb_last3_average","hmmb_last5_average",
       "hmm_last_pick", "hmm_last3_pick", "hmm_last5_pick",
-      "hmm_last_average","hmm_last3_average","hmm_last5_average"
       )
 
   lfo<-apply(lfomwdf,1,which.max)
@@ -279,7 +275,7 @@ for(a in seq_len(nrow(simPar))){
       "hmma",
       "hmmb",
       "hmm"))
-  
+
   lfochoice$scenario<- simPar$nameOM[a]
   lfochoice$method <-"LFO"
   lfochoicel[[a]]<-lfochoice
