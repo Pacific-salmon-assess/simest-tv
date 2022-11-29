@@ -268,22 +268,18 @@ for(a in seq_len(nrow(simPar))){
       "rwb_last"="rwb","rwb_last3"="rwb","rwb_last5"="rwb",
       "rwab_last"="rwab","rwab_last3"="rwab","rwab_last5"="rwab",
       "hmma_last_pick"="hmma","hmma_last3_pick"="hmma","hmma_last5_pick"="hmma",
-      "hmma_last_average"="hmma","hmma_last3_average"="hmma","hmma_last5_average"="hmma",
       "hmmb_last_pick"="hmmb","hmmb_last3_pick"="hmmb","hmmb_last5_pick"="hmmb",
-      "hmmb_last_average"="hmmb","hmmb_last3_average"="hmmb","hmmb_last5_average"="hmmb",
-      "hmm_last_pick"="hmm", "hmm_last3_pick"="hmm", "hmm_last5_pick"="hmm",
-      "hmm_last_average"="hmm","hmm_last3_average"="hmm","hmm_last5_average"="hmm")    
+      "hmm_last_pick"="hmm", "hmm_last3_pick"="hmm", "hmm_last5_pick"="hmm")    
 
   
-
   lfochoice$chsnmod<-factor(lfochoice$chsnmod, levels=c("simple", "autocorr", 
       "rwa",
       "rwb",
       "rwab",
       "hmma",
       "hmmb",
-      "hmm"
-      ))
+      "hmm"))
+  
   lfochoice$scenario<- simPar$nameOM[a]
   lfochoice$method <-"LFO"
   lfochoicel[[a]]<-lfochoice
