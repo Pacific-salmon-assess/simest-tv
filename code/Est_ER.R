@@ -18,7 +18,6 @@
 
 
 library(samEst)
-library(samSim)
 library(ggplot2)
 library(devtools)
 library(gridExtra)
@@ -76,16 +75,15 @@ for(a in seq_len(nrow(simPar))){
   
   for(u in unique(simData[[a]]$iteration)){
     #u=1    
-    dat<-simData[[a]][simData[[a]]$iteration==u,]
-    dat<-dat[dat$year>(max(dat$year)-46),]
+    dat <- simData[[a]][simData[[a]]$iteration==u,]
+    dat <- dat[dat$year>(max(dat$year)-46),]
   
     dat <- dat[!is.na(dat$obsRecruits),]
     df <- data.frame(by=dat$year,
                     S=dat$obsSpawners,
                     R=dat$obsRecruits,
                     logRS=log(dat$obsRecruits/dat$obsSpawners))
- 
-    
+     
 
     #p<-tryCatch(ricker_TMB(data=df),error = function(e) {list(conv_problem=TRUE)})
 
@@ -152,19 +150,15 @@ for(a in seq_len(nrow(simPar))){
             rep(btvb$alpha,nrow(df)),
             btvab$alpha[-1],
             bhmma$alpha_regime,
-            bhmma$alpha_wgt,
             rep(bhmmb$alpha,nrow(df)),
-            bhmmab$alpha_regime,
-            bhmmab$alpha_wgt),
+            bhmmab$alpha_regime),
       convergence=c(rep(c(p$model$convergence + p$conv_problem,
           pac$model$convergence + pac$conv_problem,
           ptva$model$convergence + ptva$conv_problem,
           ptvb$model$convergence + ptvb$conv_problem,
           ptvab$model$convergence + ptvab$conv_problem,
           phmma$model$convergence + phmma$conv_problem,
-          phmma$model$convergence + phmma$conv_problem,
           phmmb$model$convergence + phmmb$conv_problem,
-          phmm$model$convergence + phmm$conv_problem,
           phmm$model$convergence + phmm$conv_problem,
           as.numeric(abs(b$mcmcsummary["log_a","Rhat"]-1)>.1),
           as.numeric(abs(bac$mcmcsummary["log_a","Rhat"]-1)>.1)
@@ -319,7 +313,7 @@ for(a in seq_len(nrow(simPar))){
   
     dfsmsy<- data.frame(parameter="smsy",
       iteration=u,
-      method=rep(c(rep("MLE",11),rep("MCMC",13)),each=nrow(df)),
+      method=rep(c(rep("MLE",8),rep("MCMC",8)),each=nrow(df)),
       model=rep(c("simple",
         "autocorr",
         "rwa",
@@ -452,7 +446,6 @@ for(a in seq_len(nrow(simPar))){
   
   sgen_hmmab_regime<-sgen_hmmab[bhmmab$mcmcsummary[grep("zstar\\[",rownames(bhmmab$mcmcsummary)),"50%"]]
   
-
   dfsgen <- data.frame(parameter="sgen",
     iteration=u,
     method=rep(c(rep("MLE",8),rep("MCMC",8)),each=nrow(df)),
@@ -473,7 +466,7 @@ for(a in seq_len(nrow(simPar))){
       "hmmb_regime",
       "hmmab_regime"),each=nrow(df)),
     by=rep(dat$year,16),
-    sim=rep(unlist(mapply(sGenCalc,a=dat$alpha,Smsy=smsysim, b=dat$beta)),24),
+    sim=rep(unlist(mapply(sGenCalc,a=dat$alpha,Smsy=smsysim, b=dat$beta)),16),
     est=c(unlist(mapply(sGenCalc,a=dfa$est[dfa$model=="simple"&dfa$method=="MLE"],
              Smsy=dfsmsy$est[dfsmsy$model=="simple"&dfsmsy$method=="MLE"], 
              b=1/dfsmax$est[dfsmax$model=="simple"&dfsmax$method=="MLE"])),
@@ -505,8 +498,7 @@ for(a in seq_len(nrow(simPar))){
         sgen_tvab,
         sgen_hmma_regime,
         sgen_hmmb_regime,
-        sgen_hmmab_regime,
-        ),
+        sgen_hmmab_regime),
      convergence=c(rep(c(p$model$convergence + p$conv_problem,
       pac$model$convergence + pac$conv_problem,
       ptva$model$convergence + ptvab$conv_problem,
@@ -523,9 +515,11 @@ for(a in seq_len(nrow(simPar))){
       (as.numeric(abs(btva$mcmcsummary[grep("log_a\\[",rownames(btva$mcmcsummary)),"Rhat"]-1)>.1)+
         as.numeric(abs(btva$mcmcsummary[grep("S_msy\\[",rownames(btva$mcmcsummary)),"Rhat"]-1)>.1)+
         as.numeric(abs(btva$mcmcsummary["b","Rhat"]-1)>.1)),
+
       (as.numeric(abs(btvb$mcmcsummary["log_a","Rhat"]-1)>.1)+
         as.numeric(abs(btvb$mcmcsummary[grep("S_msy\\[",rownames(btvb$mcmcsummary)),"Rhat"]-1)>.1)+
         as.numeric(abs(btvb$mcmcsummary[grep("^b\\[",rownames(btvb$mcmcsummary)),"Rhat"]-1)>.1)),
+
       (as.numeric(abs(btvab$mcmcsummary[grep("log_a\\[",rownames(btvab$mcmcsummary)),"Rhat"]-1)>.1)+
         as.numeric(abs(btvab$mcmcsummary[grep("S_msy\\[",rownames(btvab$mcmcsummary)),"Rhat"]-1)>.1)+
         as.numeric(abs(btvab$mcmcsummary[grep("^b\\[",rownames(btvab$mcmcsummary)),"Rhat"]-1)>.1)),

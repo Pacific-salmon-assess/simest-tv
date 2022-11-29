@@ -63,6 +63,8 @@ recplot<-list()
 spnplot<-list()
 erplot<-list()
 paramplot<-list()
+stackcu<-list()
+
 
 
 for(a in seq_len(nrow(simPar))){
@@ -82,15 +84,18 @@ for(a in seq_len(nrow(simPar))){
   
 
 
-  stackcu1<-cbind(dat[,-c(9,10,11)],stack(dat[,9:11]))
+  stackcu[[a]]<-cbind(dat[,-c(9,10,11)],stack(dat[,9:11]))
+  stackcu[[a]]$scenario<-simPar$nameOM[a]
+  stackcu1<-stackcu[[a]]
 
-  paramplot[[i]] <- ggplot(stackcu1) +
+
+  paramplot[[a]] <- ggplot(stackcu1) +
     geom_line(aes(x=year,y=values, col=as.factor(CU))) +
     geom_point(aes(x=year,y=values, col=as.factor(CU))) +
-    theme_bw(14) + theme(legend.position="none") +
+    theme_classic(14) + theme(legend.position="none") +
     facet_wrap(~ind, scales="free_y") +
     scale_colour_viridis_d() +
-    labs(title = simPar$nameOM[i])
+    labs(title = simPar$nameOM[a])
 
     
   S <- seq(0,max(dat$spawners),by=1000)
@@ -108,7 +113,7 @@ for(a in seq_len(nrow(simPar))){
       recruits=c(R))
   
   srplot[[a]]<-ggplot( actualSR) +
-    geom_line(aes(x=spawners,y=recruits, col=as.factor(year)),size=2) +
+    geom_line(aes(x=spawners,y=recruits, col=as.factor(year)),linewidth=2) +
     theme_bw(14) + 
     scale_colour_viridis_d(end=.7) +
     geom_point(data=dat,aes(x=spawners,y=recruits),alpha=.5) +
@@ -136,6 +141,10 @@ for(a in seq_len(nrow(simPar))){
       labs(title = simPar$nameOM[a])
     
   }
+
+
+
+
 
 ggsave(
       filename = "outs/SamSimOutputs/plotcheck/paramplots.pdf", 
@@ -168,11 +177,68 @@ ggsave(
     )
 
 #==========================
-#todo
 
 
 
 
+allscnsim <- do.call(rbind,stackcu)
+
+summary(allscnsim)
+
+unique(allscnsim$scenario)
+
+
+allscnsim$scenario[allscnsim$scenario=="stationary"] <-"stationary sigmaShift"
+allscnsim$scenario[allscnsim$scenario== "decLinearProdshiftCap"] <- "decLinearProd shiftCap"
+
+allscnsim <- allscnsim[allscnsim$scenario!="sigmaShift",] 
+allscnsim <- allscnsim[allscnsim$ind!="sigma",] 
+
+allscnsim$scenario_f = factor(allscnsim$scenario, 
+  levels=c("stationary sigmaShift",  
+           "decLinearProd", 
+           "regimeProd",
+           "sineProd",
+           "decLinearCap",          
+           "regimeCap",
+           "shiftCap",
+           "regimeProdCap",
+           "decLinearProd shiftCap"))
+
+allscnsim$tipo <- "prod"
+allscnsim$tipo[allscnsim$scenario == "decLinearCap"|
+allscnsim$scenario == "regimeCap"|
+allscnsim$scenario == "shiftCap"] <- "cap"
+
+allscnsim$tipo[allscnsim$scenario == "regimeProdCap"|
+allscnsim$scenario == "decLinearProd shiftCap"] <- "both"
+
+
+allscnsim$tipo[allscnsim$scenario == "stationary sigmaShift"] <- "none"
+
+
+ 
+allscnsim
+
+mytheme = list(
+    theme_classic(14)+
+        theme(panel.background = element_blank(),strip.background = element_rect(colour=NA, fill=NA),panel.border = element_rect(fill = NA, color = "black"),
+              legend.title = element_blank(),legend.position="bottom", strip.text = element_text(face="bold", size=12),
+              axis.text=element_text(face="bold"),axis.title = element_text(face="bold"),plot.title = element_text(face = "bold", hjust = 0.5,size=15))
+)
+
+
+
+
+
+p <- ggplot(allscnsim) +
+     geom_line(aes(x=year,y=values,col=tipo)) +
+     geom_point(aes(x=year,y=values,col=tipo)) +
+     mytheme + theme(legend.position="none") +
+     facet_grid(ind~scenario_f, scales="free_y",
+               labeller = labeller(scenario_f = label_wrap_gen(10))) +
+     scale_colour_viridis_d(end=.85) 
+     
 
 # add sceatios for changes of age at spawners - later
 
