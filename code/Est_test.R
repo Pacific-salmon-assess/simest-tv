@@ -42,15 +42,14 @@ p <- list()
 simData <- list()
 
 #compiled Bayesian models
-simple_mod <- sr_mod(type='static', ac=FALSE, par='n', loglik=FALSE, modelcode=TRUE)
-simpleac_mod <- sr_mod(type='static', ac=TRUE, par='n', loglik=FALSE, modelcode=TRUE)
-rwa_mod <- sr_mod(type='rw',ac=FALSE,par="a",loglik=FALSE, modelcode=TRUE)
-rwb_mod <- sr_mod(type='rw',ac=FALSE,par="b",loglik=FALSE, modelcode=TRUE)
-rwab_mod <- sr_mod(type='rw',ac=FALSE,par="both",loglik=FALSE, modelcode=TRUE)
-hmma_mod<-sr_mod(type='hmm',ac=FALSE,par="a",loglik=FALSE, modelcode=TRUE)
-hmmb_mod<-sr_mod(type='hmm',ac=FALSE,par="b",loglik=FALSE, modelcode=TRUE)
-hmmab_mod<-sr_mod(type='hmm',ac=FALSE,par="both",loglik=FALSE, modelcode=TRUE)
-hmmabcaphi_mod<-sr_mod(type='hmm',ac=FALSE,par="both",loglik=FALSE, modelcode=TRUE,caphigh=TRUE)
+simple_mod <- samEst::sr_mod(type='static', ac=FALSE, par='n', lfo=FALSE, modelcode=TRUE)
+simpleac_mod <- samEst::sr_mod(type='static', ac=TRUE, par='n', lfo=FALSE, modelcode=TRUE)
+rwa_mod <- samEst::sr_mod(type='rw',ac=FALSE,par="a",lfo=FALSE, modelcode=TRUE)
+rwb_mod <- samEst::sr_mod(type='rw',ac=FALSE,par="b",lfo=FALSE, modelcode=TRUE)
+rwab_mod <- samEst::sr_mod(type='rw',ac=FALSE,par="both",lfo=FALSE, modelcode=TRUE)
+hmma_mod<-samEst::sr_mod(type='hmm',ac=FALSE,par="a",lfo=FALSE, modelcode=TRUE)
+hmmb_mod<-samEst::sr_mod(type='hmm',ac=FALSE,par="b",lfo=FALSE, modelcode=TRUE)
+hmmab_mod<-samEst::sr_mod(type='hmm',ac=FALSE,par="both",lfo=FALSE, modelcode=TRUE)
 
 
 allrmse<-list()
