@@ -9,15 +9,13 @@
 #install samsim 
 #remotes::install_github("Pacific-salmon-assess/samSim", ref="timevar", force=TRUE)
 
-#install samest
-#remotes::install_git('https://github.com/Pacific-salmon-assess/samEst')
 
 library(samSim)
 library(ggplot2)
 library(devtools)
 library(gridExtra)
 library(dplyr)
-
+library(here)
 ## Load relevant input data
 # Simulation run parameters describing different scenarios
 simPar <- read.csv("data/harckER/harcnkSimPars_ER.csv")
@@ -35,10 +33,20 @@ dirNames <- sapply(scenNames, function(x) paste(x, unique(simPar$species),sep = 
 
 for(a in seq_len(nrow(simPar))){
   
-   genericRecoverySim(simPar=simPar[a,], cuPar=cuPar, catchDat=NULL, srDat=NULL,
-            variableCU=FALSE, ricPars=NULL, larkPars=NULL, cuCustomCorrMat= NULL,
-            outDir="outs", nTrials=100, makeSubDirs=TRUE, random=FALSE, uniqueProd=TRUE,
-                               uniqueSurv=FALSE)
+   genericRecoverySim(simPar=simPar[a,], 
+    cuPar=cuPar, 
+    catchDat=NULL, 
+    srDat=NULL,
+    variableCU=FALSE, 
+    ricPars=NULL, 
+    larkPars=NULL,
+    cuCustomCorrMat= NULL,
+    outDir="outs", 
+    nTrials=100, 
+    makeSubDirs=TRUE, 
+    random=FALSE, 
+    uniqueProd=TRUE,
+    uniqueSurv=FALSE)
 
 }
 
@@ -51,6 +59,8 @@ recplot<-list()
 spnplot<-list()
 erplot<-list()
 paramplot<-list()
+
+dats<-list()
 
 
 for(a in seq_len(nrow(simPar))){
@@ -65,6 +75,9 @@ for(a in seq_len(nrow(simPar))){
   dat <- dat[!is.na(dat$obsRecruits),]
   
   stackcu1<-cbind(dat[,-c(9,10,11)],stack(dat[,9:11]))
+  dat$scenario <- simPar$scenario[a]
+  dats[[a]]<-dat
+  
 
   paramplot[[a]] <- ggplot(stackcu1) +
     geom_line(aes(x=year,y=values, col=as.factor(CU)))+
@@ -112,9 +125,9 @@ for(a in seq_len(nrow(simPar))){
       theme_bw(14)+ xlab("year")+ scale_color_discrete(name = "Smsy")+
       labs(title = simPar$scenario[a])
 
-  erplot[[a]]<-ggplot(dat) +
+  erplot[[a]]<- ggplot(dat) +
       geom_boxplot(aes(x=as.factor(year),y=ER),alpha=.5)+
-      geom_hline(data=dat,aes(yintercept=uMSY, col=as.factor(year)))+
+      geom_hline(data=dat,aes(yintercept=uMSY))+
       theme_bw(14)+ xlab("year")+ scale_color_discrete(name = "Umsy")+
       labs(title = simPar$scenario[a])
 
@@ -159,7 +172,52 @@ ggsave(
     )
 
 #==========================
-#todo
+
+
+allersim <- do.call(rbind,dats)
+unique(allersim$scenario)
+allersim$trend<- "low ER"
+
+allersim$trend[allersim$scenario == "highERLowError"|
+allersim$scenario == "highERHighError"] <- "high ER"
+
+allersim$trend[allersim$scenario == "ShiftERLowError"|
+allersim$scenario == "ShiftERHighError"] <- "shift ER"
+
+allersim$trend[allersim$scenario == "trendERLowError"|
+allersim$scenario == "trendERHighError"] <- "trend ER"
+
+allersim$ERvar<- "High CV"
+
+allersim$ERvar[allersim$scenario == "highERLowError"|
+allersim$scenario == "ShiftERLowError"|
+allersim$scenario == "trendERLowError"|
+allersim$scenario == "lowERLowError"] <- "Low CV"
+
+
+
+mytheme = list(
+    theme_classic(14)+
+        theme(panel.background = element_blank(),strip.background = element_rect(colour=NA, fill=NA),panel.border = element_rect(fill = NA, color = "black"),
+              legend.title = element_blank(),
+              legend.position="bottom", 
+              strip.text = element_text(face="bold", size=12),
+              axis.text=element_text(face="bold"),
+              axis.title = element_text(face="bold"),
+              plot.title = element_text(face = "bold", hjust = 0.5,size=15))
+)
+
+
+
+ggplot(allersim) +
+      geom_boxplot(aes(x=as.factor(year),y=ER),alpha=.5)+
+      geom_hline(aes(yintercept=uMSY))+
+       theme(axis.text.x=element_text(angle=90, hjust=1))+
+      xlab("year")+
+      scale_x_discrete(breaks = factor(seq(1,length((allersim$year)),2))) +
+      mytheme +
+      facet_grid(ERvar~trend) 
+
 
 
 

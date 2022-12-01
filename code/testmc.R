@@ -17,8 +17,7 @@ ncores<-1
 result<-mclapply(mc.cores=ncores,
   X=1:5,
   FUN=function(a){
-   
-    
+       
     out<-mclapply(mc.cores=ncores,
       X=1:20,
       FUN=function(u){
@@ -29,12 +28,14 @@ result<-mclapply(mc.cores=ncores,
     return(list(out))
 })
 
+
+
 list_df<-function(x){
   um_l=list()
   doi_l=list()
   for(p in length(x)){
    for(l in length(x[[1]])){
-     df=dplyr::bind_rows(lapply(result[[p]][[l]],data.frame, stringsAsFactors = FALSE))
+     df=dplyr::bind_rows(lapply(x[[p]][[l]],data.frame, stringsAsFactors = FALSE))
      um_l[[l]]=df[,grepl('um',colnames(df))]
      doi_l[[l]]=df[,grepl('dois',colnames(df))]
    } 
