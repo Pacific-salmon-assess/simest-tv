@@ -9,6 +9,10 @@
 #4. save parameter estimates only for selected model
 #5.do boxplots of %bias across all models, sum of numbers above bars = nsim
 
+#install samest
+#remotes::install_git('https://github.com/Pacific-salmon-assess/samEst', force=TRUE)
+
+
 
 library(samEst)
 library(samSim)
@@ -40,9 +44,7 @@ lfomwTMB <- list()
 aicTMB <- list()
 bicTMB <- list()
 
-selestlfoall<-list()
-selestaicall<-list()
-selestbicall<-list()
+selestall<-list()
 
 
 
@@ -86,15 +88,11 @@ for(a in seq_len(nrow(simPar))){
       "hmm"
   )))
   
-  
- 
 
   
   for(u in unique(simData$iteration)){
 
-    selestlfo<-list()
-    selestaic<-list()
-    selestbic<-list()
+    selest<-list()
 
     #u=30
     dat<-simData[simData$iteration==u,]
@@ -149,6 +147,16 @@ for(a in seq_len(nrow(simPar))){
     lfoch <- dimnames(lfomwdf)[[2]][which.max(mw)]
     
     paramslfo<-modselecfit(ch=lfoch,df=df)
+
+    TMBstatic <- ricker_TMB(data=df, priors=1)
+    TMBac <- ricker_TMB(data=df, AC=TRUE,priors=1)
+    TMBtva <- ricker_rw_TMB(data=df,tv.par='a',priors=1)
+    TMBtvb <- ricker_rw_TMB(data=df, tv.par='b',priors=1)
+    TMBtvab <- ricker_rw_TMB(data=df, tv.par='both',priors=1)
+    TMBhmma <- ricker_hmm_TMB(data=df, tv.par='a',priors=1)
+    TMBhmmb <- ricker_hmm_TMB(data=df, tv.par='b',priors=1)
+    TMBhmm  <- ricker_hmm_TMB(data=df, tv.par='both',priors=1)
+
 
     aicdf[u,]<-c(ifelse(TMBstatic$conv_problem,999,TMBstatic$AICc),
       ifelse(TMBac$conv_problem,999,TMBac$AICc),
@@ -222,7 +230,7 @@ for(a in seq_len(nrow(simPar))){
       model=rep(c(lfoch,aicch,bicch),each=length(dat$year)),
       by=dat$year,
       sim= unlist(mapply(sGenCalc,a=dat$alpha,Smsy=smsysim, b=dat$beta)),
-      est=c(aramslfo$sgen,paramsaic$sgen,paramsbic$sgen))
+      est=c(paramslfo$sgen,paramsaic$sgen,paramsbic$sgen))
     dfsig$pbias<- ((dfa$est-dfa$sim)/dfa$sim)*100
     
    

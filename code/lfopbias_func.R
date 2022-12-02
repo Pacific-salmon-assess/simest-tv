@@ -24,7 +24,7 @@ modselecfit <- function(ch,df){
     sgen <- rep(sGenCalc(a=mod$alpha,Smsy=mod$Smsy, b=1/mod$Smax)$fit,nrow(df))
     umsy <- rep(mod$umsy,nrow(df))
 
-  }else if(ch=="rwa_last"|lfoch=="rwa_last3"|lfoch=="rwa_last5"|lfoch=="rwa"){
+  }else if(ch=="rwa_last"|ch=="rwa_last3"|ch=="rwa_last5"|ch=="rwa"){
     mod <- ricker_rw_TMB(data=df,tv.par='a',priors=1)
     alpha <- mod$alpha
     smax <-rep(mod$Smax,nrow(df))
@@ -35,7 +35,7 @@ modselecfit <- function(ch,df){
         b=1/smax))
     umsy <- mod$umsy
 
-  }else if(lfoch=="rwb_last"|lfoch=="rwb_last3"|lfoch=="rwb_last5"|lfoch=="rwb"){
+  }else if(ch=="rwb_last"|ch=="rwb_last3"|ch=="rwb_last5"|ch=="rwb"){
     mod <- ricker_rw_TMB(data=df, tv.par='b',priors=1)
     alpha <- rep(mod$alpha,nrow(df))
     smax <- mod$Smax
@@ -46,7 +46,7 @@ modselecfit <- function(ch,df){
         b=1/smax))
     umsy <- mod$umsy
 
-  }else if(lfoch=="rwab_last"|lfoch=="rwab_last3"|"rwab_last5"|"rwab"){
+  }else if(ch=="rwab_last"|ch=="rwab_last3"|"rwab_last5"|"rwab"){
     mod <- ricker_rw_TMB(data=df, tv.par='both',priors=1) 
     alpha <- mod$alpha 
     smax <- mod$Smax
@@ -57,7 +57,7 @@ modselecfit <- function(ch,df){
         b=1/smax))
     umsy <- mod$umsy
 
-  }else if(lfoch=="hmma_last"|lfoch=="hmma_last3"|lfoch=="hmma_last5"|lfoch=="hmma"){
+  }else if(ch=="hmma_last"|ch=="hmma_last3"|ch=="hmma_last5"|ch=="hmma"){
     mod <- ricker_hmm_TMB(data=df, tv.par='a',priors=1)
     alpha <- mod$alpha[mod$regime] 
     smax <-rep(mod$Smax,nrow(df))
@@ -68,7 +68,7 @@ modselecfit <- function(ch,df){
         b=1/smax))
     umsy <- mod$umsy
 
-  }else if(lfoch=="hmmb_last"|lfoch=="hmmb_last3"|lfoch=="hmmb_last5"|lfoch=="hmmb"){
+  }else if(ch=="hmmb_last"|ch=="hmmb_last3"|ch=="hmmb_last5"|ch=="hmmb"){
     mod <- ricker_hmm_TMB(data=df, tv.par='b',priors=1)
     alpha <- rep(mod$alpha,nrow(df))
     smax <- mod$Smax[mod$regime] 
@@ -79,7 +79,7 @@ modselecfit <- function(ch,df){
         b=1/smax))
     umsy <- mod$umsy
 
-  }else if(lfoch=="hmm_last"|lfoch=="hmm_last3"|lfoch=="hmm_last5"|lfoch=="hmm"){
+  }else if(ch=="hmm_last"|ch=="hmm_last3"|ch=="hmm_last5"|ch=="hmm"){
     mod <- ricker_hmm_TMB(data=df, tv.par='both',priors=1)
     alpha <- mod$alpha[mod$regime] 
     smax <- mod$Smax[mod$regime]

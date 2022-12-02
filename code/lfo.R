@@ -230,7 +230,7 @@ if(!file.exists("outs/simestlfo")){
 save(lfoTMB, lfomwTMB,aicTMB,bicTMB,file="outs/simest/simestlfo_prodcapscenarios.Rdata")
 
 
-
+load("outs/simest/simestlfo_prodcapscenarios.Rdata") 
 
 #todo
 #processing of lfo output
@@ -245,12 +245,15 @@ for(a in seq_len(nrow(simPar))){
    
   #fix a bug in the naming
   dimnames(lfomwdf)[[2]]<-c("simple", "autocorr", 
-      "rwa_last","rwa_last3","rwa_last5",
-      "rwb_last","rwb_last3","rwb_last5",
-      "rwab_last","rwab_last3","rwab_last5",
-      "hmma_last_pick","hmma_last3_pick","hmma_last5_pick",
-      "hmmb_last_pick","hmmb_last3_pick","hmmb_last5_pick",
-      "hmm_last_pick", "hmm_last3_pick", "hmm_last5_pick",
+       "rwa_last","rwa_last3","rwa_last5",
+       "rwb_last","rwb_last3","rwb_last5",
+       "rwab_last","rwab_last3","rwab_last5",
+       "hmma_last_pick","hmma_last3_pick","hmma_last5_pick",
+       "hmma_last_average","hmma_last3_average","hmma_last5_average",
+       "hmmb_last_pick","hmmb_last3_pick","hmmb_last5_pick",
+       "hmmb_last_average","hmmb_last3_average","hmmb_last5_average",  
+       "hmm_last_pick", "hmm_last3_pick", "hmm_last5_pick",
+       "hmm_last_average", "hmm_last3_average", "hmm_last5_average"
       )
 
   lfo<-apply(lfomwdf,1,which.max)
@@ -264,8 +267,11 @@ for(a in seq_len(nrow(simPar))){
       "rwb_last"="rwb","rwb_last3"="rwb","rwb_last5"="rwb",
       "rwab_last"="rwab","rwab_last3"="rwab","rwab_last5"="rwab",
       "hmma_last_pick"="hmma","hmma_last3_pick"="hmma","hmma_last5_pick"="hmma",
+      "hmma_last_average"="hmma","hmma_last3_average"="hmma","hmma_last5_average"="hmma",      
       "hmmb_last_pick"="hmmb","hmmb_last3_pick"="hmmb","hmmb_last5_pick"="hmmb",
-      "hmm_last_pick"="hmm", "hmm_last3_pick"="hmm", "hmm_last5_pick"="hmm")    
+      "hmmb_last_average"="hmmb","hmmb_last3_average"="hmmb","hmmb_last5_average"="hmmb",
+      "hmm_last_pick"="hmm", "hmm_last3_pick"="hmm", "hmm_last5_pick"="hmm",
+      "hmm_last_average"="hmm", "hmm_last3_average"="hmm", "hmm_last5_average"="hmm")    
 
   
   lfochoice$chsnmod<-factor(lfochoice$chsnmod, levels=c("simple", "autocorr", 
@@ -277,6 +283,7 @@ for(a in seq_len(nrow(simPar))){
       "hmm"))
 
   lfochoice$scenario<- simPar$nameOM[a]
+
   lfochoice$method <-"LFO"
   lfochoicel[[a]]<-lfochoice
 
@@ -345,6 +352,18 @@ dfbic <- do.call("rbind", bicchoicel)
 df<-rbind(dflfo,dfaic,dfbic)
 
 
+df$simulated <- dplyr::recode(df$scenario, 
+      "stationary"="simple",
+      "decLinearProd"="rwa",
+      "regimeProd"="hmma",
+      "sineProd"="rwa",
+      "regimeCap"="hmmb",
+      "decLinearCap"="rwb",
+      "sigmaShift"="simple",
+      "regimeProdCap"="hmm",
+      "shiftCap"="hmmb",
+      "decLinearProdshiftCap"="rwab")   
+
 modsel<-ggplot(df) +  
  geom_bar(aes(chsnmod,fill=method), 
     position = position_dodge(width = 0.9, preserve = "single"))+
@@ -362,9 +381,26 @@ ggsave(
     )
 
 
+dflfocm<-df[df$method=="LFO",]
+unique(dflfocm$chsnmod)
+
+dt<-dflfocm |> count(chsnmod,simulated)
+dt$simulated_f <- factor(dt$simulated, levels=
+  c("simple","autocorr", "rwa","rwb","rwab","hmma", "hmmb", "hmm"))
+dt$estimated_f <- factor(dt$chsnmod, levels=
+  c("simple","autocorr", "rwa","rwb","rwab","hmma", "hmmb", "hmm"))
+
+
+ggplot(data =  dt, mapping = aes(x = simulated_f, y = chsnmod)) +
+  geom_tile(aes(fill = n), colour = "white") +
+  geom_text(aes(label = sprintf("%1.0f", n)), vjust = 1) +
+  scale_fill_gradient(low="white", high="#009194") +
+  theme_bw() + theme(legend.position = "none")+
+  ggtitle("LFO confusion matrix")+
+  ylab("estimated")+xlab("simulated")
+
 #==========================
 #todo
-#test
-#add bayes
+
 
 

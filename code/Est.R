@@ -58,7 +58,6 @@ rwab_mod <- compile_code(type='rw',ac=FALSE,par="both")
 hmma_mod <- compile_code(type='hmm',ac=FALSE,par="a")
 hmmb_mod <- compile_code(type='hmm',ac=FALSE,par="b")
 hmmab_mod <- compile_code(type='hmm',ac=FALSE,par="both")
-hmmabcaphi_mod <- compile_code(type='hmm',ac=FALSE,par="both",caphigh=TRUE)
 
 
 allrmse<-list()
