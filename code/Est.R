@@ -50,14 +50,15 @@ p <- list()
 simData <- list()
 
 #compiled Bayesian models
-simple_mod <- compile_code(type='static', ac=FALSE, par='n')
-simpleac_mod <- compile_code(type='static', ac=TRUE, par='n')
-rwa_mod <- compile_code(type='rw',ac=FALSE,par="a")
-rwb_mod <- compile_code(type='rw',ac=FALSE,par="b")
-rwab_mod <- compile_code(type='rw',ac=FALSE,par="both")
-hmma_mod <- compile_code(type='hmm',ac=FALSE,par="a")
-hmmb_mod <- compile_code(type='hmm',ac=FALSE,par="b")
-hmmab_mod <- compile_code(type='hmm',ac=FALSE,par="both")
+simple_mod <- samEst::compile_code(type='static', ac=FALSE, par='n')
+simpleac_mod <- samEst::compile_code(type='static', ac=TRUE, par='n')
+rwa_mod <- samEst::compile_code(type='rw',ac=FALSE,par="a")
+rwb_mod <- samEst::compile_code(type='rw',ac=FALSE,par="b")
+rwab_mod <- samEst::compile_code(type='rw',ac=FALSE,par="both")
+hmma_mod <- samEst::compile_code(type='hmm',ac=FALSE,par="a")
+hmmb_mod <- samEst::compile_code(type='hmm',ac=FALSE,par="b")
+hmmab_mod <- samEst::compile_code(type='hmm',ac=FALSE,par="both")
+hmmabcaphi_mod <- samEst::compile_code(type='hmm',ac=FALSE,par="both",caphigh=TRUE)
 
 
 allrmse<-list()
