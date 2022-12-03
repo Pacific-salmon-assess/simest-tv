@@ -222,7 +222,12 @@ for(a in 1:4){
         #hmmb pick
         c(as.numeric(abs(bhmmb$mcmcsummary[grep("S_max\\[",rownames(bhmmb$mcmcsummary)),
         "Rhat"]-1)>.1)[bhmmb$mcmcsummary[grep("zstar\\[",rownames(bhmmb$mcmcsummary)),"50%"]]+
-        as.numeric(abs(bhmmb$mcmcsummary[grep("zstar\\[",rownames(bhmmb$mcmcsummary)),"Rhat"]-1)>.1)))
+        as.numeric(abs(bhmmb$mcmcsummary[grep("zstar\\[",rownames(bhmmb$mcmcsummary)),"Rhat"]-1)>.1)),
+        #hmm pick
+         c(as.numeric(abs(bhmmab$mcmcsummary[grep("S_max\\[",rownames(bhmmab$mcmcsummary)),
+          "Rhat"]-1)>.1)[bhmmab$mcmcsummary[grep("zstar\\[",rownames(bhmmab$mcmcsummary)),"50%"]]+
+          as.numeric(abs(bhmmab$mcmcsummary[grep("zstar\\[",rownames(bhmmab$mcmcsummary)),"Rhat"]-1)>.1))
+        )
       )
     dfsmax$pbias<- ((dfsmax$est-dfsmax$sim)/dfsmax$sim)*100
 
@@ -324,10 +329,7 @@ for(a in 1:4){
         ptvb$model$convergence + ptvb$conv_problem,
         ptvab$model$convergence + ptvab$conv_problem,
         phmma$model$convergence + phmma$conv_problem,
-        phmma$model$convergence + phmma$conv_problem,
         phmmb$model$convergence + phmmb$conv_problem,
-        phmmb$model$convergence + phmmb$conv_problem,
-        phmm$model$convergence + phmm$conv_problem,
         phmm$model$convergence + phmm$conv_problem,
         as.numeric(abs(b$mcmcsummary["S_msy","Rhat"]-1)>.1),
         as.numeric(abs(bac$mcmcsummary["S_msy","Rhat"]-1)>.1)),each=nrow(df)),
@@ -508,7 +510,7 @@ for(a in 1:4){
       as.numeric(abs(bhmmab$mcmcsummary[grep("zstar\\[",rownames(bhmmab$mcmcsummary)),"Rhat"]-1)>.1)+
       as.numeric(abs(bhmmab$mcmcsummary[grep("^b\\[",rownames(bhmmab$mcmcsummary)),
       "Rhat"]-1)>.1)[bhmmab$mcmcsummary[grep("zstar\\[",rownames(bhmmab$mcmcsummary)),"50%"]]))
-  ))
+  )
   
     dfsgen$pbias<- ((dfsgen$est-dfsgen$sim)/dfsgen$sim)*100
 
@@ -587,14 +589,14 @@ for(a in 1:4){
     function(x)sum(x,na.rm=T))$x
 
    
-   rmse[[u]]<-rbind(rmsea,rmsesmax,rmsesig,rmsesmsy,rmsesgen,rmseumsy)
-   simest[[u]]<-rbind(dfa,dfsmax,dfsig,dfsmsy,dfsgen,dfumsy)
+    rmse[[u]]<-rbind(rmsea,rmsesmax,rmsesig,rmsesmsy,rmsesgen,rmseumsy)
+    simest[[u]]<-rbind(dfa,dfsmax,dfsig,dfsmsy,dfsgen,dfumsy)
 
   
-}
+  }
    
- allrmse[[a]]<- rmse
- allsimest[[a]]<-simest
+  allrmse[[a]]<- rmse
+  allsimest[[a]]<-simest
 }
 
   
