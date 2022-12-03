@@ -10,9 +10,6 @@
 #
 # run these if first time running script or if updates were implemented. 
 
-#install samsim 
-#remotes::install_github("Pacific-salmon-assess/samSim", ref="timevar", force=TRUE)
-
 #install samest
 #remotes::install_git('https://github.com/Pacific-salmon-assess/samEst', force=TRUE)
 
@@ -25,8 +22,7 @@ library(dplyr)
 library(here)
 library(rstan)
 #source("sgen_functions.R")
-source("code/utils.R")
-#TODO estimate only for 40 yrs of data.
+source("code/utils.R") #TODO estimate only for 40 yrs of data.
 
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
@@ -111,9 +107,7 @@ for(a in seq_len(nrow(simPar))){
     bhmmb <- ricker_hmm_stan(data=df, par="b",iter = 800, mod=hmmb_mod)
     #ricker tvhmmab
     bhmmab <- ricker_hmm_stan(data=df, par="both",iter = 800, mod=hmmab_mod) 
-    #ricker tvhmmab capacity high
-    #bhmmabcaphi <- ricker_hmm_stan(data=df, par="both",iter = 800, mod=hmmabcaphi_mod)
-  
+    
     #a estimates
     dfa<- data.frame(parameter="alpha",
       iteration=u,
