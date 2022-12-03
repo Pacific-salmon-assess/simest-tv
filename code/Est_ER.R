@@ -65,7 +65,7 @@ allsimest<-list()
 
 for(a in seq_len(nrow(simPar))){
 #for(a in 1:4){
-  #a<-2
+  #a<-4
   simData[[a]] <- readRDS(paste0("outs/SamSimOutputs/simData/", simPar$nameOM[a],"/",simPar$scenario[a],"/",
                          paste(simPar$nameOM[a],"_", simPar$nameMP[a], "_", "CUsrDat.RData",sep="")))$srDatout
   
@@ -74,7 +74,7 @@ for(a in seq_len(nrow(simPar))){
   
   
   for(u in unique(simData[[a]]$iteration)){
-    #u=1    
+    #u=30    
     dat <- simData[[a]][simData[[a]]$iteration==u,]
     dat <- dat[dat$year>(max(dat$year)-46),]
   
