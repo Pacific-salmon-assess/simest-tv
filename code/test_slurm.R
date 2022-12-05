@@ -29,7 +29,8 @@ pars <- list(par_mu = 1:10,
 sjob <- slurm_map(pars,
 	test_func, 
 	jobname = 'test_apply',
-    nodes = 2, cpus_per_node = 2, submit = FALSE)
+    nodes = 2, cpus_per_node = 3, submit = FALSE,
+    slurm_options = list(time = "1:00:00", share = TRUE))
 
 
 cleanup_files(sjob)
