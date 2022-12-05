@@ -58,7 +58,7 @@ rwab_mod <- samEst::compile_code(type='rw',ac=FALSE,par="both")
 hmma_mod <- samEst::compile_code(type='hmm',ac=FALSE,par="a")
 hmmb_mod <- samEst::compile_code(type='hmm',ac=FALSE,par="b")
 hmmab_mod <- samEst::compile_code(type='hmm',ac=FALSE,par="both")
-hmmabcaphi_mod <- samEst::compile_code(type='hmm',ac=FALSE,par="both",caphigh=TRUE)
+#hmmabcaphi_mod <- samEst::compile_code(type='hmm',ac=FALSE,par="both",caphigh=TRUE)
 
 
 allrmse<-list()
@@ -66,7 +66,7 @@ allrmse<-list()
 allsimest<-list()
 
 #for(a in seq_len(nrow(simPar))){
-for(a in 1:4){
+for(a in 5:11){
   #a<-2
   simData[[a]] <- readRDS(paste0("outs/SamSimOutputs/simData/", simPar$nameOM[a],"/",simPar$scenario[a],"/",
                          paste(simPar$nameOM[a],"_", simPar$nameMP[a], "_", "CUsrDat.RData",sep="")))$srDatout
