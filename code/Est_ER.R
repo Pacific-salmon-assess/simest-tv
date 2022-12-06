@@ -80,6 +80,9 @@ for(a in seq_len(nrow(simPar))){
                     R=dat$obsRecruits,
                     logRS=log(dat$obsRecruits/dat$obsSpawners))
      
+    if(sum(df$S==0)){
+      next
+    }
 
     #p<-tryCatch(ricker_TMB(data=df),error = function(e) {list(conv_problem=TRUE)})
 

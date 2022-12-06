@@ -24,7 +24,7 @@ library(dplyr)
 #here::here()
 ## Load relevant input data
 # Simulation run parameters describing different scenario
-simPar <- read.csv(("data/harck/harcnkSimPars.csv"))
+simPar <- read.csv("data/HarCkER/harcnkSimPars_ER.csv")
 # CU-specific parameters
 cuPar <- read.csv(("data/harck/harcnkCUPars.csv"))
 ## Store relevant object names to help run simulation 
@@ -40,6 +40,7 @@ lfoTMB <- list()
 lfomwTMB <- list()
 aicTMB <- list()
 bicTMB <- list()
+
 
 for(a in seq_len(nrow(simPar))){
    #a=2
@@ -100,7 +101,10 @@ for(a in seq_len(nrow(simPar))){
                   S=dat$obsSpawners,
                   R=dat$obsRecruits,
                   logRS=log(dat$obsRecruits/dat$obsSpawners))
-
+    
+    if(sum(df$S==0)){
+      next
+    }
     #=======================
     #lfo comparison
     lfostatic <- tmb_mod_lfo_cv(data=df,model='static', L=10)
@@ -223,14 +227,14 @@ for(a in seq_len(nrow(simPar))){
 }
 
   
-if(!file.exists("outs/simestlfo")){
-  dir.create("outs/simestlfo") 
+if(!file.exists("outs/simest")){
+  dir.create("outs/simest") 
 }
 
-save(lfoTMB, lfomwTMB,aicTMB,bicTMB,file="outs/simest/simestlfo_prodcapscenarios.Rdata")
+save(lfoTMB, lfomwTMB,aicTMB,bicTMB,file="outs/simest/simest_erscenarios.Rdata")
 
 
-load("outs/simest/simestlfo_prodcapscenarios.Rdata") 
+load("outs/simest/simest_erscenarios.Rdata") 
 
 #todo
 #processing of lfo output
@@ -249,11 +253,8 @@ for(a in seq_len(nrow(simPar))){
        "rwb_last","rwb_last3","rwb_last5",
        "rwab_last","rwab_last3","rwab_last5",
        "hmma_last_pick","hmma_last3_pick","hmma_last5_pick",
-       "hmma_last_average","hmma_last3_average","hmma_last5_average",
        "hmmb_last_pick","hmmb_last3_pick","hmmb_last5_pick",
-       "hmmb_last_average","hmmb_last3_average","hmmb_last5_average",  
-       "hmm_last_pick", "hmm_last3_pick", "hmm_last5_pick",
-       "hmm_last_average", "hmm_last3_average", "hmm_last5_average"
+       "hmm_last_pick", "hmm_last3_pick", "hmm_last5_pick"
       )
 
   lfo<-apply(lfomwdf,1,which.max)
@@ -266,12 +267,9 @@ for(a in seq_len(nrow(simPar))){
       "rwa_last"="rwa","rwa_last3" ="rwa","rwa_last5"="rwa",
       "rwb_last"="rwb","rwb_last3"="rwb","rwb_last5"="rwb",
       "rwab_last"="rwab","rwab_last3"="rwab","rwab_last5"="rwab",
-      "hmma_last_pick"="hmma","hmma_last3_pick"="hmma","hmma_last5_pick"="hmma",
-      "hmma_last_average"="hmma","hmma_last3_average"="hmma","hmma_last5_average"="hmma",      
+      "hmma_last_pick"="hmma","hmma_last3_pick"="hmma","hmma_last5_pick"="hmma",    
       "hmmb_last_pick"="hmmb","hmmb_last3_pick"="hmmb","hmmb_last5_pick"="hmmb",
-      "hmmb_last_average"="hmmb","hmmb_last3_average"="hmmb","hmmb_last5_average"="hmmb",
-      "hmm_last_pick"="hmm", "hmm_last3_pick"="hmm", "hmm_last5_pick"="hmm",
-      "hmm_last_average"="hmm", "hmm_last3_average"="hmm", "hmm_last5_average"="hmm")    
+      "hmm_last_pick"="hmm", "hmm_last3_pick"="hmm", "hmm_last5_pick"="hmm")    
 
   
   lfochoice$chsnmod<-factor(lfochoice$chsnmod, levels=c("simple", "autocorr", 
@@ -350,54 +348,112 @@ dfaic <- do.call("rbind", aicchoicel)
 dfbic <- do.call("rbind", bicchoicel)
 
 df<-rbind(dflfo,dfaic,dfbic)
+summary(df)
+
+#df$simulated <- dplyr::recode(df$scenario, 
+#      "stationary"="simple",
+#      "decLinearProd"="rwa",
+#      "regimeProd"="hmma",
+#      "sineProd"="rwa",
+#      "regimeCap"="hmmb",
+#      "decLinearCap"="rwb",
+#      "sigmaShift"="simple",
+#      "regimeProdCap"="hmm",
+#      "shiftCap"="hmmb",
+#      "decLinearProdshiftCap"="rwab")   
+
+df$simulated_f<-factor(df$simulated, levels=c("simple",
+                                            "autocorr",
+                                            "rwa",
+                                            "rwb",
+                                            "rwab", 
+                                            "hmma",
+                                            "hmmb",
+                                            "hmm"))
+
+df$scenario_f <- factor(df$scenario,levels=c("stationary",
+                                             "autocorr",
+                                            "decLinearProd",        
+                                            "regimeProd",
+                                            "sineProd",
+                                            "regimeCap",            
+                                            "decLinearCap",
+                                            "sigmaShift",            
+                                            "regimeProdCap",
+                                            "shiftCap",
+                                            "decLinearProdshiftCap")
+)
 
 
-df$simulated <- dplyr::recode(df$scenario, 
-      "stationary"="simple",
-      "decLinearProd"="rwa",
-      "regimeProd"="hmma",
-      "sineProd"="rwa",
-      "regimeCap"="hmmb",
-      "decLinearCap"="rwb",
-      "sigmaShift"="simple",
-      "regimeProdCap"="hmm",
-      "shiftCap"="hmmb",
-      "decLinearProdshiftCap"="rwab")   
+
+mytheme = list(
+    theme_bw(16)+
+        theme(panel.background = element_blank(),strip.background = element_rect(colour=NA, fill=NA),panel.border = element_rect(fill = NA, color = "black"),
+              legend.title = element_blank(),legend.position="bottom", strip.text = element_text(face="bold", size=12),
+              axis.text=element_text(face="bold"),axis.title = element_text(face="bold"),plot.title = element_text(face = "bold", hjust = 0.5,size=15))
+)
+
 
 modsel<-ggplot(df) +  
  geom_bar(aes(chsnmod,fill=method), 
     position = position_dodge(width = 0.9, preserve = "single"))+
- facet_wrap(~scenario)+ 
- theme_bw(14) +
+ geom_rect(aes(xmin=as.numeric(simulated_f)-.5,
+                         xmax=as.numeric(simulated_f)+.5,
+                         ymin=-Inf,ymax=Inf),
+                    color="gray90",alpha=0.002)+
+ facet_wrap(~scenario_f)+ 
+# theme_bw(14) +
+ mytheme+
  theme(axis.text.x = element_text(angle = 90))+
+ xlab("chosen estimation model")+
  scale_fill_viridis_d(begin=.3, end=.9) 
-
+modsel
 
 
 ggsave(
       filename = "outs/SamSimOutputs/plotcheck/model_selectionLFOallopt.pdf", 
       plot = modsel, 
-      width = 12, height = 5
+      width = 14, height = 8
     )
 
 
 dflfocm<-df[df$method=="LFO",]
 unique(dflfocm$chsnmod)
 
-dt<-dflfocm |> count(chsnmod,simulated)
+dt<-df |> count(chsnmod,simulated,method)
 dt$simulated_f <- factor(dt$simulated, levels=
   c("simple","autocorr", "rwa","rwb","rwab","hmma", "hmmb", "hmm"))
 dt$estimated_f <- factor(dt$chsnmod, levels=
   c("simple","autocorr", "rwa","rwb","rwab","hmma", "hmmb", "hmm"))
+ dt$nst<-0
+
+for(j in seq_along(unique(dt$simulated))){
+  for(i in unique(dt$method)){
+    dp<-dt[dt$simulated==unique(dt$simulated)[j]&dt$method==i,]
+    dp$nst<-dp$n/sum(dp$n)*100
+    dt$nst[dt$simulated==unique(dt$simulated)[j]&dt$method==i]<-dp$nst
+  }
+
+}
 
 
-ggplot(data =  dt, mapping = aes(x = simulated_f, y = chsnmod)) +
-  geom_tile(aes(fill = n), colour = "white") +
-  geom_text(aes(label = sprintf("%1.0f", n)), vjust = 1) +
+confmat<-ggplot(data =  dt, mapping = aes(x = simulated_f, y = chsnmod)) +
+  geom_tile(aes(fill = nst), colour = "white") +
+  geom_text(aes(label = sprintf("%1.0f", nst)), vjust = 1) +
   scale_fill_gradient(low="white", high="#009194") +
   theme_bw() + theme(legend.position = "none")+
-  ggtitle("LFO confusion matrix")+
+  facet_wrap(~method)+
+  mytheme+
+  theme(axis.text.x = element_text(angle = 90),legend.position="none")+
   ylab("estimated")+xlab("simulated")
+
+
+ggsave(
+      filename = "outs/SamSimOutputs/plotcheck/confmatMLE.png", 
+      plot = confmat, 
+      width = 12, height = 5
+    )
+
 
 #==========================
 #todo

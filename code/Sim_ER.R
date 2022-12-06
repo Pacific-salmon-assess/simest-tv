@@ -225,4 +225,20 @@ ggplot(allersim) +
 
 # add sceatios for changes of age at spawners - later
 
+#check if ER=1
 
+for(a in seq_len(nrow(simPar))){
+
+  simd <- readRDS(paste0("outs/SamSimOutputs/simData/", simPar$nameOM[a],"/",simPar$scenario[a],"/",
+                         paste(simPar$nameOM[a],"_", simPar$nameMP[a], "_", "CUsrDat.RData",sep="")))$srDatout
+  
+
+
+  dat<-simd
+  dat<-dat[dat$year>(max(dat$year)-46),]
+  dat <- dat[!is.na(dat$obsRecruits),]
+
+max(dat$ER)
+View(dat[dat$ER==max(dat$ER),])
+  summary(dat$ER)
+}
