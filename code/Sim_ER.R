@@ -242,3 +242,85 @@ max(dat$ER)
 View(dat[dat$ER==max(dat$ER),])
   summary(dat$ER)
 }
+
+
+
+#Plot one iteration and recruitment curves per scenario
+
+
+
+actualSR<-list()
+alldat<-list()
+
+for(a in seq_len(nrow(simPar))){
+
+  simData[[a]] <- readRDS(paste0("outs/SamSimOutputs/simData/", 
+                          simPar$nameOM[a],"/",
+                          simPar$scenario[a],"/",
+                          paste(simPar$nameOM[a],"_", 
+                          simPar$nameMP[a], "_", 
+                          "CUsrDat.RData",sep="")))$srDatout
+
+  dat<-simData[[a]] 
+  dat<-dat[dat$year>(max(dat$year)-46),]
+  dat <- dat[!is.na(dat$obsRecruits),]
+  
+  dat <- dat[dat$iteration==sample(unique(dat$iteration),1),]
+  dat$scenario <- simPar$scenario[a]
+  alldat[[a]]<-dat
+
+  S <- seq(0,600000,by=1000)
+  R <- matrix(NA, ncol=length(unique(dat$year)),nrow=length(S))
+  
+  for(i in unique(dat$year)){
+
+    alpha<- dat$alpha[dat$year==i]
+    beta<- dat$beta[dat$year==i]
+    R[,which(unique(dat$year)==i)]<-S*exp(alpha-beta*S)
+  }
+    
+  actualSR[[a]]<-data.frame(year=rep(unique(dat$year),
+      each=length(S)),
+      spawners=S,
+      recruits=c(R),
+      scenario=simPar$scenario[a])
+
+}
+
+SRdf<-do.call(rbind,actualSR)
+datdf<-do.call(rbind,alldat)
+
+SRdf$scenario_f <-factor(SRdf$scenario, levels=c("lowERLowError",
+                                                 "lowERHighError",
+                                                 "highERLowError",  
+                                                 "highERHighError", 
+                                                 "ShiftERLowError",  
+                                                 "ShiftERHighError",
+                                                 "trendERLowError",  
+                                                 "trendERHighError"))
+
+
+datdf$scenario_f <-factor(datdf$scenario, levels=c("lowERLowError",
+                                                 "lowERHighError",
+                                                 "highERLowError",  
+                                                 "highERHighError", 
+                                                 "ShiftERLowError",  
+                                                 "ShiftERHighError",
+                                                 "trendERLowError",  
+                                                 "trendERHighError"))
+
+
+SRexample<-  ggplot(SRdf) +
+    geom_line(aes(x=spawners,y=recruits, col=as.factor(year)),linewidth=2) +
+    theme_bw(14) + 
+    scale_colour_viridis_d(end=.7) +
+    labs(col = "year") +
+    geom_point(data=datdf,aes(x=spawners,y=recruits,col=as.factor(year)),alpha=.5) +
+    facet_wrap(~scenario_f)
+    
+ 
+ggsave(
+      filename = "outs/SamSimOutputs/plotcheck/srexample_erscn.png", 
+      plot = SRexample, 
+      width = 12, height = 6
+    )

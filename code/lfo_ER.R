@@ -247,21 +247,11 @@ for(a in seq_len(nrow(simPar))){
 
   lfomwdf<- lfomwTMB[[a]] 
    
-  #fix a bug in the naming
-  dimnames(lfomwdf)[[2]]<-c("simple", "autocorr", 
-       "rwa_last","rwa_last3","rwa_last5",
-       "rwb_last","rwb_last3","rwb_last5",
-       "rwab_last","rwab_last3","rwab_last5",
-       "hmma_last_pick","hmma_last3_pick","hmma_last5_pick",
-       "hmmb_last_pick","hmmb_last3_pick","hmmb_last5_pick",
-       "hmm_last_pick", "hmm_last3_pick", "hmm_last5_pick"
-      )
-
   lfo<-apply(lfomwdf,1,which.max)
-
+  lfo[sapply( lfo,  function(x) length(x)==0L)] <- NA
   
   lfochoice<-data.frame(
-    chsnmodorig=dimnames(lfomwdf)[[2]][apply(lfomwdf,1,which.max)])
+    chsnmodorig=dimnames(lfomwdf)[[2]][unlist(lfo)])
   
   lfochoice$chsnmod <- dplyr::recode(lfochoice$chsnmodorig, 
       "rwa_last"="rwa","rwa_last3" ="rwa","rwa_last5"="rwa",
@@ -280,7 +270,7 @@ for(a in seq_len(nrow(simPar))){
       "hmmb",
       "hmm"))
 
-  lfochoice$scenario<- simPar$nameOM[a]
+  lfochoice$scenario<- simPar$scenario[a]
 
   lfochoice$method <-"LFO"
   lfochoicel[[a]]<-lfochoice
@@ -295,10 +285,12 @@ for(a in seq_len(nrow(simPar))){
       "hmmb",
       "hmm"
       )
-
+  aictmp<-apply(aicdf,1,which.min)
+  aictmp[sapply(aictmp,  function(x) length(x)==0L)] <- NA
+  
   
   aicchoice<-data.frame(
-    chsnmod=dimnames(aicdf)[[2]][apply(aicdf,1,which.min)])
+    chsnmod=dimnames(aicdf)[[2]][unlist(aictmp)])
 
   aicchoice$chsnmod<-factor(aicchoice$chsnmod, levels=c("simple", "autocorr", 
       "rwa",
@@ -308,7 +300,7 @@ for(a in seq_len(nrow(simPar))){
       "hmmb",
       "hmm"
       ))
-  aicchoice$scenario<- simPar$nameOM[a]
+  aicchoice$scenario<- simPar$scenario[a]
   aicchoice$method<- "AICc"
    aicchoice$chsnmodorig<-NA
   aicchoicel[[a]]<-aicchoice
@@ -323,10 +315,12 @@ for(a in seq_len(nrow(simPar))){
       "hmmb",
       "hmm"
       )
-
+  bictmp<-apply(bicdf,1,which.min)
+  bictmp[sapply(bictmp,  function(x) length(x)==0L)] <- NA
+  
   
   bicchoice<-data.frame(
-    chsnmod=dimnames(bicdf)[[2]][apply(bicdf,1,which.min)])
+    chsnmod=dimnames(bicdf)[[2]][unlist(bictmp)])
   bicchoice$chsnmodorig<-NA
   bicchoice$chsnmod<-factor(bicchoice$chsnmod, levels=c("simple", "autocorr", 
       "rwa",
@@ -336,7 +330,7 @@ for(a in seq_len(nrow(simPar))){
       "hmmb",
       "hmm"
       ))
-  bicchoice$scenario<- simPar$nameOM[a]
+  bicchoice$scenario<- simPar$scenario[a]
   bicchoice$method<- "BIC"
 
   bicchoicel[[a]]<-bicchoice
@@ -348,19 +342,10 @@ dfaic <- do.call("rbind", aicchoicel)
 dfbic <- do.call("rbind", bicchoicel)
 
 df<-rbind(dflfo,dfaic,dfbic)
-summary(df)
+unique(df$scenario)
 
-#df$simulated <- dplyr::recode(df$scenario, 
-#      "stationary"="simple",
-#      "decLinearProd"="rwa",
-#      "regimeProd"="hmma",
-#      "sineProd"="rwa",
-#      "regimeCap"="hmmb",
-#      "decLinearCap"="rwb",
-#      "sigmaShift"="simple",
-#      "regimeProdCap"="hmm",
-#      "shiftCap"="hmmb",
-#      "decLinearProdshiftCap"="rwab")   
+df$simulated <- "simple"
+
 
 df$simulated_f<-factor(df$simulated, levels=c("simple",
                                             "autocorr",
@@ -371,17 +356,14 @@ df$simulated_f<-factor(df$simulated, levels=c("simple",
                                             "hmmb",
                                             "hmm"))
 
-df$scenario_f <- factor(df$scenario,levels=c("stationary",
-                                             "autocorr",
-                                            "decLinearProd",        
-                                            "regimeProd",
-                                            "sineProd",
-                                            "regimeCap",            
-                                            "decLinearCap",
-                                            "sigmaShift",            
-                                            "regimeProdCap",
-                                            "shiftCap",
-                                            "decLinearProdshiftCap")
+df$scenario_f <- factor(df$scenario,levels=c("lowERLowError",
+                                             "lowERHighError",   
+                                             "highERLowError",  
+                                             "highERHighError", 
+                                             "ShiftERLowError", 
+                                            "ShiftERHighError",
+                                            "trendERLowError",  
+                                            "trendERHighError")
 )
 
 
@@ -393,8 +375,11 @@ mytheme = list(
               axis.text=element_text(face="bold"),axis.title = element_text(face="bold"),plot.title = element_text(face = "bold", hjust = 0.5,size=15))
 )
 
+summary(df)
+dff<-df[!is.na(df$chsnmod),]
 
-modsel<-ggplot(df) +  
+
+modsel<-ggplot(dff) +  
  geom_bar(aes(chsnmod,fill=method), 
     position = position_dodge(width = 0.9, preserve = "single"))+
  geom_rect(aes(xmin=as.numeric(simulated_f)-.5,
@@ -402,7 +387,6 @@ modsel<-ggplot(df) +
                          ymin=-Inf,ymax=Inf),
                     color="gray90",alpha=0.002)+
  facet_wrap(~scenario_f)+ 
-# theme_bw(14) +
  mytheme+
  theme(axis.text.x = element_text(angle = 90))+
  xlab("chosen estimation model")+
@@ -411,33 +395,42 @@ modsel
 
 
 ggsave(
-      filename = "outs/SamSimOutputs/plotcheck/model_selectionLFOallopt.pdf", 
+      filename = "outs/SamSimOutputs/plotcheck/model_selectionERscen.png", 
       plot = modsel, 
       width = 14, height = 8
     )
 
 
-dflfocm<-df[df$method=="LFO",]
-unique(dflfocm$chsnmod)
 
-dt<-df |> count(chsnmod,simulated,method)
+
+dt<-dff |> count(chsnmod,simulated,method,scenario)
 dt$simulated_f <- factor(dt$simulated, levels=
   c("simple","autocorr", "rwa","rwb","rwab","hmma", "hmmb", "hmm"))
 dt$estimated_f <- factor(dt$chsnmod, levels=
   c("simple","autocorr", "rwa","rwb","rwab","hmma", "hmmb", "hmm"))
+
+dt$scenario_f <- factor(dt$scenario,levels=c("lowERLowError",
+                                             "lowERHighError",   
+                                             "highERLowError",  
+                                             "highERHighError", 
+                                             "ShiftERLowError", 
+                                            "ShiftERHighError",
+                                            "trendERLowError",  
+                                            "trendERHighError")
+)
  dt$nst<-0
 
-for(j in seq_along(unique(dt$simulated))){
+for(j in seq_along(unique(dt$scenario))){
   for(i in unique(dt$method)){
-    dp<-dt[dt$simulated==unique(dt$simulated)[j]&dt$method==i,]
+    dp<-dt[dt$scenario==unique(dt$scenario)[j]&dt$method==i,]
     dp$nst<-dp$n/sum(dp$n)*100
-    dt$nst[dt$simulated==unique(dt$simulated)[j]&dt$method==i]<-dp$nst
+    dt$nst[dt$scenario==unique(dt$scenario)[j]&dt$method==i]<-dp$nst
   }
 
 }
 
 
-confmat<-ggplot(data =  dt, mapping = aes(x = simulated_f, y = chsnmod)) +
+confmat<-ggplot(data =  dt, mapping = aes(x = scenario_f, y = chsnmod)) +
   geom_tile(aes(fill = nst), colour = "white") +
   geom_text(aes(label = sprintf("%1.0f", nst)), vjust = 1) +
   scale_fill_gradient(low="white", high="#009194") +
@@ -446,7 +439,7 @@ confmat<-ggplot(data =  dt, mapping = aes(x = simulated_f, y = chsnmod)) +
   mytheme+
   theme(axis.text.x = element_text(angle = 90),legend.position="none")+
   ylab("estimated")+xlab("simulated")
-
+confmat
 
 ggsave(
       filename = "outs/SamSimOutputs/plotcheck/confmatMLE.png", 
