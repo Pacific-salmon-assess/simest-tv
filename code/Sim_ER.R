@@ -197,7 +197,7 @@ allersim$scenario == "lowERLowError"] <- "Low CV"
 
 
 mytheme = list(
-    theme_classic(14)+
+    theme_classic(16)+
         theme(panel.background = element_blank(),strip.background = element_rect(colour=NA, fill=NA),panel.border = element_rect(fill = NA, color = "black"),
               legend.title = element_blank(),
               legend.position="bottom", 
@@ -223,8 +223,6 @@ ggplot(allersim) +
 
 
 
-# add sceatios for changes of age at spawners - later
-
 #check if ER=1
 
 for(a in seq_len(nrow(simPar))){
@@ -238,9 +236,6 @@ for(a in seq_len(nrow(simPar))){
   dat<-dat[dat$year>(max(dat$year)-46),]
   dat <- dat[!is.na(dat$obsRecruits),]
 
-max(dat$ER)
-View(dat[dat$ER==max(dat$ER),])
-  summary(dat$ER)
 }
 
 
@@ -312,7 +307,8 @@ datdf$scenario_f <-factor(datdf$scenario, levels=c("lowERLowError",
 
 SRexample<-  ggplot(SRdf) +
     geom_line(aes(x=spawners,y=recruits, col=as.factor(year)),linewidth=2) +
-    theme_bw(14) + 
+    mytheme + 
+    theme(legend.position="right") +
     scale_colour_viridis_d(end=.7) +
     labs(col = "year") +
     geom_point(data=datdf,aes(x=spawners,y=recruits,col=as.factor(year)),alpha=.5) +

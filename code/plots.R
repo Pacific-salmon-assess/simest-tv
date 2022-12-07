@@ -284,3 +284,43 @@ ggsave(
       width = 12, height = 8
     )
 
+
+
+
+
+#============================================================
+#plot of prior distributions
+
+
+#dgamma(3,1)
+
+al<-seq(0,10,by=.1)
+be<-seq(-25,-1,by=.1)
+si<-seq(0,3,by=.01)
+
+par(mfrow=c(1,3),
+  font.lab=2,
+  cex.axis=1.5,
+  las=1,
+  cex.main=2)
+plot(al,dgamma(al,3,1),type="l", lwd=2,ylab="",
+  main=expression(alpha), 
+  xlab="alpha",
+  font=2
+  )
+plot(exp(be),dnorm(be,-12,3),type="l", lwd=2,ylab="",
+  main=expression(beta), 
+  xlab="beta", 
+  xlim=c(1e-10,1e-1),
+  log="x",
+  font=2)
+plot(si,dgamma(si,2,3),type="l", lwd=2,ylab="",
+  main=expression(sigma),
+  xlab="sigma",
+  font=2)
+
+
+
+
+
+

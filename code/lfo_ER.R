@@ -442,9 +442,9 @@ confmat<-ggplot(data =  dt, mapping = aes(x = scenario_f, y = chsnmod)) +
 confmat
 
 ggsave(
-      filename = "outs/SamSimOutputs/plotcheck/confmatMLE.png", 
+      filename = "outs/SamSimOutputs/plotcheck/confmatMLE_er.png", 
       plot = confmat, 
-      width = 12, height = 5
+      width = 10, height = 5
     )
 
 

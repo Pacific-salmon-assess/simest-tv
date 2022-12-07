@@ -188,14 +188,15 @@ summary(allscnsim)
 unique(allscnsim$scenario)
 
 
-allscnsim$scenario[allscnsim$scenario=="stationary"] <-"stationary sigmaShift"
+allscnsim$scenario[allscnsim$scenario=="stationary"] <-"stationary sigmaShift autocorr"
 allscnsim$scenario[allscnsim$scenario== "decLinearProdshiftCap"] <- "decLinearProd shiftCap"
 
 allscnsim <- allscnsim[allscnsim$scenario!="sigmaShift",] 
+allscnsim <- allscnsim[allscnsim$scenario!="autocorr",] 
 allscnsim <- allscnsim[allscnsim$ind!="sigma",] 
 
 allscnsim$scenario_f = factor(allscnsim$scenario, 
-  levels=c("stationary sigmaShift",  
+  levels=c("stationary sigmaShift autocorr",  
            "decLinearProd", 
            "regimeProd",
            "sineProd",
@@ -214,7 +215,7 @@ allscnsim$tipo[allscnsim$scenario == "regimeProdCap"|
 allscnsim$scenario == "decLinearProd shiftCap"] <- "both"
 
 
-allscnsim$tipo[allscnsim$scenario == "stationary sigmaShift"] <- "none"
+allscnsim$tipo[allscnsim$scenario == "stationary sigmaShift autocorr"] <- "none"
 
 
  
@@ -238,7 +239,13 @@ p <- ggplot(allscnsim) +
      facet_grid(ind~scenario_f, scales="free_y",
                labeller = labeller(scenario_f = label_wrap_gen(10))) +
      scale_colour_viridis_d(end=.85) 
-     
+
+
+ggsave(
+      filename = "outs/SamSimOutputs/plotcheck/erplots.pdf", 
+      plot = marrangeGrob(erplot, nrow=1, ncol=1), 
+      width = 12, height = 5
+    )     
 
 # add sceatios for changes of age at spawners - later
 
@@ -300,10 +307,20 @@ datdf$scenario_f <-factor(datdf$scenario, levels=c("stationary","autocorr","sigm
                "regimeProdCap",  "decLinearProdshiftCap"))
 
 
+
+
+mytheme = list(
+    theme_classic(14)+
+        theme(panel.background = element_blank(),strip.background = element_rect(colour=NA, fill=NA),panel.border = element_rect(fill = NA, color = "black"),
+              legend.title = element_blank(),legend.position="bottom", strip.text = element_text(face="bold", size=12),
+              axis.text=element_text(face="bold"),axis.title = element_text(face="bold"),plot.title = element_text(face = "bold", hjust = 0.5,size=15))
+)
+
 SRexample<-  ggplot(SRdf) +
     geom_line(aes(x=spawners,y=recruits, col=as.factor(year)),linewidth=2) +
-    theme_bw(14) + 
-    scale_colour_viridis_d(end=.7) +
+    mytheme + 
+    theme(legend.position="right") +
+    scale_colour_viridis_d(end=.85) +
     labs(col = "year") +
     geom_point(data=datdf,aes(x=spawners,y=recruits,col=as.factor(year)),alpha=.5) +
     facet_wrap(~scenario_f)
