@@ -400,17 +400,17 @@ for(a in seq_len(nrow(simPar))){
 
     #tva
     sgen_tva[j]<-median(unlist(mapply(sGenCalc,a=c(btva$samples[,,paste0("log_a[",j,"]")]),
-      b=c(btva$samples[,,paste0("b")]),
+      b=pmax(c(btva$samples[,,paste0("b")]),1e-11),
       Smsy= c(btva$samples[,,paste0("S_msy[",j,"]")]))),na.rm=T)
 
     #tvb    
     sgen_tvb[j]<-median(unlist(mapply(sGenCalc,a=c(btvb$samples[,,paste0("log_a")]),
-      b=c(btvb$samples[,,paste0("b[",j,"]")]),
+      b=pmax(c(btvb$samples[,,paste0("b[",j,"]")]),1e-11),
       Smsy= c(btvb$samples[,,paste0("S_msy[",j,"]")]))),na.rm=T)
 
     #tvab        
     sgen_tvab[j]<-median(unlist(mapply(sGenCalc,a=c(btvab$samples[,,paste0("log_a[",j,"]")]),
-      b=c(btvab$samples[,,paste0("b[",j,"]")]),
+      b=pmax(c(btvab$samples[,,paste0("b[",j,"]")]),1e-11),
       Smsy=c(btvab$samples[,,paste0("S_msy[",j,"]")]))),na.rm=T)
 
   }
@@ -424,15 +424,15 @@ for(a in seq_len(nrow(simPar))){
   for(k in seq_len(kregime)){
 
     sgen_hmma[k] <- median(unlist(mapply(sGenCalc,a=c(bhmma$samples[,,paste0("log_a[",k,"]")]),
-      b=c(bhmma$samples[,,paste0("b")]),
+      b=pmax(c(bhmma$samples[,,paste0("b")]),1e-11),
       Smsy=c(bhmma$samples[,,paste0("S_msy[",k,"]")]))),na.rm=T) 
 
     sgen_hmmb[k] <- median(unlist(mapply(sGenCalc,a=c(bhmmb$samples[,,paste0("log_a")]),
-      b=c(bhmmb$samples[,,paste0("b[",k,"]")]),
+      b=pmax(c(bhmmb$samples[,,paste0("b[",k,"]")])),
       Smsy=c(bhmmb$samples[,,paste0("S_msy[",k,"]")]))),na.rm=T)
 
     sgen_hmmab[k] <- median(unlist(mapply(sGenCalc,a=c(bhmmab$samples[,,paste0("log_a[",k,"]")]),
-      b=c(bhmmab$samples[,,paste0("b[",k,"]")]),
+      b=pmax(c(bhmmab$samples[,,paste0("b[",k,"]")])),
       Smsy=c(bhmmab$samples[,,paste0("S_msy[",k,"]")]))),na.rm=T)
 
   }
