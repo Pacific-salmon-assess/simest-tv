@@ -609,7 +609,15 @@ save(allrmse, allsimest,file="outs/simest/simest_prodcapscenarios1_4.Rdata")
 
 #=================================
 #plots
+
+load("outs/simest/simest_prodcapscenarios1_4.Rdata") 
+
+
+
+
 pbiasplot<-list()
+dfpbiasall<-list()
+
 for(a in 1:4){
   scna<-allsimest[[a]]
   dfpbias<-do.call("rbind",scna)
@@ -619,6 +627,8 @@ for(a in 1:4){
   "hmmab_regime", "hmmab_average",  "hmmabhc_regime","hmmabhc_average" ))
   dfpbias$method <- factor(dfpbias$method, levels=c("MLE","MCMC"))
   dfpbias<-dfpbias[!is.na(dfpbias$pbias),] 
+  dfpbias$scenario<- simPar$scenario[a]
+  dfpbiasall[[a]]<-dfpbias
 
   pbiasplot[[a]] <-  ggplot(dfpbias,aes(x=model,y=pbias)) +
       geom_boxplot(aes(fill=method)) +
@@ -632,11 +642,77 @@ for(a in 1:4){
       theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
 }
 
+
+
 ggsave(
       filename = "outs/SamSimOutputs/plotcheck/pbias1_4.pdf", 
       plot = marrangeGrob(pbiasplot, nrow=1, ncol=1), 
       width = 12, height = 5
     )
+
+
+dfpb<-do.call(rbind,dfpbiasall)
+dfpb$simulated <- dplyr::recode(dfpb$scenario, 
+      "stationary"="simple",
+      "decLinearProd"="rwa",
+      "regimeProd"="hmma",
+      "autocorr"="autocorr")   
+
+dfpb$simulated_f<-factor(dfpb$simulated, levels=c("simple",
+                                            "autocorr",
+                                            "rwa",
+                                            "rwb",
+                                            "rwab", 
+                                            "hmma",
+                                            "hmmb",
+                                            "hmm"))
+
+dfpb$scenario_f<- factor(dfpb$scenario, levels=c(
+      "stationary",
+      "autocorr",
+      "decLinearProd",
+      "regimeProd"
+      )  )
+
+summary(dfpb)
+
+dfpba<-dfpb[dfpb$parameter=="alpha"|
+dfpb$parameter=="Smax"|
+dfpb$parameter=="smsy",]
+
+
+
+mytheme = list(
+    theme_classic(16)+
+        theme(panel.background = element_blank(),strip.background = element_rect(colour=NA, fill=NA),panel.border = element_rect(fill = NA, color = "black"),
+              legend.title = element_blank(),legend.position="bottom", strip.text = element_text(face="bold", size=12),
+              axis.text=element_text(face="bold"),axis.title = element_text(face="bold"),plot.title = element_text(face = "bold", hjust = 0.5,size=15))
+)
+
+pbiasparam<-ggplot(dfpba,aes(x=model,y=pbias)) +
+      geom_boxplot(aes(fill=method)) +
+      coord_cartesian(ylim = c(-100,100))+
+      geom_hline(yintercept=0) +
+      geom_rect(aes(xmin=as.numeric(simulated_f)-.5,
+                         xmax=as.numeric(simulated_f)+.5,
+                         ymin=-Inf,ymax=Inf),
+                    color="gray90",alpha=0.002)+
+      mytheme+ 
+      facet_grid(parameter~scenario_f, scales="free_y")+
+      scale_fill_viridis_d(begin=.3, end=.9) +
+      stat_summary(fun.data = give.n, geom = "text", 
+          vjust = -2)+ 
+      theme(axis.text.x = element_text(angle = 45, vjust=0.5))
+
+pbiasparam
+
+ggsave(
+      filename = "outs/SamSimOutputs/plotcheck/pbias1_4paramscn.png", 
+      plot = pbiasparam, 
+      width = 12, height = 7
+    )
+
+
 dfpbias<-do.call("rbind",simest)
 dfpbias<- dfpbias[dfpbias$convergence==0,]
 dfpbias$model <- factor(dfpbias$model, levels=c("simple","simple_b", "autocorr", "rwa", "rwb",
@@ -677,5 +753,15 @@ stat_summary(fun.data = give.n, geom = "text", hjust = 0.5,
     vjust = -2)+
 theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
 fig2
+
+
+
+
+#============================
+#plot relative pbias
+dfpb <- do.call(rbind,dfpbiasall)
+
+names(dfpb )
+
 
 
