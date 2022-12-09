@@ -654,7 +654,7 @@ if(!file.exists("outs/simest")){
 }
 
 
-save(allrmse, allsimest,file="outs/simest/simest_ERcenarios4_11.Rdata")
+save(allrmse, allsimest,file="outs/simest/simest_ERcenarios_all.Rdata")
 
 #=================================
 #plots
