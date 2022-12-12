@@ -413,7 +413,6 @@ ggsave(
     )
 
 
-dflfocm<-df[df$method=="LFO",]
 unique(dflfocm$chsnmod)
 
 dt<-df |> count(chsnmod,simulated,method)
@@ -421,7 +420,8 @@ dt$simulated_f <- factor(dt$simulated, levels=
   c("simple","autocorr", "rwa","rwb","rwab","hmma", "hmmb", "hmm"))
 dt$estimated_f <- factor(dt$chsnmod, levels=
   c("simple","autocorr", "rwa","rwb","rwab","hmma", "hmmb", "hmm"))
- dt$nst<-0
+dt$nst<-0
+summary(dt)
 
 for(j in seq_along(unique(dt$simulated))){
   for(i in unique(dt$method)){
@@ -433,10 +433,20 @@ for(j in seq_along(unique(dt$simulated))){
 }
 
 
-confmat<-ggplot(data =  dt, mapping = aes(x = simulated_f, y = chsnmod)) +
-  geom_tile(aes(fill = nst), colour = "white") +
-  geom_text(aes(label = sprintf("%1.0f", nst)), vjust = 1) +
+dt$diag<-dt$simulated_f==dt$estimated_f
+
+confmat<-ggplot(data =  dt, mapping = aes(x = simulated_f, y = estimated_f)) +
+  geom_tile(aes(fill = nst)) +
+  geom_segment(data=transform(subset(dt, !!diag), 
+                    simulated=as.numeric(simulated_f), 
+                    estimated=as.numeric(estimated_f)), 
+               aes(x=simulated-.49, xend=simulated+.49, y=estimated-.49, yend=estimated+.49), 
+               color="white", size=2)+
+
+  #scale_color_manual(guide = FALSE, values = c(`TRUE` = "black", `FALSE`=NA))+
+  geom_text(aes(label =  nst), vjust = 1) +
   scale_fill_gradient(low="white", high="#009194") +
+  #scale_colour_manual(values = c("white", "black"))+
   theme_bw() + theme(legend.position = "none")+
   facet_wrap(~method)+
   mytheme+

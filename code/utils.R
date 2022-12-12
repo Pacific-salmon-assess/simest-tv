@@ -6,10 +6,17 @@
 
 
 give.n <- function(x){
-  return(c(y = median(x)*1.05, label = length(x))) 
+  return(c(y = median(x,na.rm=T)*1.05, label = length(x))) 
   # experiment with the multiplier to find the perfect position
 } 
 
+
+
+
+max.n <- function(x){
+  return(c(y = 100*1.05, label = length(x))) 
+  # experiment with the multiplier to find the perfect position
+} 
 
 
 

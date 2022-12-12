@@ -104,7 +104,7 @@ for(a in seq_len(nrow(simPar))){
  
 
   srplot[[a]]<-ggplot( actualSR) +
-    geom_line(aes(x=spawners,y=recruits, col=as.factor(year)),size=2)+
+    geom_line(aes(x=spawners,y=recruits, col=as.factor(year)),linewidth=2)+
     theme_bw(14) + scale_colour_viridis_d(end=.7)+
     geom_point(data=dat,aes(x=spawners,y=recruits),alpha=.5)+
     labs(title = simPar$scenario[a])
@@ -304,16 +304,36 @@ datdf$scenario_f <-factor(datdf$scenario, levels=c("lowERLowError",
                                                  "trendERLowError",  
                                                  "trendERHighError"))
 
+datdf$trend<- "low ER"
+datdf$trend[datdf$scenario == "highERLowError"|
+datdf$scenario == "highERHighError"] <- "high ER"
+
+datdf$trend[datdf$scenario == "ShiftERLowError"|
+datdf$scenario == "ShiftERHighError"] <- "shift ER"
+
+datdf$trend[datdf$scenario == "trendERLowError"|
+datdf$scenario == "trendERHighError"] <- "trend ER"
+
+datdf$ERvar<- "High CV"
+
+datdf$ERvar[datdf$scenario == "highERLowError"|
+datdf$scenario == "ShiftERLowError"|
+datdf$scenario == "trendERLowError"|
+datdf$scenario == "lowERLowError"] <- "Low CV"
+
+
+
 
 SRexample<-  ggplot(SRdf) +
     geom_line(aes(x=spawners,y=recruits, col=as.factor(year)),linewidth=2) +
     mytheme + 
-    theme(legend.position="right") +
+    theme(legend.position="bottom",axis.text.x = element_text(angle = 45,  hjust=1)) +
     scale_colour_viridis_d(end=.7) +
     labs(col = "year") +
+    guides(col=guide_legend(ncol=10))+
     geom_point(data=datdf,aes(x=spawners,y=recruits,col=as.factor(year)),alpha=.5) +
-    facet_wrap(~scenario_f)
-    
+    facet_grid(ERvar~trend) 
+SRexample    
  
 ggsave(
       filename = "outs/SamSimOutputs/plotcheck/srexample_erscn.png", 
