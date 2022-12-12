@@ -58,8 +58,8 @@ hmmab_mod <- compile_code(type='hmm',ac=FALSE,par="both")
 allrmse<-list()
 
 allsimest<-list()
-
-for(a in seq_len(nrow(simPar))){
+simerr<-list()
+for(a in  1:(nrow(simPar))){
 #for(a in 1:4){
   #a<-4
   simData[[a]] <- readRDS(paste0("outs/SamSimOutputs/simData/", simPar$nameOM[a],"/",simPar$scenario[a],"/",
@@ -67,7 +67,8 @@ for(a in seq_len(nrow(simPar))){
   
   simest<-list()
   rmse<-list()
-  
+  sier<-0
+  simerr[[a]]<-sier
   
   for(u in unique(simData[[a]]$iteration)){
     #u=30    
@@ -81,6 +82,8 @@ for(a in seq_len(nrow(simPar))){
                     logRS=log(dat$obsRecruits/dat$obsSpawners))
      
     if(sum(df$S==0)){
+      sier<-sier+1
+      simerr[[a]]<-sier
       next
     }
 
@@ -651,7 +654,7 @@ if(!file.exists("outs/simest")){
 }
 
 
-save(allrmse, allsimest,file="outs/simest/simest_prodcapscenarios1_4.Rdata")
+save(allrmse, allsimest,file="outs/simest/simest_ERcenarios_all.Rdata")
 
 #=================================
 #plots
@@ -679,7 +682,7 @@ for(a in 1:4){
 }
 
 ggsave(
-      filename = "outs/SamSimOutputs/plotcheck/pbias1_4.pdf", 
+      filename = "outs/SamSimOutputs/plotcheck/pbias1_4ER.pdf", 
       plot = marrangeGrob(pbiasplot, nrow=1, ncol=1), 
       width = 12, height = 5
     )
