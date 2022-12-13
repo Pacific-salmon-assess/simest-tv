@@ -14,7 +14,7 @@ give.n <- function(x){
 
 
 max.n <- function(x){
-  return(c(y = 100*1.05, label = length(x))) 
+  return(c(y = 90*1.05, label = length(x))) 
   # experiment with the multiplier to find the perfect position
 } 
 
