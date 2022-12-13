@@ -337,6 +337,61 @@ dfmpbias$scenario_f<- factor(dfmpbias$scenario, levels=c(
       )  )
 
 
+dfmpbias$model_agg <- dplyr::recode(dfmpbias$model, 
+       "simple"="simple", 
+       "autocorr"="simple",
+       "rwa"="rw",
+       "rwb"="rw",
+       "rwab"="rw",
+       "hmma_regime"="hmm",  
+       "hmmb_regime"="hmm",    
+       "hmmab_regime"="hmm")
+
+
+
+dfmpbias$simulated_agg <- dplyr::recode(dfmpbias$simulated, 
+       "simple"="simple", 
+       "autocorr"="simple",
+       "rwa"="rw",
+       "rwb"="rw",
+       "rwab"="rw",
+       "hmma"="hmm",  
+       "hmmb"="hmm",    
+       "hmmab"="hmm")
+
+
+dfmpbias$model_paragg <- dplyr::recode(dfmpbias$model, 
+       "simple"="simple", 
+       "autocorr"="simple",
+       "rwa"="tva",
+       "rwb"="tvb",
+       "rwab"="tvab",
+       "hmma_regime"="tva",  
+       "hmmb_regime"="tvb",    
+       "hmmab_regime"="tvab")
+
+
+
+dfmpbias$simulated_paragg <- dplyr::recode(dfmpbias$simulated, 
+       "simple"="simple", 
+       "autocorr"="simple",
+       "rwa"="tva",
+       "rwb"="tvb",
+       "rwab"="tvab",
+       "hmma"="tva",  
+       "hmmb"="tvb",    
+       "hmmab"="tvab")
+
+
+
+head(dfmpbias)
+
+dfmpbias_ss<-dfmpbias[dfmpbias$scenario_f%in%c("stationary",
+      "decLinearProd",
+      "shiftCap"),]
+
+
+
 
 mytheme = list(
     theme_classic(16)+
@@ -359,9 +414,11 @@ dfscen<-aggregate(dfmpbias15$simulated_f,list(parameter=dfmpbias15$parameter,
   scenario_f=dfmpbias15$scenario_f, model=dfmpbias15$model),unique)
 dfscen$simulated_f<-as.numeric(dfscen$x)
 
+
+#kitchen sink plot
 ggplot(dfmpbias15) +   
-  geom_boxplot(data=dfmpbias15,aes(fill=method,x=model,y=x)) +         
-  coord_cartesian(ylim = c(0,100))+
+  geom_boxplot(data=dfmpbias15,aes(fill=method,x=model,y=x), outlier.shape = NA) +         
+  coord_cartesian(ylim = quantile(dfmpbias15$x, c(0.1, 0.9)))+
   geom_hline(yintercept=0) +
   mytheme+ 
   ylab("mean % bias") +
@@ -372,9 +429,85 @@ ggplot(dfmpbias15) +
                          xmax=as.numeric(simulated_f)+.5,
                          ymin=-Inf,ymax=Inf),
                     color="gray90",alpha=0.02)+
-  stat_summary(aes(color=method,x=(model),y=x),fun.data = give.n, geom = "text", 
-          vjust = -2,position = position_dodge(1))+ 
+  #stat_summary(aes(color=method,x=(model),y=x),fun.data = give.n, geom = "text", 
+  #        vjust = -2,position = position_dodge(1))+ 
   theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))
+
+
+#aggregate plot
+dfscen_agg<-aggregate(dfmpbias15$simulated_agg,list(parameter=dfmpbias15$parameter,
+  scenario_f=dfmpbias15$scenario_f, model=dfmpbias15$model_par),unique)
+dfscen_agg$x<-factor(dfscen_agg$x, levels=c("simple","rw","hmm"))
+dfscen_agg$simulated_f<-as.numeric(dfscen_agg$x)
+
+
+ggplot(dfmpbias15) +   
+  geom_boxplot(data=dfmpbias15,aes(fill=method,x=model_agg,y=x), outlier.shape = NA) +         
+  coord_cartesian(ylim = c(-90,90))+
+  #coord_cartesian(ylim = quantile(dfmpbias15$x, c(0.1, 0.9)))+
+  geom_hline(yintercept=0) +
+  mytheme+ 
+  ylab("mean % bias") +
+  facet_grid(parameter~scenario_f, scales="free_y")+
+  scale_fill_viridis_d(begin=.3, end=.8) +
+  scale_color_viridis_d(begin=.3, end=.8) +
+  geom_rect(data=dfscen_agg,aes(xmin=as.numeric(simulated_f)-.5,
+                         xmax=as.numeric(simulated_f)+.5,
+                         ymin=-Inf,ymax=Inf),
+                    color="gray90",alpha=0.02)+
+  #stat_summary(aes(color=method,x=(model),y=x),fun.data = give.n, geom = "text", 
+  #        vjust = -2,position = position_dodge(1))+ 
+  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))
+
+
+
+summary(dfmpbias15)
+dfmpbias15MLE<-dfmpbias15[dfmpbias15$method=="MLE",]
+
+
+ggplot(dfmpbias15MLE) +   
+  geom_violin(trim=FALSE, aes(x=model_agg,y=x),fill="#009194",alpha=.3)+ 
+  geom_boxplot(width=0.2,position = position_dodge(1),aes(x=model_agg,y=x),fill="#009194", outlier.shape = NA) +        
+  coord_cartesian(ylim = quantile(dfmpbias15$x, c(0.025, 0.975)))+
+  geom_hline(yintercept=0) +
+  mytheme+ 
+  ylab("mean % bias") +
+  facet_grid(parameter~scenario_f, scales="free_y")+
+  scale_fill_viridis_d(begin=.3, end=.8) +
+  scale_color_viridis_d(begin=.3, end=.8) +
+  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))+
+  geom_rect(data=dfscen_agg,aes(xmin=as.numeric(simulated_f)-.5,
+                         xmax=as.numeric(simulated_f)+.5,
+                         ymin=-Inf,ymax=Inf),
+                    color="gray90",alpha=0.02)
+
+
+dfmpbias15MCMC<-dfmpbias15[dfmpbias15$method=="MCMC",]
+
+
+ggplot(dfmpbias15MCMC) +   
+  geom_violin(trim=FALSE, aes(x=model_agg,y=x),fill="#009194",alpha=.3)+ 
+  geom_boxplot(width=0.2,position = position_dodge(1),aes(x=model_agg,y=x),fill="#009194", outlier.shape = NA) +        
+  coord_cartesian(ylim = quantile(dfmpbias15$x, c(0.025, 0.975)))+
+  geom_hline(yintercept=0) +
+  mytheme+ 
+  ylab("mean % bias") +
+   xlab("estimation model") +
+  facet_grid(parameter~scenario_f, scales="free_y")+
+  scale_fill_viridis_d(begin=.3, end=.8) +
+  scale_color_viridis_d(begin=.3, end=.8) +
+  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))+
+  geom_rect(data=dfscen_agg,aes(xmin=as.numeric(simulated_f)-.5,
+                         xmax=as.numeric(simulated_f)+.5,
+                         ymin=-Inf,ymax=Inf),
+                    color="gray90",alpha=0.05)
+  #stat_summary(aes(color=method,x=(model),y=x),fun.data = give.n, geom = "text", 
+  #        vjust = -2,position = position_dodge(1))+ 
+
+#aggregate estimates
+
+
+
 
 dfmpbias611<-dfmpbias[dfmpbias$scenario_f%in%c("regimeProd",
       "decLinearCap",
@@ -427,6 +560,36 @@ ggplot(dfmpbias611,aes(x=model,y=x)) +
           vjust = -2, position = position_dodge(1))+ 
       theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))
 
+
+
+
+#aggregate plot
+dfscen_agg<-aggregate(dfmpbias611$simulated_agg,list(parameter=dfmpbias611$parameter,
+  scenario_f=dfmpbias611$scenario_f, model=dfmpbias611$model_par),unique)
+dfscen_agg$x<-factor(dfscen_agg$x, levels=c("simple","rw","hmm"))
+dfscen_agg$simulated_f<-as.numeric(dfscen_agg$x)
+
+
+ggplot(dfmpbias611) +   
+  geom_boxplot(data=dfmpbias611,aes(fill=method,x=model_agg,y=x), outlier.shape = NA) +         
+  coord_cartesian(ylim = c(-90,90))+
+  #coord_cartesian(ylim = quantile(dfmpbias15$x, c(0.1, 0.9)))+
+  geom_hline(yintercept=0) +
+  mytheme+ 
+  ylab("mean % bias") +
+  facet_grid(parameter~scenario_f, scales="free_y")+
+  scale_fill_viridis_d(begin=.3, end=.8) +
+  scale_color_viridis_d(begin=.3, end=.8) +
+  geom_rect(data=dfscen_agg,aes(xmin=as.numeric(simulated_f)-.5,
+                         xmax=as.numeric(simulated_f)+.5,
+                         ymin=-Inf,ymax=Inf),
+                    color="gray90",alpha=0.02)+
+  #stat_summary(aes(color=method,x=(model),y=x),fun.data = give.n, geom = "text", 
+  #        vjust = -2,position = position_dodge(1))+ 
+  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))
+
+
+
 #try violin plot
 ggplot(dfmpbias611,aes(x=model,y=x)) +
        geom_violin(aes(color=method),trim=FALSE)+
@@ -449,6 +612,27 @@ ggplot(dfmpbias611,aes(x=model,y=x)) +
       theme(axis.text.x = element_text(angle = 45, vjust=0.5))
 
 
+
+
+dfmpbias611MCMC<-dfmpbias611[dfmpbias611$method=="MCMC",]
+
+
+ggplot(dfmpbias611MCMC) +   
+  geom_violin(trim=FALSE, aes(x=model_agg,y=x),fill="#009194",alpha=.3)+ 
+  geom_boxplot(width=0.2,position = position_dodge(1),aes(x=model_agg,y=x),fill="#009194", outlier.shape = NA) +        
+  coord_cartesian(ylim = quantile(dfmpbias15$x, c(0.025, 0.975)))+
+  geom_hline(yintercept=0) +
+  mytheme+ 
+  ylab("mean % bias") +
+  xlab("estimation model") +
+  facet_grid(parameter~scenario_f, scales="free_y")+
+  scale_fill_viridis_d(begin=.3, end=.8) +
+  scale_color_viridis_d(begin=.3, end=.8) +
+  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))+
+  geom_rect(data=dfscen_agg,aes(xmin=as.numeric(simulated_f)-.5,
+                         xmax=as.numeric(simulated_f)+.5,
+                         ymin=-Inf,ymax=Inf),
+                    color="gray90",alpha=0.05)
 
 
 
