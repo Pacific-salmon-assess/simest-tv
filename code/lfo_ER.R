@@ -231,10 +231,10 @@ if(!file.exists("outs/simest")){
   dir.create("outs/simest") 
 }
 
-save(lfoTMB, lfomwTMB,aicTMB,bicTMB,file="outs/simest/simest_erscenarios.Rdata")
+save(lfoTMB, lfomwTMB,aicTMB,bicTMB,file="outs/simest/lfo_erscenarios.Rdata")
 
 
-load("outs/simest/simest_erscenarios.Rdata") 
+load("outs/simest/lfo_erscenarios.Rdata") 
 
 #todo
 #processing of lfo output
