@@ -386,10 +386,6 @@ dfmpbias$simulated_paragg <- dplyr::recode(dfmpbias$simulated,
 
 head(dfmpbias)
 
-dfmpbias_ss<-dfmpbias[dfmpbias$scenario_f%in%c("stationary",
-      "decLinearProd",
-      "shiftCap"),]
-
 
 
 
@@ -399,6 +395,45 @@ mytheme = list(
               legend.title = element_blank(),legend.position="bottom", strip.text = element_text(face="bold", size=12),
               axis.text=element_text(face="bold"),axis.title = element_text(face="bold"),plot.title = element_text(face = "bold", hjust = 0.5,size=15))
 )
+
+dfmpbias_ss<-dfmpbias[dfmpbias$scenario_f%in%c("stationary",
+      "decLinearProd",
+      "shiftCap"),]
+
+
+dfmpbias_ss<-dfmpbias_ss[dfmpbias_ss$parameter%in%c("alpha",
+      "Smax",
+      "smsy"),]
+
+
+dfscen_ss<-aggregate(dfmpbias_ss$simulated_agg,list(parameter=dfmpbias_ss$parameter,
+  scenario_f=dfmpbias_ss$scenario_f, model=dfmpbias_ss$model_agg),unique)
+dfscen_ss$x<-factor(dfscen_ss$x, levels=c("simple","rw","hmm"))
+dfscen_ss$simulated_f<-as.numeric(dfscen_ss$x)
+
+
+
+ggplot(dfmpbias_ss) +   
+  geom_boxplot(data=dfmpbias_ss,aes(fill=method,x=model_agg,y=x), outlier.shape = NA) +         
+  coord_cartesian(ylim = quantile(dfmpbias_ss$x, c(0.025, 0.975)))+
+  geom_hline(yintercept=0) +
+  mytheme+ 
+  ylab("mean % bias") +
+  xlab("estimation model") +
+  facet_grid(parameter~scenario_f, scales="free_y")+
+  scale_fill_viridis_d(begin=.3, end=.8) +
+  scale_color_viridis_d(begin=.3, end=.8) +
+  geom_rect(data=dfscen_ss,aes(xmin=as.numeric(simulated_f)-.5,
+                         xmax=as.numeric(simulated_f)+.5,
+                         ymin=-Inf,ymax=Inf),
+                    color="gray90",alpha=0.05)+
+  #stat_summary(aes(color=method,x=(model),y=x),fun.data = give.n, geom = "text", 
+  #        vjust = -2,position = position_dodge(1))+ 
+  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))
+
+
+
+
 
 dfmpbias15<-dfmpbias[dfmpbias$scenario_f%in%c("stationary",
       "autocorr",
@@ -436,7 +471,7 @@ ggplot(dfmpbias15) +
 
 #aggregate plot
 dfscen_agg<-aggregate(dfmpbias15$simulated_agg,list(parameter=dfmpbias15$parameter,
-  scenario_f=dfmpbias15$scenario_f, model=dfmpbias15$model_par),unique)
+  scenario_f=dfmpbias15$scenario_f, model=dfmpbias15$model_agg),unique)
 dfscen_agg$x<-factor(dfscen_agg$x, levels=c("simple","rw","hmm"))
 dfscen_agg$simulated_f<-as.numeric(dfscen_agg$x)
 
@@ -462,30 +497,112 @@ ggplot(dfmpbias15) +
 
 
 summary(dfmpbias15)
-dfmpbias15MLE<-dfmpbias15[dfmpbias15$method=="MLE",]
 
-
-ggplot(dfmpbias15MLE) +   
+ggplot(dfmpbias15) +   
   geom_violin(trim=FALSE, aes(x=model_agg,y=x),fill="#009194",alpha=.3)+ 
   geom_boxplot(width=0.2,position = position_dodge(1),aes(x=model_agg,y=x),fill="#009194", outlier.shape = NA) +        
   coord_cartesian(ylim = quantile(dfmpbias15$x, c(0.025, 0.975)))+
   geom_hline(yintercept=0) +
   mytheme+ 
   ylab("mean % bias") +
-  facet_grid(parameter~scenario_f, scales="free_y")+
+  facet_grid(parameter~scn_f, scales="free_y")+
   scale_fill_viridis_d(begin=.3, end=.8) +
   scale_color_viridis_d(begin=.3, end=.8) +
   theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))+
-  geom_rect(data=dfscen_agg,aes(xmin=as.numeric(simulated_f)-.5,
+  geom_rect(data=dfscenselec,aes(xmin=as.numeric(simulated_f)-.5,
+                         xmax=as.numeric(simulated_f)+.5,
+                         ymin=-Inf,ymax=Inf),
+                    color="gray90",alpha=0.02)
+
+dfmpbiasMCMCselec<-dfmpbias[dfmpbias$scenario_f%in%c("stationary","sineProd","decLinearCap"),]
+dfmpbiasMCMCselec<-dfmpbiasMCMCselec[dfmpbiasMCMCselec$method=="MCMC",]
+
+
+dfmpbiasMCMCselec$scn_f<-factor(dfmpbiasMCMCselec$scenario, levels=c("stationary",
+                                                                         "sineProd","decLinearCap"))
+
+dfmpbiasMCMCselec<-dfmpbiasMCMCselec[dfmpbiasMCMCselec$parameter%in%c("alpha","Smax","smsy"),]
+
+
+
+dfscen<-aggregate(dfmpbias$simulated_agg,list(parameter=dfmpbias$parameter,
+  scenario_f=dfmpbias$scenario_f, model=dfmpbias$model_agg),unique)
+dfscen<-dfscen[dfscen$parameter%in%c("alpha","Smax","smsy"),]
+
+dfscen$simulated_f<-as.numeric(factor(dfscen$x), levels=c("simple", "rw","hmm"))
+
+dfscenselec<-dfscen[dfscen$scenario_f%in%c("stationary",
+                                                    "sineProd","decLinearCap"),]
+
+dfscenselec$scn_f<-factor(dfscenselec$scenario_f,levels=c("stationary",
+                                                          "sineProd","decLinearCap"))
+
+
+
+
+ggplot(dfmpbiasMCMCselec) +   
+  geom_violin(trim=FALSE, aes(x=model_agg,y=x),fill="#009194",alpha=.3)+ 
+  geom_boxplot(width=0.2,position = position_dodge(1),aes(x=model_agg,y=x),fill="#009194", outlier.shape = NA) +        
+  coord_cartesian(ylim = quantile(dfmpbias$x, c(0.025, 0.975)))+
+  geom_hline(yintercept=0) +
+  mytheme+ 
+  ylab("mean % bias") +
+  xlab("estimation model") +
+  facet_grid(parameter~scn_f, scales="free_y")+
+  scale_fill_viridis_d(begin=.3, end=.8) +
+  scale_color_viridis_d(begin=.3, end=.8) +
+  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))+
+  geom_rect(data=dfscenselec,aes(xmin=as.numeric(simulated_f)-.5,
                          xmax=as.numeric(simulated_f)+.5,
                          ymin=-Inf,ymax=Inf),
                     color="gray90",alpha=0.02)
 
 
-dfmpbias15MCMC<-dfmpbias15[dfmpbias15$method=="MCMC",]
+
+dfmpbiasMCMCselec2<-dfmpbias[dfmpbias$scenario_f%in%c("regimeProd","shiftCap","decLinearProdshiftCap"),]
+dfmpbiasMCMCselec2<-dfmpbiasMCMCselec2[dfmpbiasMCMCselec2$method=="MCMC",]
 
 
-ggplot(dfmpbias15MCMC) +   
+dfmpbiasMCMCselec2$scn_f<-factor(dfmpbiasMCMCselec2$scenario, levels=c("regimeProd","shiftCap","decLinearProdshiftCap"))
+
+dfmpbiasMCMCselec2<-dfmpbiasMCMCselec2[dfmpbiasMCMCselec2$parameter%in%c("alpha","Smax","smsy"),]
+
+
+
+dfscen2<-aggregate(dfmpbias$simulated_agg,list(parameter=dfmpbias$parameter,
+  scenario_f=dfmpbias$scenario_f, model=dfmpbias$model_agg),unique)
+dfscen2<-dfscen2[dfscen2$parameter%in%c("alpha","Smax","smsy"),]
+
+dfscen2$simulated_f<-as.numeric(factor(dfscen2$x), levels=c("simple", "rw","hmm"))
+
+dfscenselec2<-dfscen2[dfscen2$scenario_f%in%c("regimeProd","shiftCap","decLinearProdshiftCap"),]
+
+dfscenselec2$scn_f<-factor(dfscenselec2$scenario_f,levels=c("regimeProd","shiftCap","decLinearProdshiftCap"))
+
+
+summary(dfmpbiasMCMCselec2)
+
+
+
+ggplot(dfmpbiasMCMCselec2) +   
+  geom_violin(trim=FALSE, aes(x=model_agg,y=x),fill="#009194",alpha=.3)+ 
+  geom_boxplot(width=0.2,position = position_dodge(1),aes(x=model_agg,y=x),fill="#009194", outlier.shape = NA) +        
+  coord_cartesian(ylim = quantile(dfmpbias$x, c(0.025, 0.975)))+
+  geom_hline(yintercept=0) +
+  mytheme+ 
+  ylab("mean % bias") +
+  xlab("estimation model") +
+  facet_grid(parameter~scn_f, scales="free_y")+
+  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))+
+  geom_rect(data=dfscenselec2,aes(xmin=as.numeric(simulated_f)-.5,
+                         xmax=as.numeric(simulated_f)+.5,
+                         ymin=-Inf,ymax=Inf),
+                    color="gray90",alpha=0.02)
+
+
+
+
+ggplot(dfmpbias15MCMCselec) +   
   geom_violin(trim=FALSE, aes(x=model_agg,y=x),fill="#009194",alpha=.3)+ 
   geom_boxplot(width=0.2,position = position_dodge(1),aes(x=model_agg,y=x),fill="#009194", outlier.shape = NA) +        
   coord_cartesian(ylim = quantile(dfmpbias15$x, c(0.025, 0.975)))+
@@ -497,10 +614,10 @@ ggplot(dfmpbias15MCMC) +
   scale_fill_viridis_d(begin=.3, end=.8) +
   scale_color_viridis_d(begin=.3, end=.8) +
   theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))+
-  geom_rect(data=dfscen_agg,aes(xmin=as.numeric(simulated_f)-.5,
+  geom_rect(data=dfscenselec,aes(xmin=as.numeric(simulated_f)-.5,
                          xmax=as.numeric(simulated_f)+.5,
                          ymin=-Inf,ymax=Inf),
-                    color="gray90",alpha=0.05)
+                    color="gray90",alpha=0.02)
   #stat_summary(aes(color=method,x=(model),y=x),fun.data = give.n, geom = "text", 
   #        vjust = -2,position = position_dodge(1))+ 
 
@@ -987,6 +1104,19 @@ dfer$simulated_f<-factor(dfer$simulated, levels=c("simple",
                                             "hmm"))
 
 
+dfer$model_agg<- dplyr::recode(dfer$model, 
+       "simple"="simple", 
+       "autocorr"="simple",
+       "rwa"="rw",
+       "rwb"="rw",
+       "rwab"="rw",
+       "hmma_regime"="hmm",  
+       "hmmb_regime"="hmm",    
+       "hmmab_regime"="hmm")
+
+ unique(dfer$model_agg)
+
+
 
 dfer$trend<- "low ER"
 dfer$trend[dfer$scenario == "highERLowError"|
@@ -1045,6 +1175,97 @@ ggsave(
       width = 12, height = 7
     )
 
+
+pbiasparamER<-ggplot(dfera,aes(x=model_agg,y=x)) +
+      geom_boxplot(aes(fill=method), outlier.shape = NA) +
+       coord_cartesian(ylim = quantile(dfera$x, c(0.025, 0.975)))+
+      geom_hline(yintercept=0) +
+      geom_rect(aes(xmin=as.numeric(simulated_f)-.5,
+                         xmax=as.numeric(simulated_f)+.5,
+                         ymin=-Inf,ymax=Inf),
+                    color="gray90",alpha=0.002)+
+      mytheme+ 
+      facet_grid(parameter~scenario, scales="free_y")+
+      scale_fill_viridis_d(begin=.3, end=.9) +
+      #stat_summary(fun.data = give.n, geom = "text", 
+      #    vjust = -2)+ 
+      theme(axis.text.x = element_text(angle = 45, vjust=0.5))
+
+
+
+unique(dfer$scenario)
+
+dfer_ss<-dfer[dfer$scenario%in%c("highERHighError",
+      "lowERLowError"),]
+
+
+dfer_ss<-dfer_ss[dfer_ss$parameter%in%c("alpha",
+      "Smax",
+      "smsy"),]
+
+
+dferscen_ss<-aggregate(dfer_ss$simulated,list(parameter=dfer_ss$parameter,
+  scenario_f=dfer_ss$scenario, model_agg=dfer_ss$model_agg),unique)
+
+dferscen_ss$x<-factor(dferscen_ss$x, levels=c("simple","rw","hmm"))
+dferscen_ss$simulated_f<-as.numeric(dferscen_ss$x)
+
+
+
+ggplot(dfer_ss) +   
+  geom_boxplot(data=dfer_ss,aes(fill=method,x=model_agg,y=x), outlier.shape = NA) +         
+  coord_cartesian(ylim = quantile(dfer_ss$x, c(0.025, 0.975)))+
+  geom_hline(yintercept=0) +
+  mytheme+ 
+  ylab("mean % bias") +
+  xlab("estimation model") +
+  facet_grid(parameter~scenario, scales="free_y")+
+  scale_fill_viridis_d(begin=.3, end=.8) +
+  scale_color_viridis_d(begin=.3, end=.8) +
+  geom_rect(data=dferscen_ss,aes(xmin=as.numeric(simulated_f)-.5,
+                         xmax=as.numeric(simulated_f)+.5,
+                         ymin=-Inf,ymax=Inf),
+                    color="gray90",alpha=0.05)+
+  #stat_summary(aes(color=method,x=(model),y=x),fun.data = give.n, geom = "text", 
+  #        vjust = -2,position = position_dodge(1))+ 
+  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))
+
+
+
+dferaMCMC<-dfera[dfera$method=="MCMC",]
+
+ggplot(dferaMCMC) +
+      geom_violin(trim=FALSE, aes(x=model_agg,y=x),fill="#009194",alpha=.3)+ 
+  geom_boxplot(width=0.2,position = position_dodge(1),aes(x=model_agg,y=x),fill="#009194", outlier.shape = NA) +        
+  coord_cartesian(ylim = quantile(dferaMCMC$x, c(0.025, 0.975)))+
+  geom_hline(yintercept=0) +
+  mytheme+ 
+  ylab("mean % bias") +
+  facet_grid(parameter~scenario, scales="free_y")+
+  scale_fill_viridis_d(begin=.3, end=.8) +
+  scale_color_viridis_d(begin=.3, end=.8) +
+  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))+
+  geom_rect(data=dferscen_ss,aes(xmin=as.numeric(simulated_f)-.5,
+                         xmax=as.numeric(simulated_f)+.5,
+                         ymin=-Inf,ymax=Inf),
+                    color="gray90",alpha=0.02)
+
+
+ggplot(dfmpbias15MLE) +   
+  geom_violin(trim=FALSE, aes(x=model_agg,y=x),fill="#009194",alpha=.3)+ 
+  geom_boxplot(width=0.2,position = position_dodge(1),aes(x=model_agg,y=x),fill="#009194", outlier.shape = NA) +        
+  coord_cartesian(ylim = quantile(dfmpbias15$x, c(0.025, 0.975)))+
+  geom_hline(yintercept=0) +
+  mytheme+ 
+  ylab("mean % bias") +
+  facet_grid(parameter~scenario_f, scales="free_y")+
+  scale_fill_viridis_d(begin=.3, end=.8) +
+  scale_color_viridis_d(begin=.3, end=.8) +
+  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))+
+  geom_rect(data=dfscen_agg,aes(xmin=as.numeric(simulated_f)-.5,
+                         xmax=as.numeric(simulated_f)+.5,
+                         ymin=-Inf,ymax=Inf),
+                    color="gray90",alpha=0.02)
 
 
 #============================================================

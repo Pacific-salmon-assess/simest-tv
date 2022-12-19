@@ -227,7 +227,7 @@ if(!file.exists("outs/simestlfo")){
   dir.create("outs/simestlfo") 
 }
 
-save(lfoTMB, lfomwTMB,aicTMB,bicTMB,file="outs/simest/simestlfo_prodcapscenarios.Rdata")
+#save(lfoTMB, lfomwTMB,aicTMB,bicTMB,file="outs/simest/simestlfo_prodcapscenarios.Rdata")
 
 
 load("outs/simest/simestlfo_prodcapscenarios.Rdata") 
@@ -345,9 +345,11 @@ dfbic <- do.call("rbind", bicchoicel)
 
 df<-rbind(dflfo,dfaic,dfbic)
 summary(df)
+unique(df$scenario)
 
 df$simulated <- dplyr::recode(df$scenario, 
       "stationary"="simple",
+      "autocorr"="autocorr",
       "decLinearProd"="rwa",
       "regimeProd"="hmma",
       "sineProd"="rwa",
@@ -357,6 +359,37 @@ df$simulated <- dplyr::recode(df$scenario,
       "regimeProdCap"="hmm",
       "shiftCap"="hmmb",
       "decLinearProdshiftCap"="rwab")   
+
+
+df$simulated_agg <- dplyr::recode(df$scenario, 
+      "stationary"="simple",
+      "autocorr"="simple",
+      "decLinearProd"="rw",
+      "regimeProd"="hmm",
+      "sineProd"="rw",
+      "regimeCap"="hmm",
+      "decLinearCap"="rw",
+      "sigmaShift"="simple",
+      "regimeProdCap"="hmm",
+      "shiftCap"="hmm",
+      "decLinearProdshiftCap"="rw")   
+
+
+df$chsnmod_agg <- dplyr::recode(df$chsnmod, 
+  "simple"="simple",
+  "rwab"="rw",
+   "rwb"="rw",
+  "rwa"="rw",
+  "autocorr"="simple",
+  "hmmb"="hmm",
+  "hmma"="hmm",
+  "hmm"="hmm"
+  )   
+
+
+df$simulated_agg_f<-factor(df$simulated_agg,levels=c("simple",
+                                            "rw", 
+                                            "hmm"))
 
 df$simulated_f<-factor(df$simulated, levels=c("simple",
                                             "autocorr",
@@ -368,17 +401,17 @@ df$simulated_f<-factor(df$simulated, levels=c("simple",
                                             "hmm"))
 
 df$scenario_f <- factor(df$scenario,levels=c("stationary",
+                                             "decLinearProd",
+                                             "regimeProd",  
+                                             "decLinearProdshiftCap",
                                              "autocorr",
-                                            "decLinearProd",        
-                                            "regimeProd",
-                                            "sineProd",
-                                            "regimeCap",            
-                                            "decLinearCap",
-                                            "sigmaShift",            
-                                            "regimeProdCap",
-                                            "shiftCap",
-                                            "decLinearProdshiftCap")
-)
+                                             "sineProd",
+                                             "regimeCap",
+                                             "regimeProdCap", 
+                                             "sigmaShift", 
+                                             "decLinearCap",                                   
+                                                                                    
+                                            "shiftCap"))
 
 
 
@@ -406,6 +439,40 @@ modsel<-ggplot(df) +
 modsel
 
 
+
+modsel<-ggplot(df) +  
+ geom_bar(aes(chsnmod_agg,fill=method), 
+    position = position_dodge(width = 0.9, preserve = "single"))+
+ geom_rect(aes(xmin=as.numeric(simulated_agg_f)-.5,
+                         xmax=as.numeric(simulated_agg_f)+.5,
+                         ymin=-Inf,ymax=Inf),
+                    color="gray90",alpha=0.002)+
+ facet_wrap(~scenario_f)+ 
+# theme_bw(14) +
+ mytheme+
+ theme(axis.text.x = element_text(angle = 90))+
+ xlab("chosen estimation model")+
+ scale_fill_viridis_d(begin=.3, end=.9) 
+
+
+modsel
+
+
+modsel<-ggplot(df) +  
+ geom_bar(aes(chsnmod,fill=method), 
+    position = position_dodge(width = 0.9, preserve = "single"))+
+ geom_rect(aes(xmin=as.numeric(simulated_agg)-.5,
+                         xmax=as.numeric(simulated_agg)+.5,
+                         ymin=-Inf,ymax=Inf),
+                    color="gray90",alpha=0.002)+
+ facet_wrap(~scenario_f)+ 
+# theme_bw(14) +
+ mytheme+
+ theme(axis.text.x = element_text(angle = 90))+
+ xlab("chosen estimation model")+
+ scale_fill_viridis_d(begin=.3, end=.9) 
+modsel
+
 ggsave(
       filename = "outs/SamSimOutputs/plotcheck/model_selectionLFOallopt.pdf", 
       plot = modsel, 
@@ -415,7 +482,7 @@ ggsave(
 
 unique(dflfocm$chsnmod)
 
-dt<-df |> count(chsnmod,simulated,method)
+dt<-df |> dplyr::count(chsnmod,simulated,method)
 dt$simulated_f <- factor(dt$simulated, levels=
   c("simple","autocorr", "rwa","rwb","rwab","hmma", "hmmb", "hmm"))
 dt$estimated_f <- factor(dt$chsnmod, levels=
@@ -441,7 +508,7 @@ confmat<-ggplot(data =  dt, mapping = aes(x = simulated_f, y = estimated_f)) +
                     simulated=as.numeric(simulated_f), 
                     estimated=as.numeric(estimated_f)), 
                aes(x=simulated-.49, xend=simulated+.49, y=estimated-.49, yend=estimated+.49), 
-               color="white", size=2)+
+               color="white", linewidth=2)+
 
   #scale_color_manual(guide = FALSE, values = c(`TRUE` = "black", `FALSE`=NA))+
   geom_text(aes(label =  nst), vjust = 1) +
@@ -459,6 +526,48 @@ ggsave(
       plot = confmat, 
       width = 12, height = 5
     )
+
+
+#aggregate decision mat
+
+dt_agg<-df |> dplyr::count(chsnmod_agg,simulated_agg,method)
+dt_agg$simulated_agg_f <- factor(dt_agg$simulated_agg, levels=
+  c("simple", "rw","hmm"))
+dt_agg$estimated_agg_f <- factor(dt_agg$chsnmod, levels=
+  c("simple","rw", "hmm"))
+dt_agg$nst<-0
+summary(dt)
+
+for(j in seq_along(unique(dt_agg$simulated_agg))){
+  for(i in unique(dt_agg$method)){
+    dp<-dt_agg[dt_agg$simulated_agg==unique(dt_agg$simulated_agg)[j]&dt_agg$method==i,]
+    dp$nst<-dp$n/sum(dp$n)*100
+    dt_agg$nst[dt_agg$simulated_agg==unique(dt_agg$simulated_agg)[j]&dt_agg$method==i]<-dp$nst
+  }
+}
+
+dt_agg$diag<-dt_agg$simulated_agg_f==dt_agg$estimated_agg_f
+
+head(dt_agg)
+ggplot(data =  dt_agg, mapping = aes(x = simulated_agg_f, y = estimated_agg_f)) +
+  geom_tile(aes(fill = nst)) +
+  geom_segment(data=transform(subset(dt_agg, !!diag), 
+                    simulated=as.numeric(simulated_agg_f), 
+                    estimated=as.numeric(estimated_agg_f)), 
+               aes(x=simulated-.49, xend=simulated+.49, y=estimated-.49, yend=estimated+.49), 
+               color="white", linewidth=2)+
+
+  #scale_color_manual(guide = FALSE, values = c(`TRUE` = "black", `FALSE`=NA))+
+  geom_text(aes(label =  round(nst,2)), vjust = 1,fontface="bold") +
+  scale_fill_gradient(low="white", high="#009194") +
+  #scale_colour_manual(values = c("white", "black"))+
+  theme_bw() + theme(legend.position = "none")+
+  facet_wrap(~method)+
+  mytheme+
+  theme(axis.text.x = element_text(angle = 90),legend.position="none")+
+  ylab("estimated")+xlab("simulated")
+
+
 
 
 #==========================

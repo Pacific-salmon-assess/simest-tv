@@ -231,7 +231,7 @@ if(!file.exists("outs/simest")){
   dir.create("outs/simest") 
 }
 
-save(lfoTMB, lfomwTMB,aicTMB,bicTMB,file="outs/simest/lfo_erscenarios.Rdata")
+#save(lfoTMB, lfomwTMB,aicTMB,bicTMB,file="outs/simest/lfo_erscenarios.Rdata")
 
 
 load("outs/simest/lfo_erscenarios.Rdata") 
@@ -341,7 +341,10 @@ dflfo <- do.call("rbind", lfochoicel)
 dfaic <- do.call("rbind", aicchoicel)
 dfbic <- do.call("rbind", bicchoicel)
 
+summary(dfbic)
+
 df<-rbind(dflfo,dfaic,dfbic)
+summary(df)
 unique(df$scenario)
 
 df$simulated <- "simple"
@@ -356,6 +359,11 @@ df$simulated_f<-factor(df$simulated, levels=c("simple",
                                             "hmmb",
                                             "hmm"))
 
+df$simulated_agg_f<-factor(df$simulated, levels=c("simple",
+                                            "rw",
+                                            "hmm"))
+
+
 df$scenario_f <- factor(df$scenario,levels=c("lowERLowError",
                                              "lowERHighError",   
                                              "highERLowError",  
@@ -363,8 +371,20 @@ df$scenario_f <- factor(df$scenario,levels=c("lowERLowError",
                                              "ShiftERLowError", 
                                             "ShiftERHighError",
                                             "trendERLowError",  
-                                            "trendERHighError")
-)
+                                            "trendERHighError"))
+
+
+
+df$chsnmod_agg <- dplyr::recode(df$chsnmod, 
+  "simple"="simple",
+  "rwab"="rw",
+   "rwb"="rw",
+  "rwa"="rw",
+  "autocorr"="simple",
+  "hmma"="hmm",
+  "hmm"="hmm"
+  )   
+
 
 
 
@@ -392,6 +412,20 @@ modsel<-ggplot(dff) +
  xlab("chosen estimation model")+
  scale_fill_viridis_d(begin=.3, end=.9) 
 modsel
+
+
+ggplot(dff) +  
+ geom_bar(aes(chsnmod_agg,fill=method), 
+    position = position_dodge(width = 0.9, preserve = "single"))+
+ geom_rect(aes(xmin=as.numeric(simulated_agg_f)-.5,
+                         xmax=as.numeric(simulated_agg_f)+.5,
+                         ymin=-Inf,ymax=Inf),
+                    color="gray90",alpha=0.002)+
+ facet_wrap(~scenario_f)+ 
+ mytheme+
+ theme(axis.text.x = element_text(angle = 90))+
+ xlab("chosen estimation model")+
+ scale_fill_viridis_d(begin=.3, end=.9) 
 
 
 ggsave(
@@ -430,9 +464,16 @@ for(j in seq_along(unique(dt$scenario))){
 }
 
 
+dt$diag<-dt$estimated_f=="simple"
+
 confmat<-ggplot(data =  dt, mapping = aes(x = scenario_f, y = chsnmod)) +
   geom_tile(aes(fill = nst), colour = "white") +
-  geom_text(aes(label = sprintf("%1.0f", nst)), vjust = 1) +
+  geom_segment(data=transform(subset(dt, !!diag), 
+                    simulated=as.numeric(simulated_f), 
+                    estimated=as.numeric(estimated_f)), 
+               aes(x=as.numeric(scenario_f)-.49, xend=as.numeric(scenario_f)+.49, y=estimated-.49, yend=estimated+.49), 
+               color="white", linewidth=2)+
+  geom_text(aes(label =  round(nst,2)), vjust = 1) +
   scale_fill_gradient(low="white", high="#009194") +
   theme_bw() + theme(legend.position = "none")+
   facet_wrap(~method)+
@@ -450,6 +491,66 @@ ggsave(
 
 #==========================
 #todo
+
+
+
+#aggregate decision mat
+
+dt_agg<-dff |> dplyr::count(chsnmod_agg,simulated_agg_f,method,scenario)
+dt_agg$simulated_agg_f <- factor(dt_agg$simulated_agg, levels=
+  c("simple", "rw","hmm"))
+dt_agg$estimated_agg_f <- factor(dt_agg$chsnmod, levels=
+  c("simple","rw", "hmm"))
+dt_agg$nst<-0
+summary(dt_agg)
+
+
+for(j in seq_along(unique(dt$scenario))){
+  for(i in unique(dt$method)){
+    dp<-dt_agg[dt_agg$scenario==unique(dt_agg$scenario)[j]&dt_agg$method==i,]
+    dp$nst<-dp$n/sum(dp$n)*100
+    dt_agg$nst[dt_agg$scenario==unique(dt_agg$scenario)[j]&dt_agg$method==i]<-dp$nst
+  }
+
+}
+
+for(j in seq_along(unique(dt_agg$simulated_agg))){
+  for(i in unique(dt_agg$method)){
+    dp<-dt_agg[dt_agg$simulated_agg==unique(dt_agg$simulated_agg)[j]&dt_agg$method==i,]
+    dp$nst<-dp$n/sum(dp$n)*100
+    dt_agg$nst[dt_agg$simulated_agg==unique(dt_agg$simulated_agg)[j]&dt_agg$method==i]<-dp$nst
+  }
+}
+
+dt_agg$diag<-dt_agg$estimated_agg_f=="simple"
+dt_agg$scenario_f<- factor(dt_agg$scenario,levels=c("highERHighError",
+  "highERLowError",
+  "lowERHighError",
+  "lowERLowError",
+  "ShiftERHighError",
+  "ShiftERLowError",
+  "trendERHighError",
+   "trendERLowError"))
+
+head(dt_agg)
+ggplot(data =  dt_agg, mapping = aes(x = scenario, y = estimated_agg_f)) +
+  geom_tile(aes(fill = nst)) +
+  geom_segment(data=transform(subset(dt_agg, !!diag), 
+                    simulated=as.numeric(simulated_agg_f), 
+                    estimated=as.numeric(estimated_agg_f)), 
+               aes(x=as.numeric(scenario_f)-.49, xend=as.numeric(scenario_f)+.49, y=estimated-.49, yend=estimated+.49), 
+               color="white", linewidth=2)+
+
+  #scale_color_manual(guide = FALSE, values = c(`TRUE` = "black", `FALSE`=NA))+
+  geom_text(aes(label =  round(nst,2)), vjust = 1,fontface = "bold",size=4) +
+  scale_fill_gradient(low="white", high="#009194") +
+  #scale_colour_manual(values = c("white", "black"))+
+  theme_bw() + theme(legend.position = "none")+
+  facet_wrap(~method)+
+  mytheme+
+  theme(axis.text.x = element_text(angle = 90),legend.position="none")+
+  ylab("estimated")+xlab("simulated")
+
 
 
 
