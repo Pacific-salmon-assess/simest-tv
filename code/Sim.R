@@ -22,9 +22,9 @@ source("code/utils.R")
 
 ## Load relevant input data
 # Simulation run parameters describing different scenarios
-simPar <- read.csv("data/harck/harcnkSimPars.csv")
+simPar <- read.csv("data/generic/SimPars.csv")
 # CU-specific parameters
-cuPar <- read.csv("data/harck/harcnkCUPars.csv")
+cuPar <- read.csv("data/generic/CUPars.csv")
 
 ## Store relevant object names to help run simulation 
 scenNames <- unique(simPar$scenario)
@@ -36,7 +36,7 @@ dirNames <- sapply(scenNames, function(x) paste(x, unique(simPar$species),sep = 
 #Run and save simulated data
 
 for(a in seq_len(nrow(simPar))){
-  
+   #a=5
    genericRecoverySim(simPar=simPar[a,], 
                       cuPar=cuPar, 
                       catchDat=NULL, 
@@ -204,7 +204,8 @@ allscnsim$scenario_f = factor(allscnsim$scenario,
            "regimeCap",
            "shiftCap",
            "regimeProdCap",
-           "decLinearProd shiftCap"))
+           "decLinearProd shiftCap", 
+           "dipProd"))
 
 allscnsim$tipo <- "prod"
 allscnsim$tipo[allscnsim$scenario == "decLinearCap"|
@@ -239,7 +240,7 @@ p <- ggplot(allscnsim) +
      facet_grid(ind~scenario_f, scales="free_y",
                labeller = labeller(scenario_f = label_wrap_gen(10))) +
      scale_colour_viridis_d(end=.85) 
-
+p
 
 ggsave(
       filename = "outs/SamSimOutputs/plotcheck/erplots.pdf", 
@@ -331,5 +332,10 @@ ggsave(
       plot = SRexample, 
       width = 12, height = 6
     )
+
+
+
+
+
 
 
