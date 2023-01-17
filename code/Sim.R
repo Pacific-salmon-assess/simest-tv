@@ -200,12 +200,13 @@ allscnsim$scenario_f = factor(allscnsim$scenario,
            "decLinearProd", 
            "regimeProd",
            "sineProd",
+           "dipProd",
            "decLinearCap",          
            "regimeCap",
            "shiftCap",
            "regimeProdCap",
-           "decLinearProd shiftCap", 
-           "dipProd"))
+           "decLinearProd shiftCap"
+           ))
 
 allscnsim$tipo <- "prod"
 allscnsim$tipo[allscnsim$scenario == "decLinearCap"|
@@ -297,13 +298,13 @@ SRdf<-do.call(rbind,actualSR)
 datdf<-do.call(rbind,alldat)
 
 SRdf$scenario_f <-factor(SRdf$scenario, levels=c("stationary","autocorr","sigmaShift",
-              "decLinearProd", "regimeProd", "sineProd",
+              "decLinearProd", "regimeProd", "sineProd","dipProd",
                "regimeCap", "decLinearCap", "shiftCap",
                "regimeProdCap",  "decLinearProdshiftCap"))
 
 
 datdf$scenario_f <-factor(datdf$scenario, levels=c("stationary","autocorr","sigmaShift",
-              "decLinearProd", "regimeProd", "sineProd",
+              "decLinearProd", "regimeProd", "sineProd","dipProd",
                "regimeCap", "decLinearCap", "shiftCap",
                "regimeProdCap",  "decLinearProdshiftCap"))
 
@@ -325,7 +326,7 @@ SRexample<-  ggplot(SRdf) +
     labs(col = "year") +
     geom_point(data=datdf,aes(x=spawners,y=recruits,col=as.factor(year)),alpha=.5) +
     facet_wrap(~scenario_f)
-    
+SRexample    
  
 ggsave(
       filename = "outs/SamSimOutputs/plotcheck/srexample.png", 
