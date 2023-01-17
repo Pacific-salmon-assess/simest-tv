@@ -343,3 +343,158 @@ for(a in 1:nrow(simPar)){
   mw_loo_sw_l30[[a]] <- loomw2dfl30
 }
 save(loo_elpd, mw_loo_pbma,mw_loo_pbma_l30,mw_loo_sw,mw_loo_sw_l30,file="outs/simest/simestloo_stan_prodcapscenarios.Rdata")
+
+
+#Process LOO MS data####
+load("outs/simest/simestloo_stan_prodcapscenarios.Rdata") 
+
+#todo
+#processing of lfo output
+loochoicel<-list()
+for(a in seq_len(nrow(simPar))){
+  
+  loomwdf<- mw_loo_pbma[[a]] 
+  
+  #fix a bug in the naming
+ loo<-apply(loomwdf,1,which.max)
+  
+  
+ loochoice<-data.frame(
+    chsnmod=dimnames(loomwdf)[[2]][apply(loomwdf,1,which.max)])
+  
+  
+ loochoice$chsnmod<-factor(loochoice$chsnmod, levels=c("simple", "autocorr", 
+                                                        "rwa",
+                                                        "rwb",
+                                                        "rwab",
+                                                        "hmma",
+                                                        "hmmb",
+                                                        "hmm"))
+  
+  loochoice$scenario<- simPar$nameOM[a]
+  
+  loochoice$method <-"LOO-CV"
+  loochoicel[[a]]<-loochoice
+}
+
+dflfo <- do.call("rbind", lfochoicel)
+dfaic <- do.call("rbind", aicchoicel)
+dfbic <- do.call("rbind", bicchoicel)
+
+df<-rbind(dflfo,dfaic,dfbic)
+summary(df)
+
+df$simulated <- dplyr::recode(df$scenario, 
+                              "stationary"="simple",
+                              "decLinearProd"="rwa",
+                              "regimeProd"="hmma",
+                              "sineProd"="rwa",
+                              "regimeCap"="hmmb",
+                              "decLinearCap"="rwb",
+                              "sigmaShift"="simple",
+                              "regimeProdCap"="hmm",
+                              "shiftCap"="hmmb",
+                              "decLinearProdshiftCap"="rwab")   
+
+df$simulated_f<-factor(df$simulated, levels=c("simple",
+                                              "autocorr",
+                                              "rwa",
+                                              "rwb",
+                                              "rwab", 
+                                              "hmma",
+                                              "hmmb",
+                                              "hmm"))
+
+df$scenario_f <- factor(df$scenario,levels=c("stationary",
+                                             "autocorr",
+                                             "decLinearProd",        
+                                             "regimeProd",
+                                             "sineProd",
+                                             "regimeCap",            
+                                             "decLinearCap",
+                                             "sigmaShift",            
+                                             "regimeProdCap",
+                                             "shiftCap",
+                                             "decLinearProdshiftCap")
+)
+
+
+
+mytheme = list(
+  theme_bw(16)+
+    theme(panel.background = element_blank(),strip.background = element_rect(colour=NA, fill=NA),panel.border = element_rect(fill = NA, color = "black"),
+          legend.title = element_blank(),legend.position="bottom", strip.text = element_text(face="bold", size=12),
+          axis.text=element_text(face="bold"),axis.title = element_text(face="bold"),plot.title = element_text(face = "bold", hjust = 0.5,size=15))
+)
+
+
+modsel<-ggplot(df) +  
+  geom_bar(aes(chsnmod,fill=method), 
+           position = position_dodge(width = 0.9, preserve = "single"))+
+  geom_rect(aes(xmin=as.numeric(simulated_f)-.5,
+                xmax=as.numeric(simulated_f)+.5,
+                ymin=-Inf,ymax=Inf),
+            color="gray90",alpha=0.002)+
+  facet_wrap(~scenario_f)+ 
+  # theme_bw(14) +
+  mytheme+
+  theme(axis.text.x = element_text(angle = 90))+
+  xlab("chosen estimation model")+
+  scale_fill_viridis_d(begin=.3, end=.9) 
+modsel
+
+
+ggsave(
+  filename = "outs/SamSimOutputs/plotcheck/model_selectionLFOallopt.pdf", 
+  plot = modsel, 
+  width = 14, height = 8
+)
+
+
+unique(dflfocm$chsnmod)
+
+dt<-df |> count(chsnmod,simulated,method)
+dt$simulated_f <- factor(dt$simulated, levels=
+                           c("simple","autocorr", "rwa","rwb","rwab","hmma", "hmmb", "hmm"))
+dt$estimated_f <- factor(dt$chsnmod, levels=
+                           c("simple","autocorr", "rwa","rwb","rwab","hmma", "hmmb", "hmm"))
+dt$nst<-0
+summary(dt)
+
+for(j in seq_along(unique(dt$simulated))){
+  for(i in unique(dt$method)){
+    dp<-dt[dt$simulated==unique(dt$simulated)[j]&dt$method==i,]
+    dp$nst<-dp$n/sum(dp$n)*100
+    dt$nst[dt$simulated==unique(dt$simulated)[j]&dt$method==i]<-dp$nst
+  }
+  
+}
+
+
+dt$diag<-dt$simulated_f==dt$estimated_f
+
+confmat<-ggplot(data =  dt, mapping = aes(x = simulated_f, y = estimated_f)) +
+  geom_tile(aes(fill = nst)) +
+  geom_segment(data=transform(subset(dt, !!diag), 
+                              simulated=as.numeric(simulated_f), 
+                              estimated=as.numeric(estimated_f)), 
+               aes(x=simulated-.49, xend=simulated+.49, y=estimated-.49, yend=estimated+.49), 
+               color="white", size=2)+
+  
+  #scale_color_manual(guide = FALSE, values = c(`TRUE` = "black", `FALSE`=NA))+
+  geom_text(aes(label =  nst), vjust = 1) +
+  scale_fill_gradient(low="white", high="#009194") +
+  #scale_colour_manual(values = c("white", "black"))+
+  theme_bw() + theme(legend.position = "none")+
+  facet_wrap(~method)+
+  mytheme+
+  theme(axis.text.x = element_text(angle = 90),legend.position="none")+
+  ylab("estimated")+xlab("simulated")
+
+
+ggsave(
+  filename = "outs/SamSimOutputs/plotcheck/confmatMLE.png", 
+  plot = confmat, 
+  width = 12, height = 5
+)
+
