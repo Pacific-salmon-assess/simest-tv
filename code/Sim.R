@@ -28,7 +28,6 @@ cuPar <- read.csv("data/generic/CUPars.csv")
 
 ## Store relevant object names to help run simulation 
 scenNames <- unique(simPar$scenario)
-dirNames <- sapply(scenNames, function(x) paste(x, unique(simPar$species),sep = "_"))
 
 ## First check to ensure that a single scenario can be run (only a small number
 # of trials necessary)
@@ -36,7 +35,8 @@ dirNames <- sapply(scenNames, function(x) paste(x, unique(simPar$species),sep = 
 #Run and save simulated data
 
 for(a in seq_len(nrow(simPar))){
-   #a=5
+
+   print(a)
    genericRecoverySim(simPar=simPar[a,], 
                       cuPar=cuPar, 
                       catchDat=NULL, 
@@ -46,7 +46,7 @@ for(a in seq_len(nrow(simPar))){
                       larkPars=NULL, 
                       cuCustomCorrMat= NULL,
                       outDir="outs", 
-                      nTrials=100, 
+                      nTrials=10000, 
                       makeSubDirs=TRUE, 
                       random=FALSE, 
                       uniqueProd=TRUE,
