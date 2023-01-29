@@ -35,7 +35,7 @@ scenNames <- unique(simPar$scenario)
 #Run and save simulated data
 
 for(a in seq_len(nrow(simPar))){
-
+for(a in 5:nrow(simPar)){
    print(a)
    genericRecoverySim(simPar=simPar[a,], 
                       cuPar=cuPar, 
