@@ -33,8 +33,17 @@ scenNames <- unique(simPar$scenario)
 # of trials necessary)
 
 #Run and save simulated data
+nit<-list()
+for(a in seq_len(nrow(simPar))){
+simData <- readRDS(paste0("outs/SamSimOutputs/simData/", simPar$nameOM[a],"/",simPar$scenario[a],"/",
+                         paste(simPar$nameOM[a],"_", simPar$nameMP[a], "_", "CUsrDat.RData",sep="")))$srDatout
+ 
+nit[[a]]<-length(unique(simData$iteration))
+
+}
 
 for(a in seq_len(nrow(simPar))){
+for(a in (nrow(simPar)):8){
 
    print(a)
    genericRecoverySim(simPar=simPar[a,], 
