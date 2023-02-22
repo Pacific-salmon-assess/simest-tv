@@ -40,8 +40,8 @@ for(i in 1:length(out)){
   aic_set[[i]]=aic_set[[i]][c(12,8,9,10,11)]
   aic2=subset(out[[i]],parameter=='AIC_n')
   aic2=subset(aic2,model %in% c('simple','autocorr','rwa','rwb','rwab'))
-  aic_set22[[i]]=tidyr::spread(aic2[,-9],key=model,value=est)
-  aic_set22[[i]]=aic_set22[[i]][c(12,8,9,10,11)]
+  aic_set2[[i]]=tidyr::spread(aic2[,-9],key=model,value=est)
+  aic_set2[[i]]=aic_set2[[i]][c(12,8,9,10,11)]
   
   bic=subset(out[[i]],parameter=='BIC')
   bic_set[[i]]=tidyr::spread(bic[,-9],key=model,value=est)
@@ -447,7 +447,10 @@ p2=ggplot(data =  conf_matrix2, mapping = aes(x = OM, y = EM)) +
   mytheme + theme(legend.position="right")+xlab("Simulation Scenario")+ylab("Estimation Model")
 p2
 
+#parameter bias
+alpha_pbias=subset(out[[1]],parameter=='alpha')
 
+alpha_pbias[match]
 
 
 #AIC d90####
@@ -1581,5 +1584,183 @@ ggsave(filename = "outs/conf_mat_mc_tmb_aic.pdf",
 ggsave(filename = "outs/conf_mat_mc_tmb_bic.pdf",
        plot=b,
        width=12,height=5)
+
+
+#BIC npar2####
+#first set of scenarios
+sc1=apply(bic_npar2_set[[1]],1,which.min)
+cn1=summary(factor(sc1,levels=seq(1:5)))/2000
+w1=matrix(ncol=5,nrow=nrow(bic_npar2_set[[1]]))
+for(i in 1:nrow(bic_npar2_set[[1]])){
+  w1[i,]=unlist(samEst::model_weights(bic_npar2_set[[1]][i,],form='AIC'))
+}
+w_avg1=numeric(5)
+for(i in 1:5){
+  ws=w1[sc1==i,i]
+  w_avg1[i]=mean(ws)
+}
+
+sc2=apply(bic_npar2_set[[2]],1,which.min)
+cn2=summary(factor(sc2,levels=seq(1:5)))/2000
+w2=matrix(ncol=5,nrow=nrow(bic_npar2_set[[2]]))
+for(i in 1:nrow(bic_npar2_set[[2]])){
+  w2[i,]=unlist(samEst::model_weights(bic_npar2_set[[2]][i,],form='AIC'))
+}
+w_avg2=numeric(5)
+for(i in 1:5){
+  ws=w2[sc2==i,i]
+  w_avg2[i]=mean(ws)
+}
+
+sc3=apply(bic_npar2_set[[3]],1,which.min)
+cn3=summary(factor(sc3,levels=seq(1:5)))/2000
+w3=matrix(ncol=5,nrow=nrow(bic_npar2_set[[3]]))
+for(i in 1:nrow(bic_npar2_set[[3]])){
+  w3[i,]=unlist(samEst::model_weights(bic_npar2_set[[3]][i,],form='AIC'))
+}
+w_avg3=numeric(5)
+for(i in 1:5){
+  ws=w3[sc3==i,i]
+  w_avg3[i]=mean(ws)
+}
+sc4=apply(bic_npar2_set[[4]],1,which.min)
+cn4=summary(factor(sc4,levels=seq(1:5)))/2000
+w4=matrix(ncol=5,nrow=nrow(bic_npar2_set[[4]]))
+for(i in 1:nrow(bic_npar2_set[[4]])){
+  w4[i,]=unlist(samEst::model_weights(bic_npar2_set[[4]][i,],form='AIC'))
+}
+w_avg4=numeric(5)
+for(i in 1:5){
+  ws=w4[sc4==i,i]
+  w_avg4[i]=mean(ws)
+}
+sc5=apply(bic_npar2_set[[5]],1,which.min)
+cn5=summary(factor(sc5,levels=seq(1:5)))/2000
+w5=matrix(ncol=5,nrow=nrow(bic_npar2_set[[5]]))
+for(i in 1:nrow(bic_npar2_set[[5]])){
+  w5[i,]=unlist(samEst::model_weights(bic_npar2_set[[5]][i,],form='AIC'))
+}
+w_avg5=numeric(5)
+for(i in 1:5){
+  ws=w5[sc5==i,i]
+  w_avg5[i]=mean(ws)
+}
+#second set of scenarios
+sc6=apply(bic_npar2_set[[6]],1,which.min)
+cn6=summary(factor(sc6,levels=seq(1:5)))/2000
+w6=matrix(ncol=5,nrow=nrow(bic_npar2_set[[6]]))
+for(i in 1:nrow(bic_npar2_set[[6]])){
+  w6[i,]=unlist(samEst::model_weights(bic_npar2_set[[6]][i,],form='AIC'))
+}
+w_avg6=numeric(5)
+for(i in 1:5){
+  ws=w6[sc6==i,i]
+  w_avg6[i]=mean(ws)
+}
+sc7=apply(bic_npar2_set[[7]],1,which.min)
+cn7=summary(factor(sc7,levels=seq(1:5)))/2000
+w7=matrix(ncol=5,nrow=nrow(bic_npar2_set[[7]]))
+for(i in 1:nrow(bic_npar2_set[[7]])){
+  w7[i,]=unlist(samEst::model_weights(bic_npar2_set[[7]][i,],form='AIC'))
+}
+w_avg7=numeric(5)
+for(i in 1:5){
+  ws=w7[sc7==i,i]
+  w_avg7[i]=mean(ws)
+}
+sc8=apply(bic_npar2_set[[8]],1,which.min)
+cn8=summary(factor(sc8,levels=seq(1:5)))/2000
+w8=matrix(ncol=5,nrow=nrow(bic_npar2_set[[8]]))
+for(i in 1:nrow(bic_npar2_set[[8]])){
+  w8[i,]=unlist(samEst::model_weights(bic_npar2_set[[8]][i,],form='AIC'))
+}
+w_avg8=numeric(5)
+for(i in 1:5){
+  ws=w8[sc8==i,i]
+  w_avg8[i]=mean(ws)
+}
+
+##Confusion matrices
+conf_matrix<-expand.grid(EM=c("stationary",
+                              "autocorr",
+                              "dynamic.a","dynamic.b","dynamic.ab"
+),OM=c("stationary",
+       "autocorr",
+       "dec.prod","dec.cap","dec.prodcap"))
+
+conf_matrix$w_bic=NA
+conf_matrix$w_bic[1:5]=cn1
+conf_matrix$w_bic[6:10]=cn2
+conf_matrix$w_bic[11:15]=cn3
+conf_matrix$w_bic[16:20]=cn4
+conf_matrix$w_bic[21:25]=cn5
+conf_matrix$top_w[1:5]=w_avg1
+conf_matrix$top_w[6:10]=w_avg2
+conf_matrix$top_w[11:15]=w_avg3
+conf_matrix$top_w[16:20]=w_avg4
+conf_matrix$top_w[21:25]=w_avg5
+
+mytheme = list(
+  theme_classic(14)+
+    theme(panel.background = element_blank(),strip.background = element_rect(colour=NA, fill=NA),panel.border = element_rect(fill = NA, color = "black"),
+          legend.title = element_blank(),legend.position="bottom", strip.text = element_text(face="bold", size=13),
+          axis.text=element_text(face="bold"),axis.title = element_text(face="bold",size=16),plot.title = element_text(face = "bold", hjust = 0.5,size=16))
+)
+
+library(ggplot2)
+
+
+
+p=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
+  geom_tile(aes(fill = w_bic), colour = "white",alpha=0.7) +
+  geom_text(aes(label = round(w_bic,2)), vjust = 1,size=6) +
+  ggtitle("bic")+
+  scale_fill_gradient(low = "white", high = "navy") +
+  mytheme + theme(legend.position="none")+xlab("Simulation Scenario")+ylab("Estimation Model")
+p
+
+p2=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
+  geom_tile(aes(fill = top_w), colour = "white",alpha=0.7) +
+  geom_text(aes(label = round(w_bic,2)), vjust = 1,size=6) +
+  ggtitle("bic")+
+  scale_fill_gradient(low = "white", high = "skyblue") +
+  mytheme + theme(legend.position="right")+xlab("Simulation Scenario")+ylab("Estimation Model")
+p2
+
+
+conf_matrix2<-expand.grid(EM=c("stationary",
+                               "autocorr",
+                               "dynamic.a","dynamic.b","dynamic.ab"
+),OM=c("stationary",
+       "autocorr",
+       "regime.prod","regime.cap","regime.prodcap"))
+
+conf_matrix2$w_bic=NA
+conf_matrix2$w_bic[1:5]=cn1
+conf_matrix2$w_bic[6:10]=cn2
+conf_matrix2$w_bic[11:15]=cn6
+conf_matrix2$w_bic[16:20]=cn7
+conf_matrix2$w_bic[21:25]=cn8
+conf_matrix2$top_w[1:5]=w_avg1
+conf_matrix2$top_w[6:10]=w_avg2
+conf_matrix2$top_w[11:15]=w_avg6
+conf_matrix2$top_w[16:20]=w_avg7
+conf_matrix2$top_w[21:25]=w_avg8
+
+p=ggplot(data =  conf_matrix2, mapping = aes(x = OM, y = EM)) +
+  geom_tile(aes(fill = w_bic), colour = "white",alpha=0.7) +
+  geom_text(aes(label = round(w_bic,2)), vjust = 1,size=6) +
+  ggtitle("bic")+
+  scale_fill_gradient(low = "white", high = "navy") +
+  mytheme + theme(legend.position="none")+xlab("Simulation Scenario")+ylab("Estimation Model")
+p
+
+p2=ggplot(data =  conf_matrix2, mapping = aes(x = OM, y = EM)) +
+  geom_tile(aes(fill = top_w), colour = "white",alpha=0.7) +
+  geom_text(aes(label = round(w_bic,2)), vjust = 1,size=6) +
+  ggtitle("bic")+
+  scale_fill_gradient(low = "white", high = "skyblue") +
+  mytheme + theme(legend.position="right")+xlab("Simulation Scenario")+ylab("Estimation Model")
+p2
 
 
