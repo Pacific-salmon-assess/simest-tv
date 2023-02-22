@@ -69,7 +69,7 @@ stackcu<-list()
 
 for(a in seq_len(nrow(simPar))){
 
-  simData[[a]] <- readRDS(paste0("outs/SamSimOutputs/simData/", 
+  simData[[a]] <- readRDS(paste0("outs/SamSimOutputs/", 
                           simPar$nameOM[a],"/",
                           simPar$scenario[a],"/",
                           paste(simPar$nameOM[a],"_", 
@@ -181,47 +181,51 @@ ggsave(
 
 
 
+#Scenario plots:
 allscnsim <- do.call(rbind,stackcu)
+#one example per scearnio
+simpr=subset(allscnsim, iteration==1)
+simpr$year=simpr$year-54 #just rescaling to years observed in the time-series, easier to interpret
 
-summary(allscnsim)
+summary(simpr)
 
-unique(allscnsim$scenario)
+unique(simpr$scenario)
 
 
-allscnsim$scenario[allscnsim$scenario=="stationary"] <-"stationary sigmaShift autocorr"
-allscnsim$scenario[allscnsim$scenario== "decLinearProdshiftCap"] <- "decLinearProd shiftCap"
+simpr$scenario[simpr$scenario== "decLinearProdshiftCap"] <- "decLinProd shiftCap"
+simpr$scenario[simpr$scenario== "decLinearProd"] <- "decLinProd"
+simpr$scenario[simpr$scenario== "decLinearCap"] <- "decLinCap"
 
-allscnsim <- allscnsim[allscnsim$scenario!="sigmaShift",] 
-allscnsim <- allscnsim[allscnsim$scenario!="autocorr",] 
-allscnsim <- allscnsim[allscnsim$ind!="sigma",] 
+simpr <- simpr[simpr$scenario!="sigmaShift",]
+simpr <- simpr[simpr$scenario!="sineProd",] 
+simpr <- simpr[simpr$scenario!="shiftProd",] 
+simpr <- simpr[simpr$scenario!="shiftCap",] 
+#simpr <- simpr[simpr$scenario!="autocorr",] 
+simpr <- simpr[simpr$ind!="sigma",] 
 
-allscnsim$scenario_f = factor(allscnsim$scenario, 
-  levels=c("stationary sigmaShift autocorr",  
-           "decLinearProd", 
+simpr$scenario_f = factor(simpr$scenario, 
+  levels=c("stationary",
+           "autocorr",
+           "decLinProd", 
+           "decLinCap",
+           "decLinProd shiftCap",
            "regimeProd",
-           "sineProd",
-           "dipProd",
-           "decLinearCap",          
            "regimeCap",
-           "shiftCap",
-           "regimeProdCap",
-           "decLinearProd shiftCap"
+           "regimeProdCap"
            ))
 
-allscnsim$tipo <- "prod"
-allscnsim$tipo[allscnsim$scenario == "decLinearCap"|
-allscnsim$scenario == "regimeCap"|
-allscnsim$scenario == "shiftCap"] <- "cap"
-
-allscnsim$tipo[allscnsim$scenario == "regimeProdCap"|
-allscnsim$scenario == "decLinearProd shiftCap"] <- "both"
+simpr$tipo <- "dynamic"
+simpr$tipo[simpr$scenario == "regimeProd"|
+simpr$scenario == "regimeCap"|
+simpr$scenario == "regimeProdCap"] <- "regime"
 
 
-allscnsim$tipo[allscnsim$scenario == "stationary sigmaShift autocorr"] <- "none"
+simpr$tipo[simpr$scenario == "stationary" |
+             simpr$scenario == "autocorr"] <- "astat"
 
 
  
-allscnsim
+simpr
 
 mytheme = list(
     theme_classic(14)+
@@ -232,16 +236,17 @@ mytheme = list(
 
 
 
-
-
-p <- ggplot(allscnsim) +
+p <- ggplot(simpr) +
      geom_line(aes(x=year,y=values,col=tipo)) +
      geom_point(aes(x=year,y=values,col=tipo)) +
      mytheme + theme(legend.position="none") +
      facet_grid(ind~scenario_f, scales="free_y",
                labeller = labeller(scenario_f = label_wrap_gen(10))) +
-     scale_colour_viridis_d(end=.85) 
+     scale_colour_brewer(palette='Blues') 
 p
+ggsave(filename = "outs/par_sims.pdf",
+        plot=p,
+        width=12,height=6)
 
 ggsave(
       filename = "outs/SamSimOutputs/plotcheck/erplots.pdf", 
@@ -298,13 +303,13 @@ SRdf<-do.call(rbind,actualSR)
 datdf<-do.call(rbind,alldat)
 
 SRdf$scenario_f <-factor(SRdf$scenario, levels=c("stationary","autocorr","sigmaShift",
-              "decLinearProd", "regimeProd", "sineProd","dipProd",
+              "decLinearProd", "regimeProd", "sineProd","shiftProd",
                "regimeCap", "decLinearCap", "shiftCap",
                "regimeProdCap",  "decLinearProdshiftCap"))
 
 
 datdf$scenario_f <-factor(datdf$scenario, levels=c("stationary","autocorr","sigmaShift",
-              "decLinearProd", "regimeProd", "sineProd","dipProd",
+              "decLinearProd", "regimeProd", "sineProd","shiftProd",
                "regimeCap", "decLinearCap", "shiftCap",
                "regimeProdCap",  "decLinearProdshiftCap"))
 
