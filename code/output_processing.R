@@ -1,4 +1,4 @@
-library(here)
+library(here);library(ggplot2)
 #Output processing:
 sc14=readRDS(here('outs','cluster','sc1_4.RDS'))
 sc58=readRDS(here('outs','cluster','sc5_8.RDS'))
@@ -90,6 +90,7 @@ for(i in 1:length(out)){
   bic_npar2_d80_set[[i]]=tidyr::spread(bic_npar2_d80[,-9],key=model,value=est)
   bic_npar2_d80_set[[i]]=bic_npar2_d80_set[[i]][c(12,8,9,10,11)]
 }
+
 
 
 #AIC 1####
@@ -370,7 +371,7 @@ conf_matrix<-expand.grid(EM=c("stationary",
                               "dynamic.a","dynamic.b","dynamic.ab"
 ),OM=c("stationary",
        "autocorr",
-       "dec.prod","dec.cap","dec.prodcap"))
+       "dec.prod","dec.cap","dec.prodcap","regime.prod","regime.cap","regime.prodcap"))
 
 conf_matrix$w_AIC=NA
 conf_matrix$w_AIC[1:5]=cn1
@@ -378,11 +379,20 @@ conf_matrix$w_AIC[6:10]=cn2
 conf_matrix$w_AIC[11:15]=cn3
 conf_matrix$w_AIC[16:20]=cn4
 conf_matrix$w_AIC[21:25]=cn5
+conf_matrix$w_AIC[26:30]=cn6
+conf_matrix$w_AIC[31:35]=cn7
+conf_matrix$w_AIC[36:40]=cn8
+
 conf_matrix$top_w[1:5]=w_avg1
 conf_matrix$top_w[6:10]=w_avg2
 conf_matrix$top_w[11:15]=w_avg3
 conf_matrix$top_w[16:20]=w_avg4
 conf_matrix$top_w[21:25]=w_avg5
+conf_matrix$top_w[26:30]=w_avg6
+conf_matrix$top_w[31:35]=w_avg7
+conf_matrix$top_w[36:40]=w_avg8
+
+library(ggplot2)
 
 mytheme = list(
   theme_classic(14)+
@@ -390,8 +400,6 @@ mytheme = list(
           legend.title = element_blank(),legend.position="bottom", strip.text = element_text(face="bold", size=13),
           axis.text=element_text(face="bold"),axis.title = element_text(face="bold",size=16),plot.title = element_text(face = "bold", hjust = 0.5,size=16))
 )
-
-library(ggplot2)
 
 
 
@@ -402,14 +410,21 @@ p=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   scale_fill_gradient(low = "white", high = "navy") +
   mytheme + theme(legend.position="none")+xlab("Simulation Scenario")+ylab("Estimation Model")
 p
+pdf(file='AIC_conf_matrix.pdf',height=8,width=12)
+p
+dev.off()
 
 p2=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   geom_tile(aes(fill = top_w), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(w_AIC,2)), vjust = 1,size=6) +
   ggtitle("AIC")+
   scale_fill_gradient(low = "white", high = "skyblue") +
-  mytheme + theme(legend.position="right")+xlab("Simulation Scenario")+ylab("Estimation Model")
+  mytheme + theme(legend.position="right")+xlab("Simulation Scenario")+ylab("")
 p2
+
+pdf(file='AIC_conf_matrix_topw.pdf',height=8,width=12)
+p2
+dev.off()
 
 
 conf_matrix2<-expand.grid(EM=c("stationary",
@@ -437,21 +452,110 @@ p=ggplot(data =  conf_matrix2, mapping = aes(x = OM, y = EM)) +
   ggtitle("AIC")+
   scale_fill_gradient(low = "white", high = "navy") +
   mytheme + theme(legend.position="none")+xlab("Simulation Scenario")+ylab("Estimation Model")
+
+
+pdf(file='AIC_conf_matrix_scn5_8.pdf',height=8,width=8)
 p
+dev.off()
+
 
 p2=ggplot(data =  conf_matrix2, mapping = aes(x = OM, y = EM)) +
   geom_tile(aes(fill = top_w), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(w_AIC,2)), vjust = 1,size=6) +
   ggtitle("AIC")+
   scale_fill_gradient(low = "white", high = "skyblue") +
-  mytheme + theme(legend.position="right")+xlab("Simulation Scenario")+ylab("Estimation Model")
+  mytheme + theme(axis.text.y=element_blank(),legend.position="right")+xlab("Simulation Scenario")+ylab("")
+pdf(file='AIC_conf_matrix_scn5_8_topw.pdf',height=8,width=8)
 p2
+dev.off()
 
-#parameter bias
+
+#By model class - AIC####
+sc1m=ifelse(sc1<3,1,sc1)
+sc1m=ifelse(sc1>2,2,sc1m)
+cn1m=summary(factor(sc1m),levels=seq(1:2))/2000
+sc2m=ifelse(sc1<3,1,sc2)
+sc2m=ifelse(sc1>2,2,sc2m)
+cn2m=summary(factor(sc2m),levels=seq(1:2))/2000
+sc3m=ifelse(sc3<3,1,sc3)
+sc3m=ifelse(sc3>2,2,sc3m)
+cn3m=summary(factor(sc3m),levels=seq(1:2))/2000
+sc4m=ifelse(sc4<3,1,sc4)
+sc4m=ifelse(sc4>2,2,sc4m)
+cn4m=summary(factor(sc4m),levels=seq(1:2))/2000
+sc5m=ifelse(sc5<3,1,sc5)
+sc5m=ifelse(sc5>2,2,sc5m)
+cn5m=summary(factor(sc5m),levels=seq(1:2))/2000
+sc6m=ifelse(sc6<3,1,sc6)
+sc6m=ifelse(sc6>2,2,sc6m)
+cn6m=summary(factor(sc6m),levels=seq(1:2))/2000
+sc7m=ifelse(sc7<3,1,sc7)
+sc7m=ifelse(sc7>2,2,sc7m)
+cn7m=summary(factor(sc7m),levels=seq(1:2))/2000
+sc8m=ifelse(sc8<3,1,sc8)
+sc8m=ifelse(sc8>2,2,sc8m)
+cn8m=summary(factor(sc8m),levels=seq(1:2))/2000
+
+
+##Confusion matrices
+conf_matrix <-expand.grid(EM=c('static','dynamic'),OM=c("stationary",
+                                                        "autocorr",
+                                                        "dec.prod","dec.cap","dec.prodcap","regime.prod","regime.cap","regime.prodcap"))
+
+conf_matrix$w_AIC=NA
+conf_matrix$w_AIC[1:2]=cn1m
+conf_matrix$w_AIC[3:4]=cn2m
+conf_matrix$w_AIC[5:6]=cn3m
+conf_matrix$w_AIC[7:8]=cn4m
+conf_matrix$w_AIC[9:10]=cn5m
+conf_matrix$w_AIC[11:12]=cn6m
+conf_matrix$w_AIC[13:14]=cn7m
+conf_matrix$w_AIC[15:16]=cn8m
+
+library(ggplot2)
+p=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
+  geom_tile(aes(fill = w_AIC), colour = "white",alpha=0.7) +
+  geom_text(aes(label = round(w_AIC,2)), vjust = 1) +
+  ggtitle("AIC")+
+  scale_fill_gradient(low = "white", high = "navy") +
+  mytheme + theme(legend.position="none")+xlab("Operating Model")+ylab("Estimation Model")
+pdf(file='model_class_AICconf.pdf',width=10,height=6)
+p
+dev.off()
+
+
+#parameter bias####
 alpha_pbias=subset(out[[1]],parameter=='alpha')
+alpha_est_l=list()
+alpha_est_l[[1]]=subset(alpha_pbias,iteration %in% which(sc1==1))
+alpha_est_l[[2]]=subset(alpha_pbias,iteration %in% which(sc1==2))
+alpha_est_l[[3]]=subset(alpha_pbias,iteration %in% which(sc1==3))
 
-alpha_pbias[match]
+df1=subset(alpha_pbias,iteration==1&model=='simple')
+pdf('pbias_sc1.pdf',width=8,height=6)
+plot(exp(df1$sim)~c(df1$by-54),type='l',lwd=5,col='darkred',ylab='Maximum Productivity (Recruits/Spawner)',xlab='Year',ylim=c(0,15),main='Stationary Scenario')
+for(i in 1:length(unique(alpha_est_l[[3]]$iteration))){
+  dfx=subset(alpha_est_l[[3]],iteration==which(sc1==3)[i])
+  dfx=subset(dfx,model=='rwa')
+  lines(exp(dfx$est),col=adjustcolor('black',alpha.f=0.3))
+}
+dev.off()
 
+alpha_pbias=subset(out[[2]],parameter=='alpha')
+alpha_est_l=list()
+alpha_est_l[[1]]=subset(alpha_pbias,iteration %in% which(sc1==1))
+alpha_est_l[[2]]=subset(alpha_pbias,iteration %in% which(sc1==2))
+alpha_est_l[[3]]=subset(alpha_pbias,iteration %in% which(sc1==3))
+
+df1=subset(alpha_pbias,iteration==1&model=='simple')
+pdf('pbias_sc2.pdf',width=8,height=6)
+plot(exp(df1$sim)~c(df1$by-54),type='l',lwd=5,col='darkred',ylab='Maximum Productivity (Recruits/Spawner)',xlab='Year',ylim=c(0,15),main='Autocorrelated Scenario')
+for(i in 1:length(unique(alpha_est_l[[3]]$iteration))){
+  dfx=subset(alpha_est_l[[3]],iteration==which(sc1==3)[i])
+  dfx=subset(dfx,model=='rwa')
+  lines(exp(dfx$est),col=adjustcolor('black',alpha.f=0.3))
+}
+dev.off()
 
 #AIC d90####
 #first set of scenarios
@@ -948,7 +1052,11 @@ p=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   ggtitle("AIC")+
   scale_fill_gradient(low = "white", high = "navy") +
   mytheme + theme(legend.position="none")+xlab("Simulation Scenario")+ylab("Estimation Model")
+
+pdf(file='AIC_conf_matrix_k2.pdf',height=8,width=8)
 p
+dev.off()
+
 
 p2=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   geom_tile(aes(fill = top_w), colour = "white",alpha=0.7) +
@@ -1415,7 +1523,10 @@ p=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   ggtitle("BIC")+
   scale_fill_gradient(low = "white", high = "navy") +
   mytheme + theme(legend.position="none")+xlab("Simulation Scenario")+ylab("Estimation Model")
+
+pdf(file='BIC_conf_matrix.pdf',height=8,width=8)
 p
+dev.off()
 
 p2=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   geom_tile(aes(fill = top_w), colour = "white",alpha=0.7) +
@@ -1446,7 +1557,7 @@ conf_matrix2$top_w[21:25]=w_avg8
 
 p=ggplot(data =  conf_matrix2, mapping = aes(x = OM, y = EM)) +
   geom_tile(aes(fill = w_AIC), colour = "white",alpha=0.7) +
-  geom_text(aes(label = round(w_AIC,2)), vjust = 1,size=6) +
+  geom_text(aes(label = round(w_BIC,2)), vjust = 1,size=6) +
   ggtitle("AIC")+
   scale_fill_gradient(low = "white", high = "navy") +
   mytheme + theme(legend.position="none")+xlab("Simulation Scenario")+ylab("Estimation Model")
@@ -1461,39 +1572,6 @@ p2=ggplot(data =  conf_matrix2, mapping = aes(x = OM, y = EM)) +
 p2
 
 
-#By model class
-sc1m=ifelse(sc1<3,1,sc1)
-sc1m=ifelse(sc1>2&sc1<6,2,sc1m)
-sc1m=ifelse(sc1>5,3,sc1m)
-cn1m=summary(factor(sc1m),levels=seq(1:3))/1000
-sc2m=ifelse(sc2<3,1,sc2)
-sc2m=ifelse(sc2>2&sc2<6,2,sc2m)
-sc2m=ifelse(sc2>5,3,sc2m)
-cn2m=summary(factor(sc2m),levels=seq(1:3))/1000
-sc3m=ifelse(sc3<3,1,sc3)
-sc3m=ifelse(sc3>2&sc3<6,2,sc3m)
-sc3m=ifelse(sc3>5,3,sc3m)
-cn3m=summary(factor(sc3m),levels=seq(1:3))/1000
-sc4m=ifelse(sc4<3,1,sc4)
-sc4m=ifelse(sc4>2&sc4<6,2,sc4m)
-sc4m=ifelse(sc4>5,3,sc4m)
-cn4m=summary(factor(sc4m),levels=seq(1:3))/1000
-sc5m=ifelse(sc5<3,1,sc5)
-sc5m=ifelse(sc5>2&sc5<6,2,sc5m)
-sc5m=ifelse(sc5>5,3,sc5m)
-cn5m=summary(factor(sc5m),levels=seq(1:3))/1000
-sc6m=ifelse(sc6<3,1,sc6)
-sc6m=ifelse(sc6>2&sc6<6,2,sc6m)
-sc6m=ifelse(sc6>5,3,sc6m)
-cn6m=summary(factor(sc6m),levels=seq(1:3))/1000
-sc7m=ifelse(sc7<3,1,sc7)
-sc7m=ifelse(sc7>2&sc7<6,2,sc7m)
-sc7m=ifelse(sc7>5,3,sc7m)
-cn7m=summary(factor(sc7m),levels=seq(1:3))/1000
-sc8m=ifelse(sc8<3,1,sc8)
-sc8m=ifelse(sc8>2&sc8<6,2,sc8m)
-sc8m=ifelse(sc8>5,3,sc8m)
-cn8m=summary(factor(sc8m),levels=seq(1:3))/1000
 
 sx1m=ifelse(sx1<3,1,sx1)
 sx1m=ifelse(sx1>2&sx1<6,2,sx1m)
