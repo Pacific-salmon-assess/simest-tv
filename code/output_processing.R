@@ -657,7 +657,8 @@ conf_matrix<-expand.grid(EM=c("stationary",
                               "dynamic.a","dynamic.b","dynamic.ab"
 ),OM=c("stationary",
        "autocorr",
-       "dec.prod","dec.cap","dec.prodcap"))
+       "dec.prod","dec.cap","dec.prodcap",
+       "regime.prod","regime.cap","regime.prodcap"))
 
 conf_matrix$w_AIC=NA
 conf_matrix$w_AIC[1:5]=cn1
@@ -665,11 +666,17 @@ conf_matrix$w_AIC[6:10]=cn2
 conf_matrix$w_AIC[11:15]=cn3
 conf_matrix$w_AIC[16:20]=cn4
 conf_matrix$w_AIC[21:25]=cn5
+conf_matrix$w_AIC[26:30]=cn6
+conf_matrix$w_AIC[31:35]=cn7
+conf_matrix$w_AIC[36:40]=cn8
 conf_matrix$top_w[1:5]=w_avg1
 conf_matrix$top_w[6:10]=w_avg2
 conf_matrix$top_w[11:15]=w_avg3
 conf_matrix$top_w[16:20]=w_avg4
 conf_matrix$top_w[21:25]=w_avg5
+conf_matrix$top_w[26:30]=w_avg6
+conf_matrix$top_w[31:35]=w_avg7
+conf_matrix$top_w[36:40]=w_avg8
 
 mytheme = list(
   theme_classic(14)+
@@ -688,7 +695,9 @@ p=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   ggtitle("AIC")+
   scale_fill_gradient(low = "white", high = "navy") +
   mytheme + theme(legend.position="none")+xlab("Simulation Scenario")+ylab("Estimation Model")
+pdf(file='AIC_conf_matrix_d90.pdf',height=8,width=12)
 p
+dev.off()
 
 p2=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   geom_tile(aes(fill = top_w), colour = "white",alpha=0.7) +
@@ -838,7 +847,8 @@ conf_matrix<-expand.grid(EM=c("stationary",
                               "dynamic.a","dynamic.b","dynamic.ab"
 ),OM=c("stationary",
        "autocorr",
-       "dec.prod","dec.cap","dec.prodcap"))
+       "dec.prod","dec.cap","dec.prodcap",
+       "regime.prod","regime.cap","regime.prodcap"))
 
 conf_matrix$w_AIC=NA
 conf_matrix$w_AIC[1:5]=cn1
@@ -846,11 +856,17 @@ conf_matrix$w_AIC[6:10]=cn2
 conf_matrix$w_AIC[11:15]=cn3
 conf_matrix$w_AIC[16:20]=cn4
 conf_matrix$w_AIC[21:25]=cn5
+conf_matrix$w_AIC[26:30]=cn6
+conf_matrix$w_AIC[31:35]=cn7
+conf_matrix$w_AIC[36:40]=cn8
 conf_matrix$top_w[1:5]=w_avg1
 conf_matrix$top_w[6:10]=w_avg2
 conf_matrix$top_w[11:15]=w_avg3
 conf_matrix$top_w[16:20]=w_avg4
 conf_matrix$top_w[21:25]=w_avg5
+conf_matrix$top_w[26:30]=w_avg6
+conf_matrix$top_w[31:35]=w_avg7
+conf_matrix$top_w[36:40]=w_avg8
 
 mytheme = list(
   theme_classic(14)+
@@ -869,7 +885,9 @@ p=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   ggtitle("AIC")+
   scale_fill_gradient(low = "white", high = "navy") +
   mytheme + theme(legend.position="none")+xlab("Simulation Scenario")+ylab("Estimation Model")
+pdf(file='AIC_conf_matrix_d80.pdf',height=8,width=12)
 p
+dev.off()
 
 p2=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   geom_tile(aes(fill = top_w), colour = "white",alpha=0.7) +
@@ -1021,7 +1039,8 @@ conf_matrix<-expand.grid(EM=c("stationary",
                               "dynamic.a","dynamic.b","dynamic.ab"
 ),OM=c("stationary",
        "autocorr",
-       "dec.prod","dec.cap","dec.prodcap"))
+       "dec.prod","dec.cap","dec.prodcap",
+       "regime.prod","regime.cap","regime.prodcap"))
 
 conf_matrix$w_AIC=NA
 conf_matrix$w_AIC[1:5]=cn1
@@ -1029,11 +1048,18 @@ conf_matrix$w_AIC[6:10]=cn2
 conf_matrix$w_AIC[11:15]=cn3
 conf_matrix$w_AIC[16:20]=cn4
 conf_matrix$w_AIC[21:25]=cn5
+conf_matrix$w_AIC[26:30]=cn6
+conf_matrix$w_AIC[31:35]=cn7
+conf_matrix$w_AIC[36:40]=cn8
 conf_matrix$top_w[1:5]=w_avg1
 conf_matrix$top_w[6:10]=w_avg2
 conf_matrix$top_w[11:15]=w_avg3
 conf_matrix$top_w[16:20]=w_avg4
 conf_matrix$top_w[21:25]=w_avg5
+conf_matrix$top_w[26:30]=w_avg6
+conf_matrix$top_w[31:35]=w_avg7
+conf_matrix$top_w[36:40]=w_avg8
+
 
 mytheme = list(
   theme_classic(14)+
@@ -1053,7 +1079,7 @@ p=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   scale_fill_gradient(low = "white", high = "navy") +
   mytheme + theme(legend.position="none")+xlab("Simulation Scenario")+ylab("Estimation Model")
 
-pdf(file='AIC_conf_matrix_k2.pdf',height=8,width=8)
+pdf(file='AIC_conf_matrix_k2.pdf',height=8,width=12)
 p
 dev.off()
 
@@ -1207,8 +1233,7 @@ conf_matrix<-expand.grid(EM=c("stationary",
                               "dynamic.a","dynamic.b","dynamic.ab"
 ),OM=c("stationary",
        "autocorr",
-       "dec.prod","dec.cap","dec.prodcap"))
-
+       "dec.prod","dec.cap","dec.prodcap","regime.prod","regime.cap","regime.prodcap"))
 
 conf_matrix$w_BIC=NA
 conf_matrix$w_BIC[1:5]=cn1
@@ -1216,11 +1241,19 @@ conf_matrix$w_BIC[6:10]=cn2
 conf_matrix$w_BIC[11:15]=cn3
 conf_matrix$w_BIC[16:20]=cn4
 conf_matrix$w_BIC[21:25]=cn5
+conf_matrix$w_BIC[26:30]=cn6
+conf_matrix$w_BIC[31:35]=cn7
+conf_matrix$w_BIC[36:40]=cn8
+
 conf_matrix$top_w[1:5]=w_avg1
 conf_matrix$top_w[6:10]=w_avg2
 conf_matrix$top_w[11:15]=w_avg3
 conf_matrix$top_w[16:20]=w_avg4
 conf_matrix$top_w[21:25]=w_avg5
+conf_matrix$top_w[26:30]=w_avg6
+conf_matrix$top_w[31:35]=w_avg7
+conf_matrix$top_w[36:40]=w_avg8
+
 
 p=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   geom_tile(aes(fill = w_BIC), colour = "white",alpha=0.7) +
@@ -1502,8 +1535,7 @@ conf_matrix<-expand.grid(EM=c("stationary",
                               "dynamic.a","dynamic.b","dynamic.ab"
 ),OM=c("stationary",
        "autocorr",
-       "dec.prod","dec.cap","dec.prodcap"))
-
+       "dec.prod","dec.cap","dec.prodcap","regime.prod","regime.cap","regime.prodcap"))
 
 conf_matrix$w_BIC=NA
 conf_matrix$w_BIC[1:5]=cn1
@@ -1511,11 +1543,19 @@ conf_matrix$w_BIC[6:10]=cn2
 conf_matrix$w_BIC[11:15]=cn3
 conf_matrix$w_BIC[16:20]=cn4
 conf_matrix$w_BIC[21:25]=cn5
+conf_matrix$w_BIC[26:30]=cn6
+conf_matrix$w_BIC[31:35]=cn7
+conf_matrix$w_BIC[36:40]=cn8
+
 conf_matrix$top_w[1:5]=w_avg1
 conf_matrix$top_w[6:10]=w_avg2
 conf_matrix$top_w[11:15]=w_avg3
 conf_matrix$top_w[16:20]=w_avg4
 conf_matrix$top_w[21:25]=w_avg5
+conf_matrix$top_w[26:30]=w_avg6
+conf_matrix$top_w[31:35]=w_avg7
+conf_matrix$top_w[36:40]=w_avg8
+
 
 p=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   geom_tile(aes(fill = w_BIC), colour = "white",alpha=0.7) +
@@ -1524,7 +1564,7 @@ p=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   scale_fill_gradient(low = "white", high = "navy") +
   mytheme + theme(legend.position="none")+xlab("Simulation Scenario")+ylab("Estimation Model")
 
-pdf(file='BIC_conf_matrix.pdf',height=8,width=8)
+pdf(file='BIC_conf_matrix.pdf',height=8,width=12)
 p
 dev.off()
 
