@@ -18,9 +18,9 @@ library(dplyr)
 library(here)
 ## Load relevant input data
 # Simulation run parameters describing different scenarios
-simPar <- read.csv("data/harckER/harcnkSimPars_ER.csv")
+simPar <- read.csv("data/genericER/SimPars_ER.csv")
 # CU-specific parameters
-cuPar <- read.csv("data/harckER/harcnkCUPars.csv")
+cuPar <- read.csv("data/genericER/CUPars.csv")
 
 ## Store relevant object names to help run simulation 
 scenNames <- unique(simPar$scenario)
@@ -42,7 +42,7 @@ for(a in seq_len(nrow(simPar))){
     larkPars=NULL,
     cuCustomCorrMat= NULL,
     outDir="outs", 
-    nTrials=100, 
+    nTrials=10000, 
     makeSubDirs=TRUE, 
     random=FALSE, 
     uniqueProd=TRUE,

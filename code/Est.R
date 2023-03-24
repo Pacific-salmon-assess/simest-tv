@@ -14,8 +14,7 @@
 #remotes::install_github("Pacific-salmon-assess/samSim", ref="timevar", force=TRUE)
 
 #install samest
-#remotes::install_git('https://github.com/Pacific-salmon-assess/samEst', force=TRUE)
-
+#1
 
 library(samEst)
 library(samSim)

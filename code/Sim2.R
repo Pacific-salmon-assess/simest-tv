@@ -35,7 +35,7 @@ scenNames <- unique(simPar$scenario)
 #Run and save simulated data
 
 for(a in seq_len(nrow(simPar))){
-
+for(a in 5:nrow(simPar)){
    print(a)
    genericRecoverySim(simPar=simPar[a,], 
                       cuPar=cuPar, 
@@ -266,7 +266,7 @@ alldat<-list()
 
 for(a in seq_len(nrow(simPar))){
 
-  simData[[a]] <- readRDS(paste0("outs/SamSimOutputs/simData/", 
+  simData[[a]] <- readRDS(paste0("outs/SamSimOutputs/", 
                           simPar$nameOM[a],"/",
                           simPar$scenario[a],"/",
                           paste(simPar$nameOM[a],"_", 
@@ -302,16 +302,31 @@ for(a in seq_len(nrow(simPar))){
 SRdf<-do.call(rbind,actualSR)
 datdf<-do.call(rbind,alldat)
 
-SRdf$scenario_f <-factor(SRdf$scenario, levels=c("stationary","autocorr","sigmaShift",
-              "decLinearProd", "regimeProd", "sineProd","shiftProd",
-               "regimeCap", "decLinearCap", "shiftCap",
-               "regimeProdCap",  "decLinearProdshiftCap"))
+
+scn=c("stationary","autocorr",
+             "decLinearProd","decLinearCap",  "decLinearProdshiftCap", "regimeProd",
+             "regimeCap",
+             "regimeProdCap")
+SRdf=subset(SRdf,scenario %in% scn)
+
+SRdf$scenario_f=SRdf$scenario
+SRdf$scenario_f=ifelse(SRdf$scenario_f=="decLinearProd",'dec.prod',SRdf$scenario_f)
+SRdf$scenario_f=ifelse(SRdf$scenario_f=="decLinearCap",'dec.cap',SRdf$scenario_f)
+SRdf$scenario_f=ifelse(SRdf$scenario_f=="decLinearProdshiftCap",'dec.prodcap',SRdf$scenario_f)
+SRdf$scenario_f=ifelse(SRdf$scenario_f=="regimeProd",'regime.prod',SRdf$scenario_f)
+SRdf$scenario_f=ifelse(SRdf$scenario_f=="regimeCap",'regime.cap',SRdf$scenario_f)
+SRdf$scenario_f=ifelse(SRdf$scenario_f=="regimeProdCap",'regime.prodcap',SRdf$scenario_f)
+
+SRdf$scenario_f <-factor(SRdf$scenario_f, levels=c("stationary","autocorr",
+                                                        "dec.prod","dec.cap","dec.prodcap","regime.prod",
+                                                        "regime.cap",
+                                                        "regime.prodcap"))
 
 
-datdf$scenario_f <-factor(datdf$scenario, levels=c("stationary","autocorr","sigmaShift",
-              "decLinearProd", "regimeProd", "sineProd","shiftProd",
-               "regimeCap", "decLinearCap", "shiftCap",
-               "regimeProdCap",  "decLinearProdshiftCap"))
+datdf$scenario_f <-factor(datdf$scenario_f, levels=c("stationary","autocorr",
+                                                   "dec.prod","dec.cap","dec.prodcap","regime.prod",
+                                                   "regime.cap",
+                                                   "regime.prodcap"))
 
 
 
@@ -331,8 +346,10 @@ SRexample<-  ggplot(SRdf) +
     labs(col = "year") +
     geom_point(data=datdf,aes(x=spawners,y=recruits,col=as.factor(year)),alpha=.5) +
     facet_wrap(~scenario_f)
+pdf('sr_examples.pdf',width=12,height=10)
 SRexample    
- 
+dev.off()
+
 ggsave(
       filename = "outs/SamSimOutputs/plotcheck/srexample.png", 
       plot = SRexample, 
