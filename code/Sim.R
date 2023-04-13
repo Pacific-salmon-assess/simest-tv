@@ -22,9 +22,14 @@ source("code/utils.R")
 
 ## Load relevant input data
 # Simulation run parameters describing different scenarios
-simPar <- read.csv("data/generic/SimPars.csv")
+#simPar <- read.csv("data/generic/SimPars.csv")
+#simPar <- read.csv("data/genericER/SimPars_ER.csv")
+simPar <- read.csv("data/Smax_sensitivity/SimPars.csv")
+
 # CU-specific parameters
-cuPar <- read.csv("data/generic/CUPars.csv")
+#cuPar <- read.csv("data/generic/CUPars.csv")
+#cuPar <- read.csv("data/genericER/CUPars.csv")
+cuPar <- read.csv("data/Smax_sensitivity/CUPars.csv")
 
 ## Store relevant object names to help run simulation 
 scenNames <- unique(simPar$scenario)
@@ -69,13 +74,12 @@ stackcu<-list()
 
 for(a in seq_len(nrow(simPar))){
 
-  simData[[a]] <- readRDS(paste0("outs/SamSimOutputs/", 
+  simData[[a]] <- readRDS(paste0("outs/SamSimOutputs/simData/", 
                           simPar$nameOM[a],"/",
                           simPar$scenario[a],"/",
                           paste(simPar$nameOM[a],"_", 
                           simPar$nameMP[a], "_", 
                           "CUsrDat.RData",sep="")))$srDatout
-  
 
 
   dat<-simData[[a]] 
@@ -197,31 +201,32 @@ simpr$scenario[simpr$scenario== "decLinearProd"] <- "decLinProd"
 simpr$scenario[simpr$scenario== "decLinearCap"] <- "decLinCap"
 
 simpr <- simpr[simpr$scenario!="sigmaShift",]
-simpr <- simpr[simpr$scenario!="sineProd",] 
-simpr <- simpr[simpr$scenario!="shiftProd",] 
-simpr <- simpr[simpr$scenario!="shiftCap",] 
+#simpr <- simpr[simpr$scenario!="sineProd",] 
+#simpr <- simpr[simpr$scenario!="shiftProd",] 
+#simpr <- simpr[simpr$scenario!="shiftCap",] 
 #simpr <- simpr[simpr$scenario!="autocorr",] 
 simpr <- simpr[simpr$ind!="sigma",] 
 
 simpr$scenario_f = factor(simpr$scenario, 
   levels=c("stationary",
            "autocorr",
-           "decLinProd", 
+           "decLinProd",
+           "sineProd", 
            "decLinCap",
            "decLinProd shiftCap",
            "regimeProd",
+           "shiftProd",
            "regimeCap",
+           "shiftCap",
            "regimeProdCap"
            ))
 
 simpr$tipo <- "dynamic"
-simpr$tipo[simpr$scenario == "regimeProd"|
-simpr$scenario == "regimeCap"|
-simpr$scenario == "regimeProdCap"] <- "regime"
+simpr$tipo[simpr$scenario %in% c("regimeProd","shiftProd","regimeCap","shiftProd","shiftCap","regimeProdCap")] <- "regime"
 
 
 simpr$tipo[simpr$scenario == "stationary" |
-             simpr$scenario == "autocorr"] <- "astat"
+             simpr$scenario == "autocorr"] <- "stationary"
 
 
  
@@ -242,7 +247,8 @@ p <- ggplot(simpr) +
      mytheme + theme(legend.position="none") +
      facet_grid(ind~scenario_f, scales="free_y",
                labeller = labeller(scenario_f = label_wrap_gen(10))) +
-     scale_colour_brewer(palette='Blues') 
+      scale_colour_viridis_d(end=.85) 
+     #scale_colour_brewer(palette='Blues') 
 p
 ggsave(filename = "outs/par_sims.pdf",
         plot=p,
@@ -302,10 +308,11 @@ for(a in seq_len(nrow(simPar))){
 SRdf<-do.call(rbind,actualSR)
 datdf<-do.call(rbind,alldat)
 
-SRdf$scenario_f <-factor(SRdf$scenario, levels=c("stationary","autocorr","sigmaShift",
-              "decLinearProd", "regimeProd", "sineProd","shiftProd",
-               "regimeCap", "decLinearCap", "shiftCap",
-               "regimeProdCap",  "decLinearProdshiftCap"))
+SRdf$scenario_f <-factor(SRdf$scenario, levels=c("stationary", "autocorr","sigmaShift",
+                                                "decLinearProd", "regimeProd", "sineProd", "shiftProd",
+                                                "regimeCap", "decLinearCap", "shiftCap", 
+                                                "regimeProdCap", "decLinearProdshiftCap"))   
+
 
 
 datdf$scenario_f <-factor(datdf$scenario, levels=c("stationary","autocorr","sigmaShift",
