@@ -24,12 +24,13 @@ source("code/utils.R")
 # Simulation run parameters describing different scenarios
 #simPar <- read.csv("data/generic/SimPars.csv")
 #simPar <- read.csv("data/genericER/SimPars_ER.csv")
-simPar <- read.csv("data/Smax_sensitivity/SimPars.csv")
+#simPar <- read.csv("data/Smax_sensitivity/SimPars.csv")
+simPar <- read.csv("data/Smax_sensitivity_doublealpha/SimPars.csv")
 
 # CU-specific parameters
 #cuPar <- read.csv("data/generic/CUPars.csv")
 #cuPar <- read.csv("data/genericER/CUPars.csv")
-cuPar <- read.csv("data/Smax_sensitivity/CUPars.csv")
+cuPar <- read.csv("data/Smax_sensitivity/CUPars_doublealpha.csv")
 
 ## Store relevant object names to help run simulation 
 scenNames <- unique(simPar$scenario)
