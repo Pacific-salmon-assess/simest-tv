@@ -180,7 +180,7 @@ ggsave(
 #----------------------------------------
 
 
-simPar_sena_hsmax <- read.csv("data/sensitivity_halfbeta/SimPars.csv")
+simPar_sena_hsmax <- read.csv("data/sensitivity_halfSmax/SimPars.csv")
 
 
 simData_sena_hsmax<-list()
