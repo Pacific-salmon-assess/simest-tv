@@ -101,7 +101,7 @@ ggsave(
 
 simPar_sena <- read.csv("data/sensitivity/SimPars.csv")
 
-
+simPar_sena$scenario
 simData_sena<-list()
 actualSR_sena<-list()
 alldat_sena<-list()
@@ -146,15 +146,19 @@ datdf_sena<-do.call(rbind,alldat_sena)
 unique(SRdf_sena$scenario)
 SRdf_sena$scenario_f <-factor(SRdf_sena$scenario, levels=c("trendLinearProd1", "trendLinearProd2",
                                                            "trendLinearProd5", "trendLinearProd7",
+                                                           "trendLinearProd10",
                                                             "regimeProd1",      "regimeProd2",
-                                                            "regimeProd5",      "regimeProd7"))   
+                                                            "regimeProd5",      "regimeProd7",
+                                                            "regimeProd10"))   
 
 
 
 datdf_sena$scenario_f <-factor(datdf_sena$scenario, levels=c("trendLinearProd1", "trendLinearProd2",
                                                            "trendLinearProd5", "trendLinearProd7",
+                                                           "trendLinearProd10",
                                                             "regimeProd1",      "regimeProd2",
-                                                            "regimeProd5",      "regimeProd7"))
+                                                            "regimeProd5",      "regimeProd7",
+                                                            "regimeProd10"))
 
 
 
@@ -225,25 +229,29 @@ for(a in seq_len(nrow(simPar_sena_hsmax))){
 SRdf_sena_hsmax<-do.call(rbind,actualSR_sena_hsmax)
 datdf_sena_hsmax<-do.call(rbind,alldat_sena_hsmax)
 unique(SRdf_sena_hsmax$scenario)
-SRdf_sena_hsmax$scenario_f <-factor(SRdf_sena_hsmax$scenario, levels=c("trendLinearProd1_halfbeta",
-                                                                       "trendLinearProd2_halfbeta", 
-                                                                       "trendLinearProd5_halfbeta",
-                                                                    "trendLinearProd7_halfbeta",
-                                                                    "regimeProd1_halfbeta",
-                                                                    "regimeProd2_halfbeta",     
-                                                                    "regimeProd5_halfbeta",
-                                                                    "regimeProd7_halfbeta"))   
+SRdf_sena_hsmax$scenario_f <-factor(SRdf_sena_hsmax$scenario, levels=c("trendLinearProd1_halfSmax",
+                                                                       "trendLinearProd2_halfSmax", 
+                                                                       "trendLinearProd5_halfSmax",
+                                                                    "trendLinearProd7_halfSmax",
+                                                                    "trendLinearProd10_halfSmax",
+                                                                    "regimeProd1_halfSmax",
+                                                                    "regimeProd2_halfSmax",     
+                                                                    "regimeProd5_halfSmax",
+                                                                    "regimeProd7_halfSmax",
+                                                                    "regimeProd10_halfSmax"))   
 
 
 
-datdf_sena_hsmax$scenario_f <-factor(datdf_sena_hsmax$scenario, levels=c("trendLinearProd1_halfbeta",
-                                                            "trendLinearProd2_halfbeta", 
-                                                            "trendLinearProd5_halfbeta",
-                                                            "trendLinearProd7_halfbeta",
-                                                            "regimeProd1_halfbeta",
-                                                            "regimeProd2_halfbeta",     
-                                                            "regimeProd5_halfbeta",
-                                                            "regimeProd7_halfbeta"))
+datdf_sena_hsmax$scenario_f <-factor(datdf_sena_hsmax$scenario, levels=c("trendLinearProd1_halfSmax",
+                                                                       "trendLinearProd2_halfSmax", 
+                                                                       "trendLinearProd5_halfSmax",
+                                                                    "trendLinearProd7_halfSmax",
+                                                                    "trendLinearProd10_halfSmax",
+                                                                    "regimeProd1_halfSmax",
+                                                                    "regimeProd2_halfSmax",     
+                                                                    "regimeProd5_halfSmax",
+                                                                    "regimeProd7_halfSmax",
+                                                                    "regimeProd10_halfSmax"))
 
 
 
@@ -295,7 +303,7 @@ for(a in seq_len(nrow(simPar_senSmax))){
   dat$scenario <- simPar_senSmax$scenario[a]
   alldat_senSmax[[a]]<-dat
 
-  S <- seq(0,750000,by=1000)
+  S <- seq(0,1300000,by=1000)
   R <- matrix(NA, ncol=length(unique(dat$year)),nrow=length(S))
   
   for(i in unique(dat$year)){
@@ -390,7 +398,7 @@ for(a in seq_len(nrow(simPar_senSmax_da))){
   dat$scenario <- simPar_senSmax_da$scenario[a]
   alldat_senSmax_da[[a]]<-dat
 
-  S <- seq(0,750000,by=1000)
+  S <- seq(0,1300000,by=1000)
   R <- matrix(NA, ncol=length(unique(dat$year)),nrow=length(S))
   
   for(i in unique(dat$year)){
@@ -411,34 +419,34 @@ for(a in seq_len(nrow(simPar_senSmax_da))){
 SRdf_senSmax_da<-do.call(rbind,actualSR_senSmax_da)
 datdf_senSmax_da<-do.call(rbind,alldat_senSmax_da)
 unique(SRdf_senSmax_da$scenario)
-SRdf_senSmax_da$scenario_f <-factor(SRdf_senSmax_da$scenario, levels=c("trendLinearSmax025",
-                                                                "trendLinearSmax050",
-                                                                 "trendLinearSmax150",
-                                                                "trendLinearSmax200",
-                                                                "trendLinearSmax300",
-                                                                 "regimeSmax025",
-                                                                 "regimeSmax050",
-                                                                "regimeSmax150",
-                                                                "regimeSmax200",      
-                                                                "regimeSmax300"))   
+SRdf_senSmax_da$scenario_f <-factor(SRdf_senSmax_da$scenario, levels=c("trendLinearSmax025_da",
+                                                                "trendLinearSmax050_da",
+                                                                 "trendLinearSmax150_da",
+                                                                "trendLinearSmax200_da",
+                                                                "trendLinearSmax300_da",
+                                                                 "regimeSmax025_da",
+                                                                 "regimeSmax050_da",
+                                                                "regimeSmax150_da",
+                                                                "regimeSmax200_da",      
+                                                                "regimeSmax300_da"))   
 
 
 
-datdf_senSmax_da$scenario_f <-factor(datdf_senSmax_da$scenario, levels=c("trendLinearSmax025",
-                                                                "trendLinearSmax050",
-                                                                 "trendLinearSmax150",
-                                                                "trendLinearSmax200",
-                                                                "trendLinearSmax300",
-                                                                 "regimeSmax025",
-                                                                 "regimeSmax050",
-                                                                "regimeSmax150",
-                                                                "regimeSmax200",      
-                                                                "regimeSmax300"))
+datdf_senSmax_da$scenario_f <-factor(datdf_senSmax_da$scenario, levels=c("trendLinearSmax025_da",
+                                                                "trendLinearSmax050_da",
+                                                                 "trendLinearSmax150_da",
+                                                                "trendLinearSmax200_da",
+                                                                "trendLinearSmax300_da",
+                                                                 "regimeSmax025_da",
+                                                                 "regimeSmax050_da",
+                                                                "regimeSmax150_da",
+                                                                "regimeSmax200_da",      
+                                                                "regimeSmax300_da"))
 
 
 
 
-SRexample_senSmax<-  ggplot(SRdf_senSmax_da) +
+SRexample_senSmax_da<-  ggplot(SRdf_senSmax_da) +
     geom_line(aes(x=spawners,y=recruits, col=as.factor(year)),linewidth=2) +
     mytheme + 
     theme(legend.position="right") +
@@ -446,7 +454,7 @@ SRexample_senSmax<-  ggplot(SRdf_senSmax_da) +
     labs(col = "year") +
     geom_point(data=datdf_senSmax_da,aes(x=spawners,y=recruits,col=as.factor(year)),alpha=.5) +
     facet_wrap(~scenario_f)
-SRexample_senSmax    
+SRexample_senSmax_da    
  
 ggsave(
       filename = "outs/SamSimOutputs/plotcheck/srcurve_sensitivity_Smax.png", 
@@ -460,6 +468,94 @@ ggsave(
 #----------------------------------------
 #sigmalow sensitivity                   |
 #----------------------------------------
+
+simPar_siglow <- read.csv("data/sigmalow_sensitivity/SimPars.csv")
+
+
+
+simData_siglow<-list()
+actualSR_siglow<-list()
+alldat_siglow<-list()
+
+for(a in seq_len(nrow(simPar_siglow))){
+
+  simData_siglow[[a]] <- readRDS(paste0("outs/SamSimOutputs/simData/", 
+                          simPar_siglow$nameOM[a],"/",
+                          simPar_siglow$scenario[a],"/",
+                          paste(simPar_siglow$nameOM[a],"_", 
+                          simPar_siglow$nameMP[a], "_", 
+                          "CUsrDat.RData",sep="")))$srDatout
+
+  dat<-simData_siglow[[a]] 
+  dat<-dat[dat$year>(max(dat$year)-46),]
+  dat <- dat[!is.na(dat$obsRecruits),]
+  
+  dat <- dat[dat$iteration==sample(unique(dat$iteration),1),]
+  dat$scenario <- simPar_siglow$scenario[a]
+  alldat_siglow[[a]]<-dat
+
+  S <- seq(0,750000,by=1000)
+  R <- matrix(NA, ncol=length(unique(dat$year)),nrow=length(S))
+  
+  for(i in unique(dat$year)){
+
+    alpha<- dat$alpha[dat$year==i]
+    beta<- dat$beta[dat$year==i]
+    R[,which(unique(dat$year)==i)]<-S*exp(alpha-beta*S)
+  }
+    
+  actualSR_siglow[[a]]<-data.frame(year=rep(unique(dat$year),
+      each=length(S)),
+      spawners=S,
+      recruits=c(R),
+      scenario=simPar_siglow$scenario[a])
+
+}
+
+SRdf_siglow<-do.call(rbind,actualSR_siglow)
+datdf_siglow<-do.call(rbind,alldat_siglow)
+unique(SRdf_siglow$scenario)
+SRdf_siglow$scenario_f <-factor(SRdf_siglow$scenario, levels=c("sigmalow_stationary",
+                                                               "sigmalow_decLinearProd",
+                                                               "sigmalow_regimeProd",           
+                                                               "sigmalow_sineProd",
+                                                               "sigmalow_regimeCap",
+                                                               "sigmalow_decLinearCap",         
+                                                               "sigmalow_regimeProdCap",
+                                                               "sigmalow_shiftCap",
+                                                               "sigmalow_decLinearProdshiftCap"))   
+
+
+
+datdf_siglow$scenario_f <-factor(datdf_siglow$scenario, levels=c("sigmalow_stationary",
+                                                               "sigmalow_decLinearProd",
+                                                               "sigmalow_regimeProd",           
+                                                               "sigmalow_sineProd",
+                                                               "sigmalow_regimeCap",
+                                                               "sigmalow_decLinearCap",         
+                                                               "sigmalow_regimeProdCap",
+                                                               "sigmalow_shiftCap",
+                                                               "sigmalow_decLinearProdshiftCap"))
+
+
+
+
+SRexample_siglow <- ggplot(SRdf_siglow) +
+    geom_line(aes(x=spawners,y=recruits, col=as.factor(year)),linewidth=2) +
+    mytheme + 
+    theme(legend.position="right") +
+    scale_colour_viridis_d(end=.85) +
+    labs(col = "year") +
+    geom_point(data=datdf_siglow,aes(x=spawners,y=recruits,col=as.factor(year)),alpha=.5) +
+    facet_wrap(~scenario_f)
+SRexample_siglow    
+ 
+ggsave(
+      filename = "outs/SamSimOutputs/plotcheck/srcurve_sensitivity_siglow.png", 
+      plot = SRexample_siglow, 
+      width = 12, height = 6
+    )
+
 
 
 
