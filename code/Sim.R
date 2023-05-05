@@ -26,39 +26,75 @@ source("code/utils.R")
 #simPar <- read.csv("data/genericER/SimPars_ER.csv")
 #simPar <- read.csv("data/Smax_sensitivity/SimPars.csv")
 #simPar <- read.csv("data/sensitivity_halfSmax/SimPars.csv")
-simPar <- read.csv("data/Smax_sensitivity_doublealpha/SimPars.csv")
+#simPar <- read.csv("data/Smax_sensitivity_doublealpha/SimPars.csv")
 
 # CU-specific parameters
 #cuPar <- read.csv("data/generic/CUPars.csv")
 #cuPar <- read.csv("data/genericER/CUPars.csv")
 #cuPar <- read.csv("data/sensitivity_halfSmax/CUPars_halfSmax.csv")
-cuPar <- read.csv("data/Smax_sensitivity_doublealpha/CUPars_doublealpha.csv")
+#cuPar <- read.csv("data/Smax_sensitivity_doublealpha/CUPars_doublealpha.csv")
 ## Store relevant object names to help run simulation 
 
-scenNames <- unique(simPar$scenario)
+
 
 ## First check to ensure that a single scenario can be run (only a small number
 # of trials necessary)
 
 #Run and save simulated data
+for(u in 1:9){
+  if(u==1){
+    print("base")
+    simPar <- read.csv("data/generic/SimPars.csv")
+    cuPar <- read.csv("data/generic/CUPars.csv")
+  }else if(u==2){
+    print("base ER")
+    simPar <- read.csv("data/genericER/SimPars_ER.csv")
+    cuPar <- read.csv("data/genericER/CUPars.csv")
+  }else if(u==3){
+    print("sensitivity a")
+    simPar <- read.csv("data/sensitivity/SimPars.csv")
+    cuPar <- read.csv("data/sensitivity/CUPars.csv")
+  }else if(u==4){
+    print("sensitivity a half Smax")
+    simPar <- read.csv("data/sensitivity_halfSmax/SimPars.csv")
+    cuPar <- read.csv("data/sensitivity_halfSmax/CUPars_halfSmax.csv")
+  }else if(u==5){
+    simPar <- read.csv("data/Smax_sensitivity/SimPars.csv")
+    cuPar <- read.csv("data/Smax_sensitivity/CUPars.csv")
+  }else if(u==6){
+    simPar <- read.csv("data/Smax_sensitivity_doublealpha/SimPars.csv")  
+    cuPar <- read.csv("data/Smax_sensitivity_doublealpha/CUPars_doublealpha.csv")
+  }else if(u==7){
+    simPar <- read.csv("data/sigmalow_sensitivity/SimPars.csv")  
+    cuPar <- read.csv("data/sigmalow_sensitivity/CUPars_lowsigma.csv")
+  }else if(u==8){
+    simPar <- read.csv("data/sigmamed_sensitivity/SimPars.csv")  
+    cuPar <- read.csv("data/sigmamed_sensitivity/CUPars_medsigma.csv")
+  }else if(u==9){
+    simPar <- read.csv("data/generic_biascorr/SimPars_bhttp://127.0.0.1:47827/graphics/plot_zoom_png?width=403&height=690iascorr.csv")  
+    cuPar <- read.csv("data/generic_biascorr/CUPars.csv")
+  }
 
-for(a in seq_len(nrow(simPar))){
-
-   print(a)
-   genericRecoverySim(simPar=simPar[a,], 
-                      cuPar=cuPar, 
-                      catchDat=NULL, 
-                      srDat=NULL,
-                      variableCU=FALSE, 
-                      ricPars=NULL, 
-                      larkPars=NULL, 
-                      cuCustomCorrMat= NULL,
-                      outDir="outs", 
-                      nTrials=1000, 
-                      makeSubDirs=TRUE, 
-                      random=FALSE, 
-                      uniqueProd=TRUE,
-                      uniqueSurv=FALSE)
+  scenNames <- unique(simPar$scenario)
+  for(a in seq_len(nrow(simPar))){
+  
+    print(a)
+    genericRecoverySim(simPar=simPar[a,], 
+                        cuPar=cuPar, 
+                        catchDat=NULL, 
+                        srDat=NULL,
+                        variableCU=FALSE, 
+                        ricPars=NULL, 
+                        larkPars=NULL, 
+                        cuCustomCorrMat= NULL,
+                        outDir="outs", 
+                        nTrials=1000, 
+                        makeSubDirs=TRUE, 
+                        random=FALSE, 
+                        uniqueProd=TRUE,
+                        uniqueSurv=FALSE)
+  
+  }
 
 }
 

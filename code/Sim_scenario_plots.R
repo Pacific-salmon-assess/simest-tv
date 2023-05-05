@@ -564,3 +564,94 @@ ggsave(
 #----------------------------------------
 
 
+simPar_sigmed <- read.csv("data/sigmamed_sensitivity/SimPars.csv")
+
+
+
+simData_sigmed <- list()
+actualSR_sigmed <- list()
+alldat_sigmed <- list()
+
+for(a in seq_len(nrow(simPar_sigmed))){
+  
+  simData_sigmed[[a]] <- readRDS(paste0("outs/SamSimOutputs/simData/", 
+                                        simPar_sigmed$nameOM[a],"/",
+                                        simPar_sigmed$scenario[a],"/",
+                                        paste(simPar_sigmed$nameOM[a],"_", 
+                                              simPar_sigmed$nameMP[a], "_", 
+                                              "CUsrDat.RData",sep="")))$srDatout
+  
+  dat <- simData_sigmed[[a]] 
+  dat <- dat[dat$year>(max(dat$year)-46),]
+  dat <- dat[!is.na(dat$obsRecruits),]
+  
+  dat <- dat[dat$iteration==sample(unique(dat$iteration),1),]
+  dat$scenario <- simPar_sigmed$scenario[a]
+  alldat_sigmed[[a]]<-dat
+  
+  S <- seq(0,750000,by=1000)
+  R <- matrix(NA, ncol=length(unique(dat$year)),nrow=length(S))
+  
+  for(i in unique(dat$year)){
+    
+    alpha<- dat$alpha[dat$year==i]
+    beta<- dat$beta[dat$year==i]
+    R[,which(unique(dat$year)==i)]<-S*exp(alpha-beta*S)
+  }
+  
+  actualSR_sigmed[[a]]<-data.frame(year=rep(unique(dat$year),
+                                            each=length(S)),
+                                   spawners=S,
+                                   recruits=c(R),
+                                   scenario=simPar_sigmed$scenario[a])
+  
+}
+
+SRdf_sigmed <- do.call(rbind,actualSR_sigmed)
+datdf_sigmed <- do.call(rbind,alldat_sigmed)
+unique(SRdf_sigmed$scenario)
+SRdf_sigmed$scenario_f <-factor(SRdf_sigmed$scenario, levels=c("sigmamed_stationary",
+                                                               "sigmamed_decLinearProd",
+                                                               "sigmamed_regimeProd",           
+                                                               "sigmamed_sineProd",
+                                                               "sigmamed_regimeCap",
+                                                               "sigmamed_decLinearCap",         
+                                                               "sigmamed_regimeProdCap",
+                                                               "sigmamed_shiftCap",
+                                                               "sigmamed_decLinearProdshiftCap"))   
+
+
+
+datdf_sigmed$scenario_f <-factor(datdf_sigmed$scenario, levels=c("sigmamed_stationary",
+                                                                 "sigmamed_decLinearProd",
+                                                                 "sigmamed_regimeProd",           
+                                                                 "sigmamed_sineProd",
+                                                                 "sigmamed_regimeCap",
+                                                                 "sigmamed_decLinearCap",         
+                                                                 "sigmamed_regimeProdCap",
+                                                                 "sigmamed_shiftCap",
+                                                                 "sigmamed_decLinearProdshiftCap"))
+
+
+
+
+SRexample_sigmed <- ggplot(SRdf_sigmed) +
+  geom_line(aes(x=spawners,y=recruits, col=as.factor(year)),linewidth=2) +
+  mytheme + 
+  theme(legend.position="right") +
+  scale_colour_viridis_d(end=.85) +
+  labs(col = "year") +
+  geom_point(data=datdf_sigmed,aes(x=spawners,y=recruits,col=as.factor(year)),alpha=.5) +
+  facet_wrap(~scenario_f)
+SRexample_sigmed    
+
+ggsave(
+  filename = "outs/SamSimOutputs/plotcheck/srcurve_sensitivity_siglow.png", 
+  plot = SRexample_siglow, 
+  width = 12, height = 6
+)
+
+
+
+
+

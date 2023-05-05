@@ -916,13 +916,13 @@ p
 #========================================================================================================
 #sigma low sensitivity 
 #read in data
-simPar <- read.csv("data/Smax_sensitivity_doublealpha/SimPars.csv")
+simPar <- read.csv("data/sigmalow_sensitivity/SimPars.csv")
 
 ## Store relevant object names to help run simulation 
 scenNames <- unique(simPar$scenario)
 
-res_smaxda<-readRDS(file = "outs/simest/res_gamma_alpha/res_smaxda.rds")
-res_smaxda56<-readRDS(file = "outs/simest/res_gamma_alpha/res_smaxda_56.rds")
+res_siglow<-readRDS(file = "outs/simest/res_gamma_alpha/res_smaxda.rds")
+res_siglow56<-readRDS(file = "outs/simest/res_gamma_alpha/res_smaxda_56.rds")
 
 
 ressmaxda<-rbind(res_smaxda,res_smaxda56)
