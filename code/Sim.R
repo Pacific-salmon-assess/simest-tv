@@ -25,15 +25,16 @@ source("code/utils.R")
 #simPar <- read.csv("data/generic/SimPars.csv")
 #simPar <- read.csv("data/genericER/SimPars_ER.csv")
 #simPar <- read.csv("data/Smax_sensitivity/SimPars.csv")
-simPar <- read.csv("data/sensitivity_halfSmax/SimPars.csv")
-#simPar <- read.csv("data/Smax_sensitivity_doublealpha/SimPars.csv")
+#simPar <- read.csv("data/sensitivity_halfSmax/SimPars.csv")
+simPar <- read.csv("data/Smax_sensitivity_doublealpha/SimPars.csv")
 
 # CU-specific parameters
 #cuPar <- read.csv("data/generic/CUPars.csv")
 #cuPar <- read.csv("data/genericER/CUPars.csv")
-cuPar <- read.csv("data/sensitivity_halfSmax/CUPars_halfSmax.csv")
-#cuPar <- read.csv("data/Smax_sensitivity_doublealpha/CUPars_doublealpha.csv")
+#cuPar <- read.csv("data/sensitivity_halfSmax/CUPars_halfSmax.csv")
+cuPar <- read.csv("data/Smax_sensitivity_doublealpha/CUPars_doublealpha.csv")
 ## Store relevant object names to help run simulation 
+
 scenNames <- unique(simPar$scenario)
 
 ## First check to ensure that a single scenario can be run (only a small number
@@ -53,7 +54,7 @@ for(a in seq_len(nrow(simPar))){
                       larkPars=NULL, 
                       cuCustomCorrMat= NULL,
                       outDir="outs", 
-                      nTrials=10000, 
+                      nTrials=1000, 
                       makeSubDirs=TRUE, 
                       random=FALSE, 
                       uniqueProd=TRUE,
