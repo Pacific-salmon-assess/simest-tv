@@ -71,7 +71,7 @@ for(u in 1:9){
     simPar <- read.csv("data/sigmamed_sensitivity/SimPars.csv")  
     cuPar <- read.csv("data/sigmamed_sensitivity/CUPars_medsigma.csv")
   }else if(u==9){
-    simPar <- read.csv("data/generic_biascorr/SimPars_bhttp://127.0.0.1:47827/graphics/plot_zoom_png?width=403&height=690iascorr.csv")  
+    simPar <- read.csv("data/generic_biascorr/SimPars_biascorr.csv")  
     cuPar <- read.csv("data/generic_biascorr/CUPars.csv")
   }
 
