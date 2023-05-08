@@ -921,39 +921,220 @@ simPar <- read.csv("data/sigmalow_sensitivity/SimPars.csv")
 ## Store relevant object names to help run simulation 
 scenNames <- unique(simPar$scenario)
 
-res_siglow<-readRDS(file = "outs/simest/res_gamma_alpha/res_smaxda.rds")
-res_siglow56<-readRDS(file = "outs/simest/res_gamma_alpha/res_smaxda_56.rds")
+res_siglow<-readRDS(file = "outs/simest/res_gamma_alpha/res_siglow.rds")
 
+res_siglow5<-readRDS(file = "outs/simest/res_gamma_alpha/res_siglow_5.rds")
+res_siglow26<-readRDS(file = "outs/simest/res_gamma_alpha/res_siglow_26.rds")
 
-ressmaxda<-rbind(res_smaxda,res_smaxda56)
+ressiglow<-rbind(res_siglow,res_siglow5,res_siglow26)
 
 #res_a <- res_a[res_a$convergence==0,]
 
-aic_smaxda=subset(ressmaxda, parameter=='AIC'&method=='MLE')
-bic_smaxda=subset(ressmaxda, parameter=='BIC'&method=='MLE')
-lfo_smaxda=subset(ressmaxda, parameter=='LFO'&method=='MLE')
+aic_siglow=subset(ressiglow, parameter=='AIC'&method=='MLE')
+bic_siglow=subset(ressiglow, parameter=='BIC'&method=='MLE')
+lfo_siglow=subset(ressiglow, parameter=='LFO'&method=='MLE')
 
 
-lfo_smaxda<-lfo_smaxda[lfo_smaxda$model %in% c("simple","autocorr","rwa","rwb","rwab","hmma","hmmb","hmmab"),]
-lfo_smaxda[is.na(lfo_smaxda$est),]<--Inf
+lfo_siglow<-lfo_siglow[lfo_siglow$model %in% c("simple","autocorr","rwa","rwb","rwab","hmma","hmmb","hmmab"),]
+lfo_siglow[is.na(lfo_siglow$est),]<--Inf
 
-lfo_smaxda<-lfo_smaxda[lfo_smaxda$model %in% c("simple","autocorr","rwa","rwb","rwab","hmma","hmmb","hmmab"),]
+lfo_siglow<-lfo_siglow[lfo_siglow$model %in% c("simple","autocorr","rwa","rwb","rwab","hmma","hmmb","hmmab"),]
 
-lfo_smaxda[is.na(lfo_smaxda$est),]<--Inf
-aic_smaxda$est[aic_smaxda$convergence>0]<-Inf
-bic_smaxda$est[aic_smaxda$convergence>0]<-Inf
+lfo_siglow[is.na(lfo_siglow$est),]<--Inf
+aic_siglow$est[aic_siglow$convergence>0]<-Inf
+bic_siglow$est[aic_siglow$convergence>0]<-Inf
 
-scn<-factor(unique(aic_smaxda$scenario), levels=c(
-    "trendLinearSmax025_da",
-    "trendLinearSmax050_da", 
-    "trendLinearSmax150_da", 
-    "trendLinearSmax200_da", 
-    "trendLinearSmax300_da", 
-    "regimeSmax025_da",     
-    "regimeSmax050_da",      
-    "regimeSmax150_da",      
-    "regimeSmax200_da",      
-    "regimeSmax300_da"  ) )
+scn<-factor(unique(aic_siglow$scenario), levels=c(
+     "sigmalow_stationary",
+     "sigmalow_decLinearProd",        
+     "sigmalow_regimeProd",            
+     "sigmalow_sineProd",             
+     "sigmalow_regimeCap",             
+     "sigmalow_decLinearCap",         
+     "sigmalow_regimeProdCap",         
+     "sigmalow_shiftCap",             
+     "sigmalow_decLinearProdshiftCap"
+  ) )
+
+
+EM=c("stationary",
+     "autocorr",
+     "dynamic.a","dynamic.b","dynamic.ab",
+     "regime.a","regime.b","regime.ab")
+##Confusion matrices
+conf_matrix<-expand.grid(EM=EM,OM=scn)
+conf_matrix$w_AIC=NA
+conf_matrix$BIC=NA
+conf_matrix$LFO=NA
+
+cn1<-list()
+cn2<-list()
+cn3<-list()
+
+
+#summarize model selection
+aic_set=list()
+bic_set=list()
+lfo_set=list()
+
+unique(aica$model)
+o=0
+
+aica[7282, ]
+aica[8002, ]
+
+for(a in seq_along(scn)){
+
+   #AIC
+  aica<-subset(aic_siglow,scenario==scn[a])
+  aic_set[[a]]=tidyr::spread(aica[,-9],key=model,value=est)
+  aic_set[[a]]=aic_set[[a]][c(15,8,12,14,13,9,11,10)] #reorder estimation models
+
+  sc1=apply(aic_set[[a]],1,which.min)
+  cn1[[a]]=summary(factor(sc1,levels=seq(1:ncol(aic_set[[a]]))))/1000
+
+  bica=subset(bic_siglow,scenario==scn[a])
+  bic_set[[a]]=tidyr::spread(bica[,-9],key=model,value=est)
+  bic_set[[a]]=bic_set[[a]][c(15,8,12,14,13,9,11,10)] #reorder estimation models
+
+  sc2=apply(bic_set[[a]],1,which.min)
+  cn2[[a]]=summary(factor(sc2,levels=seq(1:ncol(bic_set[[a]]))))/1000
+
+  lfoa=subset(lfo_siglow,scenario==scn[a])
+  lfo_set[[a]]=tidyr::spread(lfoa[,-9],key=model,value=est)
+  lfo_set[[a]]=lfo_set[[a]][c(15,8,12,14,13,9,11,10)] #reorder estimation models
+
+  sc3=apply(lfo_set[[a]],1,which.max)
+  cn3[[a]]=summary(factor(sc3,levels=seq(1:ncol(lfo_set[[a]]))))/1000
+
+
+  myseq<-seq(from=o+1, length.out=length(EM))
+  conf_matrix$w_AIC[myseq]<-cn1[[a]]
+  conf_matrix$BIC[myseq]<-cn2[[a]]
+  conf_matrix$LFO[myseq]<-cn3[[a]]
+  o=max(myseq)
+
+  
+}
+
+
+conf_matrix$eqem_om <- dplyr::recode(conf_matrix$OM, 
+    "sigmalow_stationary"="stationary",
+     "sigmalow_decLinearProd"="dynamic.a",        
+     "sigmalow_regimeProd"="regime.a",            
+     "sigmalow_sineProd"="dynamic.a",             
+     "sigmalow_regimeCap"="regime.b",             
+     "sigmalow_decLinearCap"="dynamic.b",         
+     "sigmalow_regimeProdCap"="regime.ab",         
+     "sigmalow_shiftCap"="regime.b",             
+     "sigmalow_decLinearProdshiftCap"="dynamic.ab")
+    
+
+conf_matrix$eqem_om<-factor(conf_matrix$eqem_om, 
+    levels=c("stationary", 
+        "autocorr", 
+        "dynamic.a", 
+        "dynamic.b", 
+        "dynamic.ab", 
+        "regime.a", 
+        "regime.b", 
+        "regime.ab"))
+conf_matrix$diag<-conf_matrix$eqem_om==conf_matrix$EM
+
+
+
+
+
+p=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
+  geom_tile(aes(fill = w_AIC), colour = "white",alpha=0.7) +
+  geom_text(aes(label = round(w_AIC,2)), vjust = 1,size=6) +
+  ggtitle("AIC sens sigma low")+
+  scale_fill_gradient(low="white", high="#009194")  +
+  geom_segment(data=transform(subset(conf_matrix, !!diag), 
+                    simulated=as.numeric(OM), 
+                    estimated=as.numeric(EM)), 
+               aes(x=simulated-.49, xend=simulated+.49, y=estimated-.49, yend=estimated+.49), 
+               color="gray90", linewidth=2)+
+  mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1)) +
+  xlab("Simulation Scenario")+ylab("Estimation Model")
+p
+
+
+
+p=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
+  geom_tile(aes(fill = BIC), colour = "white",alpha=0.7) +
+  geom_text(aes(label = round(BIC,2)), vjust = 1,size=6) +
+  ggtitle("BIC sens sigma low")+
+  scale_fill_gradient(low="white", high="#009194")  +
+  geom_segment(data=transform(subset(conf_matrix, !!diag), 
+                    simulated=as.numeric(OM), 
+                    estimated=as.numeric(EM)), 
+               aes(x=simulated-.49, xend=simulated+.49, y=estimated-.49, yend=estimated+.49), 
+               color="gray90", linewidth=2)+
+  mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
+  xlab("Simulation Scenario")+ylab("Estimation Model")
+p
+
+
+
+p=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
+  geom_tile(aes(fill = LFO), colour = "white",alpha=0.7) +
+  geom_text(aes(label = round(LFO,2)), vjust = 1, size=6) +
+  ggtitle("LFO sens smax sigma low")+
+  scale_fill_gradient(low="white", high="#009194")  +
+  geom_segment(data=transform(subset(conf_matrix, !!diag), 
+                    simulated=as.numeric(OM), 
+                    estimated=as.numeric(EM)), 
+               aes(x=simulated-.49, xend=simulated+.49, y=estimated-.49, yend=estimated+.49), 
+               color="gray90", linewidth=2)+
+  mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
+  xlab("Simulation Scenario")+ylab("Estimation Model")
+p
+
+
+
+#========================================================================================================
+#sigma med sensitivity 
+#read in data
+simPar <- read.csv("data/sigmamed_sensitivity/SimPars.csv")
+
+## Store relevant object names to help run simulation 
+scenNames <- unique(simPar$scenario)
+
+res_sigmed<-readRDS(file = "outs/simest/res_gamma_alpha/res_sigmed.rds")
+
+res_sigmed73<-readRDS(file = "outs/simest/res_gamma_alpha/res_sigmed_73.rds")
+
+
+ressigmed<-rbind(res_sigmed,res_sigmed73)
+
+#res_a <- res_a[res_a$convergence==0,]
+
+aic_sigmed=subset(ressigmed, parameter=='AIC'&method=='MLE')
+bic_sigmed=subset(ressigmed, parameter=='BIC'&method=='MLE')
+lfo_sigmed=subset(ressigmed, parameter=='LFO'&method=='MLE')
+
+
+lfo_sigmed<-lfo_sigmed[lfo_sigmed$model %in% c("simple","autocorr","rwa","rwb","rwab","hmma","hmmb","hmmab"),]
+lfo_sigmed[is.na(lfo_sigmed$est),]<--Inf
+
+lfo_sigmed<-lfo_sigmed[lfo_sigmed$model %in% c("simple","autocorr","rwa","rwb","rwab","hmma","hmmb","hmmab"),]
+
+lfo_sigmed[is.na(lfo_sigmed$est),]<--Inf
+aic_sigmed$est[aic_sigmed$convergence>0]<-Inf
+bic_sigmed$est[aic_sigmed$convergence>0]<-Inf
+
+scn<-factor(unique(aic_sigmed$scenario), levels=c(
+     "sigmamed_stationary",
+     "sigmamed_decLinearProd",        
+     "sigmamed_regimeProd",            
+     "sigmamed_sineProd",             
+     "sigmamed_regimeCap",             
+     "sigmamed_decLinearCap",         
+     "sigmamed_regimeProdCap",         
+     "sigmamed_shiftCap",             
+     "sigmamed_decLinearProdshiftCap"
+  ) )
 
 
 EM=c("stationary",
@@ -980,28 +1161,22 @@ lfo_set=list()
 o=0
 for(a in seq_along(scn)){
 
-  #AIC
-  aica<-subset(aic,scenario==scn[a])
-  dim(aica)
-  unique(aica$scenario)
-
-
    #AIC
-  aica<-subset(aic_smaxda,scenario==scn[a])
+  aica<-subset(aic_sigmed,scenario==scn[a])
   aic_set[[a]]=tidyr::spread(aica[,-9],key=model,value=est)
   aic_set[[a]]=aic_set[[a]][c(15,8,12,14,13,9,11,10)] #reorder estimation models
 
   sc1=apply(aic_set[[a]],1,which.min)
   cn1[[a]]=summary(factor(sc1,levels=seq(1:ncol(aic_set[[a]]))))/1000
 
-  bica=subset(bic_smaxda,scenario==scn[a])
+  bica=subset(bic_sigmed,scenario==scn[a])
   bic_set[[a]]=tidyr::spread(bica[,-9],key=model,value=est)
   bic_set[[a]]=bic_set[[a]][c(15,8,12,14,13,9,11,10)] #reorder estimation models
 
   sc2=apply(bic_set[[a]],1,which.min)
   cn2[[a]]=summary(factor(sc2,levels=seq(1:ncol(bic_set[[a]]))))/1000
 
-  lfoa=subset(lfo_smaxda,scenario==scn[a])
+  lfoa=subset(lfo_sigmed,scenario==scn[a])
   lfo_set[[a]]=tidyr::spread(lfoa[,-9],key=model,value=est)
   lfo_set[[a]]=lfo_set[[a]][c(15,8,12,14,13,9,11,10)] #reorder estimation models
 
@@ -1020,17 +1195,16 @@ for(a in seq_along(scn)){
 
 
 conf_matrix$eqem_om <- dplyr::recode(conf_matrix$OM, 
-    "trendLinearSmax025_da"="dynamic.b",
-    "trendLinearSmax050_da"="dynamic.b", 
-    "trendLinearSmax150_da"="dynamic.b", 
-    "trendLinearSmax200_da"="dynamic.b", 
-    "trendLinearSmax300_da"="dynamic.b", 
-    "regimeSmax025_da"="regime.b",     
-    "regimeSmax050_da"="regime.b",      
-    "regimeSmax150_da"="regime.b",      
-    "regimeSmax200_da"="regime.b",      
-    "regimeSmax300_da"="regime.b"
-      )   
+    "sigmamed_stationary"="stationary",
+     "sigmamed_decLinearProd"="dynamic.a",        
+     "sigmamed_regimeProd"="regime.a",            
+     "sigmamed_sineProd"="dynamic.a",             
+     "sigmamed_regimeCap"="regime.b",             
+     "sigmamed_decLinearCap"="dynamic.b",         
+     "sigmamed_regimeProdCap"="regime.ab",         
+     "sigmamed_shiftCap"="regime.b",             
+     "sigmamed_decLinearProdshiftCap"="dynamic.ab")
+    
 
 conf_matrix$eqem_om<-factor(conf_matrix$eqem_om, 
     levels=c("stationary", 
@@ -1050,7 +1224,7 @@ conf_matrix$diag<-conf_matrix$eqem_om==conf_matrix$EM
 p=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   geom_tile(aes(fill = w_AIC), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(w_AIC,2)), vjust = 1,size=6) +
-  ggtitle("AIC sens smax double alpha")+
+  ggtitle("AIC sens sigma med")+
   scale_fill_gradient(low="white", high="#009194")  +
   geom_segment(data=transform(subset(conf_matrix, !!diag), 
                     simulated=as.numeric(OM), 
@@ -1066,7 +1240,7 @@ p
 p=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   geom_tile(aes(fill = BIC), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(BIC,2)), vjust = 1,size=6) +
-  ggtitle("BIC sens smax  double alpha")+
+  ggtitle("BIC sens sigma med")+
   scale_fill_gradient(low="white", high="#009194")  +
   geom_segment(data=transform(subset(conf_matrix, !!diag), 
                     simulated=as.numeric(OM), 
@@ -1082,7 +1256,7 @@ p
 p=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   geom_tile(aes(fill = LFO), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(LFO,2)), vjust = 1, size=6) +
-  ggtitle("LFO sens smax  double alpha")+
+  ggtitle("LFO sens smax sigma med")+
   scale_fill_gradient(low="white", high="#009194")  +
   geom_segment(data=transform(subset(conf_matrix, !!diag), 
                     simulated=as.numeric(OM), 
