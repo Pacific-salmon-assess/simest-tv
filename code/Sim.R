@@ -59,18 +59,23 @@ for(u in 1:9){
     simPars <- read.csv("data/sensitivity_halfSmax/SimPars.csv")
     cuPar <- read.csv("data/sensitivity_halfSmax/CUPars_halfSmax.csv")
   }else if(u==5){
+    print("sensitivity Smax")
     simPars <- read.csv("data/Smax_sensitivity/SimPars.csv")
     cuPar <- read.csv("data/Smax_sensitivity/CUPars.csv")
   }else if(u==6){
+    print("sensitivity Smax da")
     simPars <- read.csv("data/Smax_sensitivity_doublealpha/SimPars.csv")  
     cuPar <- read.csv("data/Smax_sensitivity_doublealpha/CUPars_doublealpha.csv")
   }else if(u==7){
+    print("sigma low")
     simPars <- read.csv("data/sigmalow_sensitivity/SimPars.csv")  
     cuPar <- read.csv("data/sigmalow_sensitivity/CUPars_lowsigma.csv")
   }else if(u==8){
+    print("sigma med")
     simPars <- read.csv("data/sigmamed_sensitivity/SimPars.csv")  
     cuPar <- read.csv("data/sigmamed_sensitivity/CUPars_medsigma.csv")
   }else if(u==9){
+    print("base biascorr")
     simPars <- read.csv("data/generic_biascorr/SimPars_biascorr.csv")  
     cuPar <- read.csv("data/generic_biascorr/CUPars.csv")
   }
