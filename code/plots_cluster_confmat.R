@@ -38,9 +38,24 @@ bic=subset(res,parameter=='BIC'&method=='MLE')
 lfo=subset(res,parameter=='LFO'&method=='MLE')
 aggregate(lfo$iteration,list(lfo$iteration),length)
 
-lfo<-lfo[lfo$model %in% c("simple","autocorr","rwa","rwb","rwab","hmma","hmmb","hmmab"),]
+lfo<-lfo[lfo$model %in% c("simple","autocorr","rwa_last5","rwb_last5","rwab_last5",
+    "hmma_last5","hmmb_last5","hmmab_last5"),]
 unique(lfo$model)
-lfo[is.na(lfo$est),]<--Inf
+
+
+lfo$model<-dplyr::recode(lfo$model, 
+      "simple"="simple",
+      "autocorr"="autocorr",
+      "rwa_last5"="rwa",
+      "rwb_last5"="rwb",
+      "rwab_last5"="rwab",
+    "hmma_last5"="hmma",
+    "hmmb_last5"="hmmb",
+    "hmmab_last5"="hmmab"
+      )   
+lfo$est[is.na(lfo$est)]<--Inf
+
+sum(is.infinite(lfo$est))/length(lfo$est)
 
 scn<-factor(unique(aic$scenario), levels=c(
   "stationary", 
