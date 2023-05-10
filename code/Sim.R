@@ -44,42 +44,42 @@ source("code/utils.R")
 for(u in 1:9){
   if(u==1){
     print("base")
-    simPar <- read.csv("data/generic/SimPars.csv")
+    simPars <- read.csv("data/generic/SimPars.csv")
     cuPar <- read.csv("data/generic/CUPars.csv")
   }else if(u==2){
     print("base ER")
-    simPar <- read.csv("data/genericER/SimPars_ER.csv")
+    simPars <- read.csv("data/genericER/SimPars_ER.csv")
     cuPar <- read.csv("data/genericER/CUPars.csv")
   }else if(u==3){
     print("sensitivity a")
-    simPar <- read.csv("data/sensitivity/SimPars.csv")
+    simPars <- read.csv("data/sensitivity/SimPars.csv")
     cuPar <- read.csv("data/sensitivity/CUPars.csv")
   }else if(u==4){
     print("sensitivity a half Smax")
-    simPar <- read.csv("data/sensitivity_halfSmax/SimPars.csv")
+    simPars <- read.csv("data/sensitivity_halfSmax/SimPars.csv")
     cuPar <- read.csv("data/sensitivity_halfSmax/CUPars_halfSmax.csv")
   }else if(u==5){
-    simPar <- read.csv("data/Smax_sensitivity/SimPars.csv")
+    simPars <- read.csv("data/Smax_sensitivity/SimPars.csv")
     cuPar <- read.csv("data/Smax_sensitivity/CUPars.csv")
   }else if(u==6){
-    simPar <- read.csv("data/Smax_sensitivity_doublealpha/SimPars.csv")  
+    simPars <- read.csv("data/Smax_sensitivity_doublealpha/SimPars.csv")  
     cuPar <- read.csv("data/Smax_sensitivity_doublealpha/CUPars_doublealpha.csv")
   }else if(u==7){
-    simPar <- read.csv("data/sigmalow_sensitivity/SimPars.csv")  
+    simPars <- read.csv("data/sigmalow_sensitivity/SimPars.csv")  
     cuPar <- read.csv("data/sigmalow_sensitivity/CUPars_lowsigma.csv")
   }else if(u==8){
-    simPar <- read.csv("data/sigmamed_sensitivity/SimPars.csv")  
+    simPars <- read.csv("data/sigmamed_sensitivity/SimPars.csv")  
     cuPar <- read.csv("data/sigmamed_sensitivity/CUPars_medsigma.csv")
   }else if(u==9){
-    simPar <- read.csv("data/generic_biascorr/SimPars_biascorr.csv")  
+    simPars <- read.csv("data/generic_biascorr/SimPars_biascorr.csv")  
     cuPar <- read.csv("data/generic_biascorr/CUPars.csv")
   }
 
-  scenNames <- unique(simPar$scenario)
-  for(a in seq_len(nrow(simPar))){
+  scenNames <- unique(simPars$scenario)
+  for(a in seq_len(nrow(simPars))){
   
     print(a)
-    genericRecoverySim(simPar=simPar[a,], 
+    genericRecoverySim(simPar=simPars[a,], 
                         cuPar=cuPar, 
                         catchDat=NULL, 
                         srDat=NULL,
@@ -87,10 +87,8 @@ for(u in 1:9){
                         ricPars=NULL, 
                         larkPars=NULL, 
                         cuCustomCorrMat= NULL,
-                        #outDir="outs", 
-                        outDir="batata", 
-                        #nTrials=1000, 
-                        nTrials=10, 
+                        outDir="outs", 
+                        nTrials=1000, 
                         makeSubDirs=TRUE, 
                         random=FALSE, 
                         uniqueProd=TRUE,

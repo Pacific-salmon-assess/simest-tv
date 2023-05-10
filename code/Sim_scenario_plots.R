@@ -22,28 +22,13 @@ mytheme = list(
 simPar <- read.csv("data/generic/SimPars.csv")
 
 
-simData[[a]] <- readRDS(paste0("batata/SamSimOutputs/simData/", 
-                          simPar$nameOM[a],"/",
-                          simPar$scenario[a],"/",
-                          paste(simPar$nameOM[a],"_", 
-                          simPar$nameMP[a], "_", 
-                          "CUsrDat.RData",sep="")))$srDatout
-dat<-simData[[a]] 
-dat<-dat[dat$year>(max(dat$year)-46),]
-  dat <- dat[!is.na(dat$obsRecruits),]
-  
-  dat <- dat[dat$iteration==sample(unique(dat$iteration),1),]
-  dat$scenario <- simPar$scenario[a]
-datdf<-dat
-max(dat$recruits)
-
 simData<-list()
 actualSR<-list()
 alldat<-list()
 
 for(a in seq_len(nrow(simPar))){
 
-  simData[[a]] <- readRDS(paste0("outs/SamSimOutputs/simData/", 
+  simData[[a]] <- readRDS(paste0("batata/SamSimOutputs/simData/", 
                           simPar$nameOM[a],"/",
                           simPar$scenario[a],"/",
                           paste(simPar$nameOM[a],"_", 
@@ -78,6 +63,7 @@ for(a in seq_len(nrow(simPar))){
 
 SRdf<-do.call(rbind,actualSR)
 datdf<-do.call(rbind,alldat)
+
 
 
 SRdf$scenario_f <-factor(SRdf$scenario, levels=c("stationary",  
