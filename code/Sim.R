@@ -6,9 +6,6 @@
 #October 2022 
 #=============================================================
 
-#batata
-
-
 #install samsim 
 #remotes::install_github("Pacific-salmon-assess/samSim", ref="timevar", force=TRUE)
 
