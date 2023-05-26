@@ -28,7 +28,7 @@ alldat<-list()
 
 for(a in seq_len(nrow(simPar))){
 
-  simData[[a]] <- readRDS(paste0("batata/SamSimOutputs/simData/", 
+  simData[[a]] <- readRDS(paste0("outs/SamSimOutputs/simData/", 
                           simPar$nameOM[a],"/",
                           simPar$scenario[a],"/",
                           paste(simPar$nameOM[a],"_", 
@@ -465,7 +465,7 @@ SRexample_senSmax_da<-  ggplot(SRdf_senSmax_da) +
     scale_colour_viridis_d(end=.85) +
     labs(col = "year") +
     geom_point(data=datdf_senSmax_da,aes(x=spawners,y=recruits,col=as.factor(year)),alpha=.5) +
-    facet_wrap(~scenario_f)
+    facet_wrap(~scenario_f,scales = "free")
 SRexample_senSmax_da    
  
 ggsave(
