@@ -66,6 +66,8 @@ datdf<-do.call(rbind,alldat)
 
 
 
+
+
 SRdf$scenario_f <-factor(SRdf$scenario, levels=c("stationary",  
                                                   "autocorr",
                                                   "sigmaShift",
@@ -105,6 +107,40 @@ ggsave(
       plot = SRexample, 
       width = 12, height = 6
     )
+
+names(datdf)
+
+datdf[datdf$scenario_f=="stationary",]
+
+
+paramdf<-reshape2::melt(datdf,id.vars=c("iteration","year","CU","spawners","recruits","obsSpawners","obsRecruits",
+                                "ER", "obsER", "targetER",   
+                                "sMSY", "sGen", "uMSY", "scenario", "scenario_f"))
+
+summary(paramdf)
+
+paramdf$dplyr::recode(dfmpbias$scenario, 
+      "stationary"="simple",
+      "autocorr"="autocorr",
+      "sigmaShift"="simple", 
+      "decLinearProd"="rwa",
+      "sineProd"="rwa",
+      "regimeProd"="hmma",
+      "decLinearCap"="rwb",
+      "regimeCap"="hmmb",
+      "shiftCap"="hmmb", 
+      "shiftProd"="hmma",
+      "regimeProdCap"="hmmab",
+      "decLinearProdshiftCap"="rwab"
+      )   
+
+ ggplot(paramdf) +
+    geom_line(aes(x=year,y=value,linewidth=1.2) )+
+    mytheme + 
+    theme(legend.position="right") +
+    scale_colour_viridis_d(end=.85) +
+    labs(col = "year") +
+    facet_grid(variable~scenario_f, scales="free")
 
 
 #----------------------------------------

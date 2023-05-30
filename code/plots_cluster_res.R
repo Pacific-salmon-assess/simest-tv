@@ -28,17 +28,20 @@ simPar <- read.csv("data/generic/SimPars.csv")
 scenNames <- unique(simPar$scenario)
 
 res<-readRDS(file = "outs/simest/res.rds")
-res14<-readRDS(file = "outs/simest/res14.rds")
+
 
 
 
 #
 resstan<-readRDS(file = "outs/simest/resstan.rds")
+names(resstan)
+unique(resstan$scenario)
 
 
-res<-rbind(res,res14,resstan)#,resstan16,resstan712)
 
+res<-rbind(res,resstan)
 
+unique(res$parameter)
 res$parameter[res$parameter=="smax"]<-"Smax"
 #mean by iteration
 resparam<-res[res$parameter%in%c("alpha","Smax","sigma","smsy","sgen","umsy"),]
@@ -169,6 +172,8 @@ dfmpbias$simulated_paragg <- dplyr::recode(dfmpbias$simulated,
 
 #all scn pbias plot
 
+names(dfmpbias)
+
 dfscen<-aggregate(dfmpbias$simulated,list(parameter=dfmpbias$parameter,
   scenario_f=dfmpbias$scenario_f, model=dfmpbias$model),unique)
 dfscen$x<-factor(dfscen$x, levels=c("simple", 
@@ -181,7 +186,7 @@ dfscen$x<-factor(dfscen$x, levels=c("simple",
         "hmmab"))
 dfscen$simulated_f<-as.numeric(dfscen$x)
 
-
+head(dfmpbias)
 
 
 ggplot(dfmpbias) +   
@@ -192,8 +197,8 @@ ggplot(dfmpbias) +
   ylab("mean % bias") +
   xlab("estimation model") +
   facet_grid(parameter~scenario_f, scales="free_y")+
-  scale_fill_viridis_d(begin=.1, end=.8) +
-  scale_color_viridis_d(begin=.1, end=.8) +
+  scale_fill_viridis_d(begin=.3, end=.8) +
+  scale_color_viridis_d(begin=.3, end=.8) +
   geom_rect(data=dfscen,aes(xmin=as.numeric(simulated_f)-.5,
                          xmax=as.numeric(simulated_f)+.5,
                          ymin=-Inf,ymax=Inf),
@@ -205,6 +210,9 @@ ggplot(dfmpbias) +
 
 #split parameter plot
 
+
+
+
 dfmpbias_main<-dfmpbias[dfmpbias$parameter%in%c("alpha",
       "Smax",
       "sigma"),]
@@ -215,14 +223,14 @@ dfscen_main<-dfscen[dfscen$parameter%in%c("alpha",
       "sigma"),]
 
 ggplot(dfmpbias_main) +   
-  geom_boxplot(data=dfmpbias_main,aes(fill=method,x=model,y=x), outlier.shape = NA,alpha=.9) +         
+  geom_boxplot(data=dfmpbias_main,aes(fill=method,x=model,y=x), outlier.shape = NA,alpha=.8) +         
   coord_cartesian(ylim = quantile(dfmpbias_main$x, c(0.025, 0.975)))+
   geom_hline(yintercept=0) +
   mytheme+ 
   ylab("mean % bias") +
   xlab("estimation model") +
   facet_grid(parameter~scenario_f, scales="free_y")+
-  scale_fill_viridis_d(begin=.1, end=.8,option = "D",) +
+  scale_fill_viridis_d(begin=.3, end=.8,option = "D") +
   scale_color_viridis_d(begin=.4, end=.8) +
   geom_rect(data=dfscen_main,aes(xmin=as.numeric(simulated_f)-.5,
                          xmax=as.numeric(simulated_f)+.5,
@@ -244,14 +252,14 @@ dfscen_deriv<-dfscen[dfscen$parameter%in%c("sgen",
 
 
 ggplot(dfmpbias_deriv) +   
-  geom_boxplot(data=dfmpbias_deriv,aes(fill=method,x=model,y=x), outlier.shape = NA,alpha=.3) +         
-  coord_cartesian(ylim = quantile(dfmpbias_main$x, c(0.025, 0.975)))+
+  geom_boxplot(data=dfmpbias_deriv,aes(fill=method,x=model,y=x), outlier.shape = NA,alpha=.9) +         
+  coord_cartesian(ylim = quantile(dfmpbias_main$x, c(0.10, 0.90)))+
   geom_hline(yintercept=0) +
   mytheme+ 
   ylab("mean % bias") +
   xlab("estimation model") +
   facet_grid(parameter~scenario_f, scales="free_y")+
-  scale_fill_viridis_d(begin=.1, end=.8,option = "D",) +
+  scale_fill_viridis_d(begin=.3, end=.8,option = "D") +
   scale_color_viridis_d(begin=.4, end=.8) +
   geom_rect(data=dfscen_deriv,aes(xmin=as.numeric(simulated_f)-.5,
                          xmax=as.numeric(simulated_f)+.5,
@@ -261,11 +269,50 @@ ggplot(dfmpbias_deriv) +
   #        vjust = -2,position = position_dodge(1))+ 
   theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))
 
+#aggregate plots
+
+unique(dfmpbias$simulated)
+unique(dfmpbias$simulated_agg)
+
+
+dfscen_agg<-aggregate(dfmpbias$simulated_agg,list(parameter=dfmpbias$parameter,
+  scenario_f=dfmpbias$scenario_f, model=dfmpbias$model_agg),unique)
+dfscen_agg$x<-factor(dfscen_agg$x, levels=c("simple", 
+       "rw",
+       "hmm"))
+dfscen_agg$simulated_f<-as.numeric(dfscen_agg$x)
+
+dfscen_main_agg<-dfscen_agg[dfscen_agg$parameter%in%c("alpha",
+      "Smax",
+      "sigma"),]
+
+ggplot(dfmpbias_main) +   
+  geom_boxplot(data=dfmpbias_main,aes(fill=method,x=model_agg,y=x), outlier.shape = NA,alpha=.8) +         
+  coord_cartesian(ylim = quantile(dfmpbias_main$x, c(0.025, 0.975)))+
+  geom_hline(yintercept=0) +
+  mytheme+ 
+  ylab("mean % bias") +
+  xlab("estimation model") +
+  facet_grid(parameter~scenario_f, scales="free_y")+
+  scale_fill_viridis_d(begin=.3, end=.8,option = "D") +
+  scale_color_viridis_d(begin=.4, end=.8) +
+  geom_rect(data=dfscen_main_agg,aes(xmin=as.numeric(simulated_f)-.5,
+                         xmax=as.numeric(simulated_f)+.5,
+                         ymin=-Inf,ymax=Inf),
+                    color="gray90",alpha=0.05)+
+  #stat_summary(aes(color=method,x=(model),y=x),fun.data = give.n, geom = "text", 
+  #        vjust = -2,position = position_dodge(1))+ 
+  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))
+
+
+
 #close look plot
 
 
 dfmpbias_ss<-dfmpbias[dfmpbias$scenario_f%in%c("stationary",
       "decLinearProd",
+      "regimeProd",
+       "decLinearCap",
       "shiftCap"),]
 
 
@@ -292,7 +339,7 @@ ggplot(dfmpbias_ss) +
   ylab("mean % bias") +
   xlab("estimation model") +
   facet_grid(parameter~scenario_f, scales="free_y")+
-  scale_fill_viridis_d(begin=.3, end=.8) +
+  scale_fill_viridis_d(begin=.3, end=.8,option = "D") +
   scale_color_viridis_d(begin=.3, end=.8) +
   geom_rect(data=dfscen_ss,aes(xmin=as.numeric(simulated_f)-.5,
                          xmax=as.numeric(simulated_f)+.5,
@@ -307,18 +354,50 @@ ggplot(dfmpbias_ss) +
 
 
 
-ggsave(
-      filename = "outs/SamSimOutputs/plotcheck/pbiasbymodel.pdf", 
-      plot = marrangeGrob(pbiasmodel, nrow=1, ncol=1), 
-      width = 12, height = 8
-    )
+#ggsave(
+#      filename = "outs/SamSimOutputs/plotcheck/rmsebymodel.pdf", 
+#      plot = marrangeGrob(rmsemodel, nrow=1, ncol=1), 
+#      width = 12, height = 8
+#    )
+
+dfmpbias_main_mle<-dfmpbias_main[dfmpbias_main$method=="MLE",]
+dfscen_main_mle<-aggregate(dfmpbias_main_mle$simulated,list(parameter=dfmpbias_main_mle$parameter,
+  scenario_f=dfmpbias_main_mle$scenario_f, model=dfmpbias_main_mle$model),unique)
+
+dfscen_ss<-aggregate(dfmpbias_ss$simulated_agg,list(parameter=dfmpbias_ss$parameter,
+  scenario_f=dfmpbias_ss$scenario_f, model=dfmpbias_ss$model_agg),unique)
+dfscen_ss$x<-factor(dfscen_ss$x, levels=c("simple","rw","hmm"))
+dfscen_ss$simulated_f<-as.numeric(dfscen_ss$x)
 
 
-ggsave(
-      filename = "outs/SamSimOutputs/plotcheck/rmsebymodel.pdf", 
-      plot = marrangeGrob(rmsemodel, nrow=1, ncol=1), 
-      width = 12, height = 8
-    )
+
+
+
+
+
+
+
+
+ggplot(dfmpbias_main_mle) +   
+  geom_boxplot(data=dfmpbias_main,aes(x=model_agg,y=x), outlier.shape = NA,alpha=.8) +         
+  coord_cartesian(ylim = quantile(dfmpbias_main$x, c(0.025, 0.975)))+
+  geom_hline(yintercept=0) +
+  mytheme+ 
+  ylab("mean % bias") +
+  xlab("estimation model") +
+  facet_grid(parameter~scenario_f, scales="free_y")+
+  scale_fill_viridis_d(begin=.3, end=.8,option = "D") +
+  scale_color_viridis_d(begin=.4, end=.8) +
+  geom_rect(data=dfscen_main,aes(xmin=as.numeric(simulated_f)-.5,
+                         xmax=as.numeric(simulated_f)+.5,
+                         ymin=-Inf,ymax=Inf),
+                    color="gray90",alpha=0.05)+
+  #stat_summary(aes(color=method,x=(model),y=x),fun.data = give.n, geom = "text", 
+  #        vjust = -2,position = position_dodge(1))+ 
+  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))
+
+
+
 
 
 #===========================================
