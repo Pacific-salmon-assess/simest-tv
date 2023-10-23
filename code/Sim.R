@@ -76,6 +76,11 @@ for(u in 1:9){
   }else if(u==9){
     simPars <- read.csv("data/generic_biascorr/SimPars_biascorr.csv")  
     cuPar <- read.csv("data/generic_biascorr/CUPars.csv")
+  }else if(u==10){
+    #RW run, do not run by default
+    simPars <- read.csv("data/generic/SimPars_rw.csv")
+    cuPar <- read.csv("data/generic/CUPars.csv")
+
   }
 
   scenNames <- unique(simPars$scenario)

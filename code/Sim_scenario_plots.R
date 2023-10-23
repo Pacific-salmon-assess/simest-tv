@@ -4,7 +4,7 @@
 #===============================================
 library(ggplot2)
 library(dplyr)
-
+library(samEst)
 
 
 
@@ -108,9 +108,7 @@ ggsave(
       width = 12, height = 6
     )
 
-names(datdf)
 
-datdf[datdf$scenario_f=="stationary",]
 
 
 paramdf<-reshape2::melt(datdf,id.vars=c("iteration","year","CU","spawners","recruits","obsSpawners","obsRecruits",
@@ -119,29 +117,61 @@ paramdf<-reshape2::melt(datdf,id.vars=c("iteration","year","CU","spawners","recr
 
 summary(paramdf)
 
-paramdf$dplyr::recode(dfmpbias$scenario, 
+paramdf$simulated<-dplyr::recode(paramdf$scenario, 
       "stationary"="simple",
-      "autocorr"="autocorr",
+      "autocorr"="simple",
       "sigmaShift"="simple", 
-      "decLinearProd"="rwa",
-      "sineProd"="rwa",
-      "regimeProd"="hmma",
-      "decLinearCap"="rwb",
-      "regimeCap"="hmmb",
-      "shiftCap"="hmmb", 
-      "shiftProd"="hmma",
-      "regimeProdCap"="hmmab",
-      "decLinearProdshiftCap"="rwab"
+      "decLinearProd"="rw",
+      "sineProd"="rw",
+      "regimeProd"="hmm",
+      "decLinearCap"="rw",
+      "regimeCap"="hmm",
+      "shiftCap"="hmm", 
+      "shiftProd"="hmm",
+      "regimeProdCap"="hmm",
+      "decLinearProdshiftCap"="rw"
       )   
 
+paramdf<-paramdf[paramdf$variable!="beta",]
+
  ggplot(paramdf) +
-    geom_line(aes(x=year,y=value,linewidth=1.2) )+
+    geom_line(aes(x=year,y=value,col=simulated), linewidth=2)+
     mytheme + 
     theme(legend.position="right") +
     scale_colour_viridis_d(end=.85) +
     labs(col = "year") +
     facet_grid(variable~scenario_f, scales="free")
 
+#----------------------------------------
+#equilibrium parameter plots                            |
+#----------------------------------------
+
+
+names(datdf)
+eqdf<-datdf
+
+eqdf$sMSY<-smsyCalc(eqdf$alpha,eqdf$beta)
+eqdf$uMSY<-umsyCalc(eqdf$alpha)
+eqdf$sGen<-unlist(mapply(sGenCalc,a=eqdf$alpha,
+          Smsy=eqdf$sMSY, 
+          b=eqdf$beta))
+
+
+pareqdf<-reshape2::melt(eqdf,id.vars=c("iteration","year","CU","spawners","recruits","obsSpawners","obsRecruits",
+                                "ER", "obsER", "targetER", "scenario", "scenario_f"))
+
+
+
+pareqdf<-pareqdf[pareqdf$variable!="sigma"&,]
+
+
+ ggplot(pareqdf) +
+    geom_line(aes(x=year,y=value), linewidth=2)+
+    mytheme + 
+    theme(legend.position="right") +
+    scale_colour_viridis_d(end=.85) +
+    labs(col = "year") +
+    facet_grid(variable~scenario_f, scales="free")
 
 #----------------------------------------
 #sensitivity alpha case                              |
@@ -415,6 +445,42 @@ ggsave(
       width = 12, height = 6
     )
 
+
+names(datdf)
+
+datdf[datdf$scenario_f=="stationary",]
+
+
+paramdf<-reshape2::melt(datdf,id.vars=c("iteration","year","CU","spawners","recruits","obsSpawners","obsRecruits",
+                                "ER", "obsER", "targetER",   
+                                "sMSY", "sGen", "uMSY", "scenario", "scenario_f"))
+
+summary(paramdf)
+
+paramdf$simulated<-dplyr::recode(paramdf$scenario, 
+      "stationary"="simple",
+      "autocorr"="simple",
+      "sigmaShift"="simple", 
+      "decLinearProd"="rw",
+      "sineProd"="rw",
+      "regimeProd"="hmm",
+      "decLinearCap"="rw",
+      "regimeCap"="hmm",
+      "shiftCap"="hmm", 
+      "shiftProd"="hmm",
+      "regimeProdCap"="hmm",
+      "decLinearProdshiftCap"="rw"
+      )   
+
+paramdf<-paramdf[paramdf$variable!="beta",]
+
+ ggplot(paramdf) +
+    geom_line(aes(x=year,y=value,col=simulated), linewidth=2)+
+    mytheme + 
+    theme(legend.position="right") +
+    scale_colour_viridis_d(end=.85) +
+    labs(col = "year") +
+    facet_grid(variable~scenario_f, scales="free")
 
 
 #----------------------------------------
@@ -703,3 +769,66 @@ ggsave(
 
 
 
+#-----------------------------------------------------------------
+#ER trend plots
+
+
+
+simPar_ER <- read.csv("data/genericER/SimPars_ER.csv")
+
+
+
+simData_ER <- list()
+actualSR_ER <- list()
+alldat_ER <- list()
+
+for(a in seq_len(nrow(simPar_ER))){
+
+
+  simData_ER[[a]] <- readRDS(paste0("outs/SamSimOutputs/", 
+                          simPar_ER$nameOM[a],"/",
+                          simPar_ER$scenario[a],"/",
+                          paste(simPar_ER$nameOM[a],"_", 
+                          simPar_ER$nameMP[a], "_", 
+                          "CUsrDat.RData",sep="")))$srDatout
+
+  dat <- simData_ER[[a]] 
+  dat <- dat[dat$year>(max(dat$year)-46),]
+  dat <- dat[!is.na(dat$obsRecruits),]
+  
+  dat <- dat[dat$iteration==sample(unique(dat$iteration),1),]
+  dat$scenario <- simPar_ER$scenario[a]
+  alldat_ER[[a]]<-dat
+  
+  S <- seq(0,750000,by=1000)
+  R <- matrix(NA, ncol=length(unique(dat$year)),nrow=length(S))
+  
+  for(i in unique(dat$year)){
+    
+    alpha<- dat$alpha[dat$year==i]
+    beta<- dat$beta[dat$year==i]
+    R[,which(unique(dat$year)==i)]<-S*exp(alpha-beta*S)
+  }
+  
+  actualSR_ER[[a]]<-data.frame(year=rep(unique(dat$year),
+                                            each=length(S)),
+                                   spawners=S,
+                                   recruits=c(R),
+                                   scenario=simPar_ER$scenario[a])
+  
+
+
+  
+
+  
+  
+}
+
+
+ggplot(dat) +
+      geom_boxplot(aes(x=as.factor(year),y=ER),alpha=.5) +
+      geom_hline(data=dat,aes(yintercept=uMSY, col=as.factor(year))) +
+      theme_bw(14) + 
+      xlab("year") + 
+      scale_color_discrete(name = "Umsy") +
+      labs(title = simPar$nameOM[a])
