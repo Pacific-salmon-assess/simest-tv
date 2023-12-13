@@ -67,11 +67,9 @@ convstat<-aggregate(resparam$convergence,
     function(x){sum(x)})
 convstatMLE<-convstat[convstat$x==0&convstat$method=="MLE",]
 convstatMCMC<-convstat[convstat$x==0&convstat$method=="MCMC",]
-head(convstatMCMC)
+
 
 allconv<-inner_join(convstatMLE[,-3], convstatMCMC[,-3])
-
-head(allconv)
 
 convsum<-aggregate(allconv$iteration,
     list(model=allconv$model,scenario=allconv$scenario),
@@ -116,7 +114,6 @@ resparam<-as.data.frame(data.table::rbindlist(resl))
 
 
 
-
 df<-reshape2::melt(resparam, id.vars=c("parameter","iteration","scenario","method","model","by", "convergence","pbias","bias"))
 
 #df_alpha<-df[df$parameter%in%c("alpha"),]
@@ -125,98 +122,126 @@ df$col<-factor(df$variable,levels=c("est","sim"))
 #df_pbias<-df_mcmc[df_mcmc$variable%in%c("est"),]
 df_pbias<-df[df$variable%in%c("mode"),]
 
-
 df_pbias<-df_pbias[df_pbias$parameter!="sigma"&df_pbias$parameter!="sgen"&!is.na(df_pbias$bias),]
 
 
-df_biasq<-aggregate(df_pbias$bias,list(parameter=df_pbias$parameter,
-    scenario=df_pbias$scenario,
-            method =df_pbias$method,
-            model =df_pbias$model,
-            by =df_pbias$by),function (x) quantile(x, c(0.1, 0.5, 0.9)))
-
-df_biasq$model<-factor(df_biasq$model, levels=c("simple", 
-       "autocorr",
-       "rwa",
-       "rwb",
-       "rwab",
-       "hmma",  
-        "hmmb",    
-        "hmmab"))
-df_biasq<-do.call(data.frame, df_biasq)
-unique(df_biasq$scenario)
-
-df_biasq$paramch<-"a"   
-df_biasq$type<-"trend"
-df_biasq$type[df_biasq$scenario%in%c("regimeProd1","regimeProd10","regimeProd2","regimeProd5","regimeProd7" )]<-"regime"
-      
+df_pbias_mcmc<-df_pbias[df_pbias$method=="MCMC",]
 
 
 
 
-#===========================================================
-#MCMC results -all conv. 
-
-resparam<-res[res$parameter%in%c("alpha","smax","sigma","smsy","sgen","umsy"),]
-resparam<-resparam[resparam$convergence==0,]
-
-df_amc<-reshape2::melt(resparam, id.vars=c("parameter","iteration","scenario","method","model","by", "convergence","pbias","bias"))
-
-#df_alpha<-df[df$parameter%in%c("alpha"),]
-df_amc$col<-factor(df_amc$variable,levels=c("est","sim"))
-
-df_mcmc_all<-df_amc[df_amc$method=="MCMC",]
-
-df_pbias_mcmc_all<-df_mcmc_all[df_mcmc_all$variable%in%c("mode"),]
-
-
-df_pbias_mcmc_all<-df_pbias_mcmc_all[df_pbias_mcmc_all$parameter!="sigma"&!is.na(df_pbias_mcmc_all$bias),]
-
-
-df_pbias_mcmc_all$paramch<-"a" 
+df_pbias_mcmc$paramch<-"a" 
  
-df_pbias_mcmc_all$type<-"trend"
-df_pbias_mcmc_all$type[df_pbias_mcmc_all$scenario%in%c("regimeProd1","regimeProd10","regimeProd2","regimeProd5","regimeProd7")]<-"shift"
+df_pbias_mcmc$type<-"trend"
+df_pbias_mcmc$type[df_pbias_mcmc$scenario%in%c("regimeProd1","regimeProd10","regimeProd2","regimeProd5","regimeProd7")]<-"shift"
 
 #time-varying alpha and Smax scenarios
-tvbxp<-df_pbias_mcmc_all %>% filter( 
+tvbxp<-df_pbias_mcmc %>% filter( 
                             parameter %in% c("alpha","smax","smsy")
                             )
 
 tvbxp$model<-factor(tvbxp$model, levels=c("simple", 
        "autocorr",
-       "rwa",
-       "rwb",
-       "rwab",
-       "hmma",  
-        "hmmb",    
-        "hmmab"))
+       "rwa","hmma",  
+       "rwb","hmmb",  
+       "rwab","hmmab"))
 
-head(tvbxp)
-pbias_tv_v<-ggplot(tvbxp) + 
-geom_violin(aes(x=model,y=pbias, fill=type), scale="width", trim=TRUE, alpha=.7,position = position_dodge(0.9))+
-geom_boxplot(aes(x=model,y=pbias, fill=type),outlier.shape = NA,width=0.1,position = position_dodge(0.9))+
-coord_cartesian(ylim =  c(-80, 80))+
- scale_fill_viridis_d("estimation:",option = "E") +
-mytheme+
-facet_grid(parameter~.)+
-geom_hline(yintercept=0, linewidth=1.2) +
+unique(tvbxp$scenario)
 
-pbias_tv_v
+tvbxp$scenario<-factor(tvbxp$scenario, levels=c("regimeProd1",
+                                                "regimeProd2",
+                                                "regimeProd5",
+                                                "regimeProd7",  
+                                                "regimeProd10",    
+                                                "trendLinearProd1",
+                                                "trendLinearProd2",
+                                                "trendLinearProd5",
+                                                "trendLinearProd7",
+                                                "trendLinearProd10" ))
+
+
+tvbxp$modtype<-case_match(
+  tvbxp$model,
+  c("simple", "autocorr") ~ "simple",
+  c("rwa", "hmma") ~ "tva",
+   c("rwb", "hmmb") ~ "tvb", 
+    c("rwab", "hmmab") ~ "both")
+
+tvbxp$model<-factor(tvbxp$model, levels=c("simple", 
+       "autocorr",
+       "rwa","hmma",  
+       "rwb","hmmb",  
+       "rwab","hmmab"))
+
+
 
 
 #plot bias (instead of pbias)
+tvbxp_alpha<-tvbxp[tvbxp$parameter=="alpha",]
 
-bias_tv_v_scn<-ggplot(tvbxp) + 
-geom_violin(aes(x=model,y=bias, fill=modtype),alpha=.7)+
-geom_boxplot(aes(x=model,y=bias, fill=modtype),outlier.shape = NA,width=0.1)+
+
+bias_alpha_scn<-ggplot(tvbxp_alpha) + 
+geom_violin(aes(x=model,y=bias, fill=modtype),scale="width", trim=TRUE, alpha=.7,position = position_dodge(0.9))+
+geom_boxplot(aes(x=model,y=bias, fill=modtype),outlier.shape = NA,width=0.1,position = position_dodge(0.9))+
+coord_cartesian(ylim =  c(-1.7, 1.5))+
  scale_fill_viridis_d("estimation:",option = "E") +
 mytheme+
 geom_hline(yintercept=0, linewidth=1.2) +
  ylab("log(alpha) bias")+
-facet_wrap(parameter~scenario, scales="free", ncol=7)
+ theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
+facet_wrap(.~ scenario, scales="free", ncol=5)
  #annotate("text", x = Inf, y = Inf, label = paste("time-varying alpha"), vjust = 1, hjust = 1.2, size=5)
-bias_tva_v_scn
+bias_alpha_scn
+
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/violins/sens_a/bias_alpha_scn_sensa.png", plot=bias_alpha_scn)
+ 
+
+
+
+tvbxp_smax<-tvbxp[tvbxp$parameter=="smax",]
+
+
+bias_smax_scn<-ggplot(tvbxp_smax) + 
+geom_violin(aes(x=model,y=bias, fill=modtype),scale="width", trim=TRUE, alpha=.7,position = position_dodge(0.9))+
+geom_boxplot(aes(x=model,y=bias, fill=modtype),outlier.shape = NA,width=0.1,position = position_dodge(0.9))+
+coord_cartesian(ylim =  c(-150000, 250000))+
+ scale_fill_viridis_d("estimation:",option = "E") +
+mytheme+
+geom_hline(yintercept=0, linewidth=1.2) +
+ ylab("smax bias")+
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
+facet_wrap(.~ scenario, scales="free", ncol=5)
+bias_smax_scn
+
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/violins/sens_a/bias_smax_scn_sensa.png", plot=bias_smax_scn)
+ 
+
+
+
+
+
+
+
+tvbxp_smsy<-tvbxp[tvbxp$parameter=="smsy",]
+
+
+bias_smsy_scn<-ggplot(tvbxp_smax) + 
+geom_violin(aes(x=model,y=bias, fill=modtype),scale="width", trim=TRUE, alpha=.7,position = position_dodge(0.9))+
+geom_boxplot(aes(x=model,y=bias, fill=modtype),outlier.shape = NA,width=0.1,position = position_dodge(0.9))+
+coord_cartesian(ylim =  c(-150000, 250000))+
+ scale_fill_viridis_d("estimation:",option = "E") +
+mytheme+
+geom_hline(yintercept=0, linewidth=1.2) +
+ ylab("smsy bias")+
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
+facet_wrap(.~ scenario, scales="free", ncol=5)
+bias_smsy_scn
+
+
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/violins/sens_a/bias_smsy_scn_sensa.png", plot=bias_smsy_scn)
+ 
+
+
 
 
 init_scales_orig =bias_tva_v_scn$facet$init_scales

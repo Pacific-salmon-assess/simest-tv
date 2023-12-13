@@ -577,7 +577,7 @@ df_biasq_MCMC<-df_biasq[df_biasq$method=="MCMC",]
 
 
 df_alpha_biasq_MCMC<-df_biasq_MCMC[df_biasq_MCMC$parameter=="alpha",]
-sensa_alpha<-ggplot(df_alpha_biasq) + 
+sensa_alpha<-ggplot(df_alpha_biasq_MCMC) + 
 coord_cartesian(ylim = c(-2,1))+ 
 geom_ribbon(aes(x=by,ymin =  x.10., ymax=x.90.,fill=magnitude_ch,group=scenario),alpha=0.2)+
 geom_line(aes(x=by,y= x.50.,color=magnitude_ch,group=scenario),linewidth=1.2)+
@@ -593,12 +593,12 @@ geom_line(aes(x=by,y= x.50.,color=magnitude_ch,group=scenario),linewidth=1.2)+
        xlab("year") +
        facet_grid(type~model, scales="free_y")
 sensa_alpha  
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/trends/sens_a/basea_MCMC.png", plot=sensa_alpha )
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/trends/sens_a/bias_a_MCMC.png", plot=sensa_alpha )
 
 
 
 df_smax_biasq_MCMC<-df_biasq_MCMC[df_biasq_MCMC$parameter=="smax",]
-sensa_smax<-ggplot(df_smax_biasq) + 
+sensa_smax<-ggplot(df_smax_biasq_MCMC) + 
 coord_cartesian(ylim = c(-100000,150000))+ 
 geom_ribbon(aes(x=by,ymin =  x.10., ymax=x.90.,fill=magnitude_ch,group=scenario),alpha=0.2)+
 geom_line(aes(x=by,y= x.50.,color=magnitude_ch,group=scenario),linewidth=1.2)+
@@ -614,7 +614,30 @@ geom_line(aes(x=by,y= x.50.,color=magnitude_ch,group=scenario),linewidth=1.2)+
        xlab("year") +
        facet_grid(type~model, scales="free_y")
 sensa_smax  
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/trends/sens_a/basea_MCMC.png", plot=sensa_smax   )
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/trends/sens_a/bias_smax_MCMC.png", plot=sensa_smax   )
+
+
+
+df_smsy_biasq_MCMC<-df_biasq_MCMC[df_biasq_MCMC$parameter=="smsy",]
+sensa_smsy<-ggplot(df_smsy_biasq_MCMC) + 
+coord_cartesian(ylim = c(-70000,70000))+ 
+geom_ribbon(aes(x=by,ymin =  x.10., ymax=x.90.,fill=magnitude_ch,group=scenario),alpha=0.2)+
+geom_line(aes(x=by,y= x.50.,color=magnitude_ch,group=scenario),linewidth=1.2)+
+       scale_color_viridis_d("magnitude of change:",begin=.1, end=.8) +
+       scale_fill_viridis_d("magnitude of change:",begin=.1, end=.8) +
+       geom_hline(yintercept=0, color="black",alpha=.7,linewidth=1.2) +
+       mytheme+ 
+       scale_y_continuous(name = "MLE bias in Smsy", sec.axis = sec_axis(~., name = "varying parameters")) +
+       theme(axis.text.y.right = element_blank(),
+        axis.ticks.y.right = element_blank()
+       )+
+       #ylab("MLE bias in log(alpha)") +
+       xlab("year") +
+       facet_grid(type~model, scales="free_y")
+sensa_smsy  
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/trends/sens_a/bias_smsy_MCMC.png", plot=sensa_smsy   )
+
+
 
 
 #=================================================
@@ -639,13 +662,13 @@ geom_line(aes(x=by,y= x.50.,color=magnitude_ch,group=scenario),linewidth=1.2)+
        xlab("year") +
        facet_grid(type~model, scales="free_y")
 sensa_alpha_MLE  
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/trends/sens_a/basea_MCMC.png", plot=sensa_alpha_MLE )
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/trends/sens_a/bias_a_MLE.png", plot=sensa_alpha_MLE )
 
 
 
-df_smax_biasq<-df_biasq[df_biasq$parameter=="smax",]
-sensa_smax<-ggplot(df_smax_biasq) + 
-coord_cartesian(ylim = c(-100000,150000))+ 
+df_smax_biasq_MLE<-df_biasq_MLE[df_biasq_MLE$parameter=="smax",]
+sensa_smax_MLE<- ggplot(df_smax_biasq_MLE) + 
+coord_cartesian(ylim = c(-120000,300000))+ 
 geom_ribbon(aes(x=by,ymin =  x.10., ymax=x.90.,fill=magnitude_ch,group=scenario),alpha=0.2)+
 geom_line(aes(x=by,y= x.50.,color=magnitude_ch,group=scenario),linewidth=1.2)+
        scale_color_viridis_d("magnitude of change:",begin=.1, end=.8) +
@@ -659,15 +682,15 @@ geom_line(aes(x=by,y= x.50.,color=magnitude_ch,group=scenario),linewidth=1.2)+
        #ylab("MLE bias in log(alpha)") +
        xlab("year") +
        facet_grid(type~model, scales="free_y")
-sensa_smax  
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/trends/sens_a/basea_MCMC.png", plot=sensa_alpha )
+sensa_smax_MLE  
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/trends/sens_a/bias_smax_MLE.png", plot=sensa_smax_MLE  )
 
 
-df_smsy_biasq<-df_biasq[df_biasq$parameter=="smsy",]
-ggplot(df_smsy_biasq) +  
+df_smsy_biasq_MLE<-df_biasq_MLE[df_biasq_MLE$parameter=="smsy",]
+sensa_smsy_MLE <-ggplot(df_smsy_biasq_MLE) +  
 coord_cartesian(ylim = c(-50000,100000))+ 
-geom_ribbon(aes(x=by,ymin =  x.10., ymax=x.90.,fill=mag),alpha=0.2)+
-geom_line(aes(x=by,y= x.50.,color=mag),linewidth=1.2)+
+geom_ribbon(aes(x=by,ymin =  x.10., ymax=x.90.,fill=magnitude_ch,group=scenario),alpha=0.2)+
+geom_line(aes(x=by,y= x.50.,color=magnitude_ch,group=scenario),linewidth=1.2)+
        scale_color_viridis_d(begin=.1, end=.8) +
        scale_fill_viridis_d(begin=.1, end=.8) +
        geom_hline(yintercept=0, color="black",alpha=.7,linewidth=1.2) +
@@ -675,10 +698,15 @@ geom_line(aes(x=by,y= x.50.,color=mag),linewidth=1.2)+
        ylab("Bias in Smsy") +
        xlab("year") +
        facet_grid(type~model, scales="free_y")
-
+sensa_smsy_MLE
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/trends/sens_a/bias_smsy_MLE.png", plot=sensa_smsy_MLE  )
 
 #========================================================================================================
 #sensitivity smax scenario
+
+
+
+
 
 
 #========================================================================================================

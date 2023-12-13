@@ -28,26 +28,33 @@ mytheme = list(
 #========================================================================================================
 #sensitivity Alpha cases
 #read in data
-simPar <- read.csv("data/sensitivity/SimPars.csv")
+simPar <- read.csv("data/Smax_sensitivity/SimPars.csv")
+
+## Store relevant object names to help run simulation 
+scenNames <- unique(simPar$scenario)
+simPar <- read.csv("data/Smax_sensitivity/SimPars.csv")
 
 ## Store relevant object names to help run simulation 
 scenNames <- unique(simPar$scenario)
 
-resa1<-readRDS(file = "outs/simest/sensitivity/res_a1.rds")
-resa2<-readRDS(file = "outs/simest/sensitivity/res_a2.rds")
+ressmax1<-readRDS(file = "outs/simest/Smax_sensitivity/res_smax1.rds")
+ressmax2<-readRDS(file = "outs/simest/Smax_sensitivity/res_smax2.rds")
+ressmax240<-readRDS(file = "outs/simest/Smax_sensitivity/res_smax_240.rds")
+restmb<-rbind(ressmax1,ressmax2,ressmax240)
 
+head(restmb)
 
-restmb<-rbind(resa1,resa2)
+resstansmax1<-readRDS(file = "outs/simest/Smax_sensitivity/resstan_smax1.rds")
+resstansmax2<-readRDS(file = "outs/simest/Smax_sensitivity/resstan_smax2.rds")
 
-resstana1<-readRDS(file = "outs/simest/sensitivity/resstan_a1.rds")
-resstana2<-readRDS(file = "outs/simest/sensitivity/resstan_a2.rds")
-resstan<-rbind(resstana1,resstana2)
-
- names(resstan)
+resstan<-rbind(resstansmax1,resstansmax2)
 
 #resstan<-readRDS(file = "outs/simest/generic/resstan.rds")
 
+
+
 res<-rbind(restmb,resstan)
+
 
 res$parameter[res$parameter=="Smax"]<-"smax"
 
@@ -98,22 +105,22 @@ for(i in seq_along(scns)){
     ranksbase[[n]]<-calcRanks(tmp.results.df, columnToRank = 4:7, ranking ="relative1")$ranks
     n<-n+1
 }}
-
+unique(ranksbaseall$"scns[i]")
 
 ranksbaseall<-do.call(rbind,ranksbase)
 ranksbaseall$model=factor(ranksbaseall$"mods[j]", levels=c("simple",
    "autocorr", "rwa", "hmma","rwb",  "hmmb","rwab", "hmmab"))
 ranksbaseall$parameter=factor(ranksbaseall$"paras[u]", levels=c("alpha","smax","smsy"))
-ranksbaseall$scenario=factor(ranksbaseall$"scns[i]", levels=c("trendLinearProd1" ,
-                                                        "trendLinearProd2", 
-                                                        "trendLinearProd5", 
-                                                        "trendLinearProd7",
-                                                        "trendLinearProd10" ,    
-                                                        "regimeProd1",  
-                                                        "regimeProd2" ,     
-                                                        "regimeProd5",     
-                                                        "regimeProd7",
-                                                        "regimeProd10" ))
+ranksbaseall$scenario=factor(ranksbaseall$"scns[i]", levels=c("trendLinearSmax025",
+                            "trendLinearSmax050",
+                            "trendLinearSmax150",
+                            "trendLinearSmax200",
+                            "trendLinearSmax300",
+                            "regimeSmax025",
+                            "regimeSmax050",
+                            "regimeSmax150",      
+                            "regimeSmax200",      
+                            "regimeSmax300" ))
 
 ranksbaseall$parameter=factor(ranksbaseall$"paras[u]", levels=c("alpha","smax","smsy"))
 
@@ -131,20 +138,22 @@ ranksbaseall$modtype<-recode(ranksbaseall$model,
      "hmmab"="tvab")
 
 ranksbaseall$scnmodmatch<-0
+unique(ranksbaseall$scenario)
 
-ranksbaseall$scnmodmatch[ranksbaseall$scenario %in% c("trendLinearProd1" ,
-                                                        "trendLinearProd2", 
-                                                        "trendLinearProd5", 
-                                                        "trendLinearProd7",
-                                                        "trendLinearProd10" )&
-                        ranksbaseall$model=="rwa"]<-1
 
-ranksbaseall$scnmodmatch[ranksbaseall$scenario %in% c( "regimeProd1",  
-                                                        "regimeProd2" ,     
-                                                        "regimeProd5",     
-                                                        "regimeProd7",
-                                                        "regimeProd10" )&
-                        ranksbaseall$model=="hmma"]<-1
+ranksbaseall$scnmodmatch[ranksbaseall$scenario %in% c("trendLinearSmax025",
+                            "trendLinearSmax050",
+                            "trendLinearSmax150",
+                            "trendLinearSmax200",
+                            "trendLinearSmax300" )&
+                        ranksbaseall$model=="rwb"]<-1
+
+ranksbaseall$scnmodmatch[ranksbaseall$scenario %in% c( "regimeSmax025",
+                            "regimeSmax050",
+                            "regimeSmax150",      
+                            "regimeSmax200",      
+                            "regimeSmax300" )&
+                        ranksbaseall$model=="hmmb"]<-1
 
 ranksbaseall$scnmodmatch<-as.factor(ranksbaseall$scnmodmatch)
 
@@ -171,33 +180,33 @@ ranksbaseall$scnmodmatch2<-as.factor(ranksbaseall$scnmodmatch2)
 ranksbaseall$scenario2 <- 
 case_match(
   ranksbaseall$scenario,
-  "trendLinearProd1"~"trend 3.6 -> 1",
-  "trendLinearProd2"~"trend 3.6 -> 2",
-  "trendLinearProd5"~"trend 3.6 -> 5",  
-  "trendLinearProd7"~"trend 3.6 -> 7",  
-  "trendLinearProd10"~"trend 3.6 -> 10", 
-  "regimeProd1"~"regime 3.6 -> 1",      
-  "regimeProd2"~"regime 3.6 -> 2",       
-  "regimeProd5"~"regime 3.6 -> 5",       
-  "regimeProd7"~"regime 3.6 -> 7",       
-  "regimeProd10"~"regime 3.6 -> 10" 
+   "trendLinearSmax025"~"trend smax*0.25"  ,
+    "trendLinearSmax050"~"trend smax*0.50",
+    "trendLinearSmax150"~"trend smax*1.5",
+    "trendLinearSmax200"~"trend smax*2.0",
+    "trendLinearSmax300"~"trend smax*3.0",
+    "regimeSmax025"~"regime smax*0.25",
+    "regimeSmax050"~"regime smax*0.50",
+    "regimeSmax150"~"regime smax*1.5",      
+    "regimeSmax200"~"regime smax*2.0",      
+    "regimeSmax300"~"regime smax*3.0"
 )
 
-ranksbaseall$scenario2<-factor(ranksbaseall$scenario2, levels=c( "trend 3.6 -> 1",
-  "trend 3.6 -> 2",
-  "trend 3.6 -> 5",  
-  "trend 3.6 -> 7",  
-  "trend 3.6 -> 10", 
-  "regime 3.6 -> 1",      
-  "regime 3.6 -> 2",       
-  "regime 3.6 -> 5",       
-  "regime 3.6 -> 7",       
-  "regime 3.6 -> 10" ))
+ranksbaseall$scenario2<-factor(ranksbaseall$scenario2, levels=c( "trend smax*0.25",
+"trend smax*0.50",
+  "trend smax*1.5", 
+ "trend smax*2.0", 
+  "trend smax*3.0",
+  "regime smax*0.25",      
+  "regime smax*0.50",      
+  "regime smax*1.5",      
+  "regime smax*2.0",       
+  "regime smax*3.0" ))
 
 unique(ranksbaseall$scenario2)
 
 
-pranks_sensa<-ggplot(data=ranksbaseall, aes(x=model, y=average.rank,fill=modtype,color=scnmodmatch ))+
+pranks_senssmax<-ggplot(data=ranksbaseall, aes(x=model, y=average.rank,fill=modtype,color=scnmodmatch ))+
      geom_bar_pattern(stat="identity", linewidth=1.3, aes(pattern_shape=scnmodmatch2 ),pattern = 'pch')+
     scale_pattern_shape_manual(values = c(NA, 16))+
    scale_fill_grey(start=0.4)+
@@ -206,10 +215,10 @@ pranks_sensa<-ggplot(data=ranksbaseall, aes(x=model, y=average.rank,fill=modtype
     mytheme+
     theme(axis.text.x = element_text(angle = 90,vjust=-0), legend.position="none") +
    facet_grid(parameter~scenario2)
-pranks_sensa
+pranks_senssmax
 
 
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/ranks/sens_a/sensa_average_rank.png", plot=pranks_sensa)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/ranks/sens_smax/senssmax_average_rank.png", plot=pranks_sensa)
 
 
 
@@ -235,9 +244,12 @@ for(i in seq_along(scns)){
 
 
 pranks_rmse<-ggplot(data=ranksbaseall, aes(x=model, y=rmse.rank,fill=modtype,color=scnmodmatch ))+
-     geom_bar_pattern(stat="identity", linewidth=1.3, aes(pattern_shape=scnmodmatch_rmse),pattern = 'pch')+
+     geom_bar_pattern(stat="identity", linewidth=1.3, aes(pattern_shape=scnmodmatch_rmse),pattern = 'pch', 
+        pattern_aspect_ratio = 1, 
+    pattern_density      = 0.5)+
     scale_pattern_shape_manual(values = c(NA, 16
                                  ))+
+    scale_pattern_size_manual(values = c(NA, 2))+
    scale_fill_grey(start=0.4)+
    scale_color_manual(values=c("transparent",                           
                              "firebrick2"#,
@@ -246,7 +258,7 @@ pranks_rmse<-ggplot(data=ranksbaseall, aes(x=model, y=rmse.rank,fill=modtype,col
     theme(axis.text.x = element_text(angle = 90,vjust=-0), legend.position="none") +
    facet_grid(parameter~scenario2)
 pranks_rmse
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/ranks/sens_a/sensa_rmse_rank.png", plot=pranks_rmse)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/ranks/sens_smax/senssmax_rmse_rank.png", plot=pranks_rmse)
 
 #=================================================================================
 #"mae"
@@ -269,7 +281,9 @@ for(i in seq_along(scns)){
 
 
 pranks_mae<-ggplot(data=ranksbaseall, aes(x=model, y=mae.rank,fill=modtype,color=scnmodmatch ))+
-     geom_bar_pattern(stat="identity", linewidth=1.3, aes(pattern_shape=scnmodmatch_mae),pattern = 'pch')+
+     geom_bar_pattern(stat="identity", linewidth=1.3, aes(pattern_shape=scnmodmatch_mae),pattern = 'pch',
+         pattern_aspect_ratio = 1, 
+    pattern_density      = 0.5)+
     scale_pattern_shape_manual(values = c(NA, 16
                                  ))+
    scale_fill_grey(start=0.4)+
@@ -281,7 +295,7 @@ pranks_mae<-ggplot(data=ranksbaseall, aes(x=model, y=mae.rank,fill=modtype,color
    facet_grid(parameter~scenario2)
 pranks_mae
 
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/ranks/sens_a/sensa_mae_rank.png", plot=pranks_mae)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/ranks/sens_smax/senssmax_mae_rank.png", plot=pranks_mae)
 
 
 
@@ -306,7 +320,9 @@ for(i in seq_along(scns)){
 
 
 pranks_mape<-ggplot(data=ranksbaseall, aes(x=model, y=mape.rank,fill=modtype,color=scnmodmatch ))+
-     geom_bar_pattern(stat="identity", linewidth=1.3, aes(pattern_shape=scnmodmatch_mape),pattern = 'pch')+
+     geom_bar_pattern(stat="identity", linewidth=1.3, aes(pattern_shape=scnmodmatch_mape),pattern = 'pch',
+        pattern_aspect_ratio = 1, 
+    pattern_density      = 0.5)+
     scale_pattern_shape_manual(values = c(NA, 16 ))+
    scale_fill_grey(start=0.4)+
    scale_color_manual(values=c("transparent",                           
@@ -316,7 +332,7 @@ pranks_mape<-ggplot(data=ranksbaseall, aes(x=model, y=mape.rank,fill=modtype,col
     theme(axis.text.x = element_text(angle = 90,vjust=-0)) +
    facet_grid(parameter~scenario2)
 pranks_mape
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/ranks/sens_a/sensa_mape_rank.png", plot=pranks_mape)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/ranks/sens_smax/senssmax_mape_rank.png", plot=pranks_mape)
 
 
 #=================================================================================
@@ -340,7 +356,9 @@ for(i in seq_along(scns)){
 
 
 pranks_sd2<-ggplot(data=ranksbaseall, aes(x=model, y=sd2.rank,fill=modtype,color=scnmodmatch ))+
-     geom_bar_pattern(stat="identity", linewidth=1.3, aes(pattern_shape=scnmodmatch_sd2),pattern = 'pch')+
+     geom_bar_pattern(stat="identity", linewidth=1.3, aes(pattern_shape=scnmodmatch_sd2),pattern = 'pch',
+        pattern_aspect_ratio = 1, 
+    pattern_density      = 0.5)+
     scale_pattern_shape_manual(values = c(NA, 16))+
    scale_fill_grey(start=0.4)+
    scale_color_manual(values=c("transparent",                           
@@ -349,6 +367,6 @@ pranks_sd2<-ggplot(data=ranksbaseall, aes(x=model, y=sd2.rank,fill=modtype,color
     theme(axis.text.x = element_text(angle = 90,vjust=-0)) +
    facet_grid(parameter~scenario2)
 pranks_sd2
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/ranks/sens_a/sensa_sd2_rank.png", plot=pranks_sd2)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/ranks/sens_smax/senssmax_sd2_rank.png", plot=pranks_sd2)
 
 

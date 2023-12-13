@@ -22,17 +22,30 @@ mytheme = list(
 #========================================================================================================
 #base case
 #read in data
-simPar <- read.csv("data/generic/SimPars.csv")
+simPar <- read.csv("data/sigmamed_sensitivity/SimPars.csv")
 
 ## Store relevant object names to help run simulation 
 scenNames <- unique(simPar$scenario)
 
-res1<-readRDS(file = "outs/simest/generic/resbase1.rds")
-res2<-readRDS(file = "outs/simest/generic/resbase2.rds")
-
-res<-rbind(res1,res2)#,resstan16,resstan712)
+res1<-readRDS(file = "outs/simest/sigmamed_sensitivity/res_sigmed.rds")
+res227<-readRDS(file = "outs/simest/sigmamed_sensitivity/res_sigmed_227.rds")
+res<-rbind(res1,res227)#,resstan16,resstan712)
 
 res<-res[res$convergence==0,]
+#
+
+
+res$scenario<-case_match(
+res$scenario,
+ "sigmamed_stationary"~"stationary",
+ "sigmamed_decLinearProd"~"decLinearProd",        
+ "sigmamed_regimeProd"~ "regimeProd",            
+ "sigmamed_sineProd"~ "sineProd",             
+ "sigmamed_regimeCap"~ "regimeCap",             
+ "sigmamed_decLinearCap"~ "decLinearCap",        
+ "sigmamed_regimeProdCap"~ "regimeProdCap",
+ "sigmamed_shiftCap"~"shiftCap",
+ "sigmamed_decLinearProdshiftCap"~"decLinearProdshiftCap")
 
 aic=subset(res,parameter=='AIC'&method=='MLE')
 bic=subset(res,parameter=='BIC'&method=='MLE')
@@ -43,32 +56,18 @@ lfo<-lfo[lfo$model %in% c("simple","autocorr","rwa","rwb","rwab",
 unique(lfo$model)
 
 
-#lfo$model<-dplyr::recode(lfo$model, 
-#      "simple"="simple",
-#      "autocorr"="autocorr",
-#      "rwa_last5"="rwa",
-#      "rwb_last5"="rwb",
-#      "rwab_last5"="rwab",
-#    "hmma_last5"="hmma",
-#    "hmmb_last5"="hmmb",
-#    "hmmab_last5"="hmmab"
-#      )   
-
-
 
 scn<-factor(unique(aic$scenario), levels=c(
-  "stationary", 
-  "sigmaShift",
-  "autocorr",
-  "decLinearProd",  
-  "sineProd",
-  "regimeProd",
-  "shiftProd", 
-  "decLinearCap",
-  "regimeCap", 
-  "shiftCap",
-  "decLinearProdshiftCap",
-  "regimeProdCap" ) )
+   "stationary",
+   "decLinearProd",
+   "sineProd",
+   "regimeProd",
+   "decLinearCap",         
+   "regimeCap",
+   "shiftCap",
+   "decLinearProdshiftCap",
+   "regimeProdCap"
+ ) )
 
 
 EM=c("stationary",
@@ -129,11 +128,9 @@ for(a in seq_along(scn)){
 
 }
 
-
+unique(conf_matrix$OM)
 conf_matrix$eqem_om <- dplyr::recode(conf_matrix$OM, 
-      "stationary"="stationary",
-      "autocorr"="autocorr",
-      "sigmaShift"="stationary", 
+      "stationary"="stationary", 
       "decLinearProd"="dynamic.a",
       "sineProd"="dynamic.a",
       "decLinearCap"="dynamic.b",
@@ -143,11 +140,15 @@ conf_matrix$eqem_om <- dplyr::recode(conf_matrix$OM,
       "regimeCap"="regime.b",
       "shiftCap"="regime.b", 
       "regimeProdCap"="regime.ab",
-      )   
+      )  
+ conf_matrix$eqem_om<-factor( conf_matrix$eqem_om,levels=c( "stationary",
+ "autocorr", "dynamic.a", "regime.a", "dynamic.b", "regime.b", "dynamic.ab", "regime.ab"
+  ))      
+
 conf_matrix$diag<-conf_matrix$eqem_om==conf_matrix$EM
 
-conf_matrix$EM
-
+unique(conf_matrix$EM)
+unique( conf_matrix$eqem_om)
 
 
 
@@ -166,7 +167,7 @@ paic=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   xlab("Simulation Scenario")+ylab("Estimation Model")
 paic
 
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/AIC_MLE.png", plot=paic)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sig_med/AIC_MLE.png", plot=paic)
 
 
 
@@ -184,7 +185,7 @@ pbic=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   xlab("Simulation Scenario")+ylab("Estimation Model")
 pbic
 
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/BIC_MLE.png", plot=pbic)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sig_med/BIC_MLE.png", plot=pbic)
 
 
 
@@ -202,7 +203,7 @@ plfo=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   xlab("Simulation Scenario")+ylab("Estimation Model")
 plfo
 
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/LFO_MLE.png", plot=plfo)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sig_med/LFO_MLE.png", plot=plfo)
 
 
 #---------------------------------------------------------------------------------------------
@@ -343,47 +344,29 @@ ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matric
 
 
 #===================================================================================
-reslfo<-readRDS(file = "outs/simest/generic/resstanloo.rds")
+reslfo<-readRDS(file = "outs/simest/sigmamed_sensitivity/resstanloo_sigmed.rds")
 head(reslfo)
 
-#reslfo<-reslfo[reslfo$model %in% c("simple","autocorr","rwa_last5","rwb_last5","rwab_last5",
-#    "hmma_last5","hmmb_last5","hmmab_last5"),]
 
-#reslfo$model<-dplyr::recode(reslfo$model, 
-#      "simple"="simple",
-#      "autocorr"="autocorr",
-#      "rwa_last5"="rwa",
-#      "rwb_last5"="rwb",
-#      "rwab_last5"="rwab",
-#    "hmma_last5"="hmma",
-#    "hmmb_last5"="hmmb",
-#    "hmmab_last5"="hmmab"
-#      ) 
-
-
-#reslfo<-reslfo[reslfo$model %in% c("simple","autocorr","rwa_last3","rwb_last3","rwab_last3",
-#    "hmma_last3","hmmb_last3","hmmab_last3"),]
+reslfo$scenario<-case_match(
+ reslfo$scenario,
+ "sigmamed_stationary"~"stationary",
+ "sigmamed_decLinearProd"~"decLinearProd",        
+ "sigmamed_regimeProd"~ "regimeProd",            
+ "sigmamed_sineProd"~ "sineProd",             
+ "sigmamed_regimeCap"~ "regimeCap",             
+ "sigmamed_decLinearCap"~ "decLinearCap",        
+ "sigmamed_regimeProdCap"~ "regimeProdCap",
+ "sigmamed_shiftCap"~"shiftCap",             
+ "sigmamed_decLinearProdshiftCap"~"decLinearProdshiftCap")
 
 
-#reslfo$model<-dplyr::recode(reslfo$model, 
-#      "simple"="simple",
-#      "autocorr"="autocorr",
-#      "rwa_last3"="rwa",
-#      "rwb_last3"="rwb",
-#      "rwab_last3"="rwab",
-#    "hmma_last3"="hmma",
-#    "hmmb_last3"="hmmb",
-#    "hmmab_last3"="hmmab"
-#      ) 
 
 scn<-factor(unique(reslfo$scenario), levels=c(
   "stationary", 
-  "sigmaShift",
-  "autocorr",
   "decLinearProd",  
   "sineProd",
   "regimeProd",
-  "shiftProd", 
   "decLinearCap",
   "regimeCap", 
   "shiftCap",
@@ -428,18 +411,23 @@ for(a in seq_along(scn)){
 
 conf_matrix$eqem_om <- dplyr::recode(conf_matrix$OM, 
       "stationary"="stationary",
-      "autocorr"="autocorr",
-      "sigmaShift"="stationary", 
       "decLinearProd"="dynamic.a",
       "sineProd"="dynamic.a",
       "decLinearCap"="dynamic.b",
       "decLinearProdshiftCap"="dynamic.ab",
       "regimeProd"="regime.a",
-      "shiftProd"="regime.a",
       "regimeCap"="regime.b",
       "shiftCap"="regime.b", 
       "regimeProdCap"="regime.ab",
       )   
+
+
+   conf_matrix$eqem_om<-factor(conf_matrix$eqem_om,levels=c("stationary",
+     "autocorr",
+     "dynamic.a","regime.a",
+     "dynamic.b","regime.b",
+     "dynamic.ab",
+     "regime.ab"))  
 conf_matrix$diag<-conf_matrix$eqem_om==conf_matrix$EM
 
 conf_matrix$EM
@@ -462,7 +450,7 @@ pmclfo=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
   xlab("Simulation Scenario")+ylab("Estimation Model")
 pmclfo
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/LFO_MCMC.png", plot=pmclfo)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sigmamed_sensitivity/LFO_MCMC_sigmed.png", plot=pmclfo)
 
 
 #lfo with 3 last yrs average

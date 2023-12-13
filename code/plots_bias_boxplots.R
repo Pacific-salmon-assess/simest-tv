@@ -53,7 +53,7 @@ resstan<-rbind(resstan1,resstan2)
 res<-rbind(restmb,resstan)
 
 res$parameter[res$parameter=="Smax"]<-"smax"
-
+res$method[res$method=="MCMC"]<-"HMC"
 resparam<-res[res$parameter%in%c("alpha","smax","sigma","smsy","sgen","umsy"),]
 
 #use only the variables that converged. Decided not to use it vecause of the various instances when 
@@ -65,15 +65,7 @@ convstat<-aggregate(resparam$convergence,
         iteration=resparam$iteration),
     function(x){sum(x)})
 convstatMLE<-convstat[convstat$x==0&convstat$method=="MLE",]
-convstatMCMC<-convstat[convstat$x==0&convstat$method=="MCMC",]
-
-head(convstatMCMC[,-3])
-
-(convstat[convstat$scenario=="stationary",][1:20,])
-
-
-(convstat[convstat$scenario=="stationary"&convstat$model=="rwb",])
-resparam[resparam$scenario=="stationary"&resparam$model=="rwb"&resparam$iteration==1&resparam$method=="MLE",]
+convstatMCMC<-convstat[convstat$x==0&convstat$method=="HMC",]
 
 allconv<-inner_join(convstatMLE[,-3], convstatMCMC[,-3])
 
@@ -81,15 +73,6 @@ head(allconv)
 
 convsum<-aggregate(allconv$iteration,
     list(model=allconv$model,scenario=allconv$scenario),
-    function(x){length(unique(x))})
-
-convsumMLE<-aggregate(convstatMLE$iteration,
-    list(model=convstatMLE$model,scenario=convstatMLE$scenario),
-    function(x){length(unique(x))})
-
-
-convsumMCMC<-aggregate(convstatMCMC$iteration,
-    list(model=convstatMCMC$model,scenario=convstatMCMC$scenario),
     function(x){length(unique(x))})
 
 
@@ -125,9 +108,91 @@ resparam<-as.data.frame(data.table::rbindlist(resl))
 
 df<-reshape2::melt(resparam, id.vars=c("parameter","iteration","scenario","method","model","by", "convergence","pbias","bias"))
 
-#df_alpha<-df[df$parameter%in%c("alpha"),]
-df$col<-factor(df$variable,levels=c("est","sim"))
 
+df_amc<-reshape2::melt(resparam, id.vars=c("parameter","iteration","scenario","method","model","by", "convergence","pbias","bias"))
+
+#df_alpha<-df[df$parameter%in%c("alpha"),]
+df_amc$col<-factor(df_amc$variable,levels=c("est","sim"))
+
+df_mcmc_all<-df_amc[df_amc$method=="HMC",]
+
+df_pbias_mcmc_all<-df_mcmc_all[df_mcmc_all$variable%in%c("mode"),]
+
+
+df_pbias_mcmc_all<-df_pbias_mcmc_all[df_pbias_mcmc_all$parameter!="sigma"&!is.na(df_pbias_mcmc_all$bias),]
+
+
+df_pbias_mcmc_all$paramch<-"stationary"
+df_pbias_mcmc_all$paramch[df_pbias_mcmc_all$scenario%in%c("decLinearCap" , "regimeCap", 
+ "shiftCap")]<-"b"
+df_pbias_mcmc_all$paramch[df_pbias_mcmc_all$scenario%in%c( "decLinearProd"  , "regimeProd" , "shiftProd",
+  "sineProd")]<-"a"
+df_pbias_mcmc_all$paramch[df_pbias_mcmc_all$scenario%in%c("decLinearProdshiftCap" ,    "regimeProdCap"  )]<-"both"
+   
+df_pbias_mcmc_all$type<-"none"
+df_pbias_mcmc_all$type[df_pbias_mcmc_all$scenario%in%c("decLinearProd" ,"decLinearCap" , "sineProd")]<-"trend"
+df_pbias_mcmc_all$type[df_pbias_mcmc_all$scenario%in%c( "regimeCap"  , "regimeProd" , "regimeProdCap", "shiftCap",
+  "shiftProd") ]<-"regime"
+df_pbias_mcmc_all$type[df_pbias_mcmc_all$scenario%in%c("decLinearProdshiftCap" )]<-"combo"
+
+
+df_pbias_mcmc_all$modtype<-"simple"
+df_pbias_mcmc_all$modtype[df_pbias_mcmc_all$model%in%c("rwa" ,"hmma")]<-"tva"
+df_pbias_mcmc_all$modtype[df_pbias_mcmc_all$model%in%c("rwb" ,"hmmb") ]<-"tvb"
+df_pbias_mcmc_all$modtype[df_pbias_mcmc_all$model%in%c("rwab" ,"hmmab")]<-"tvab"
+
+
+
+#time-varying alpha and Smax scenarios
+tvbxp<-df_pbias_mcmc_all %>% filter( paramch%in%c("a","b")&
+                            model %in%c("rwa","hmma","simple", "rwb","hmmb")&
+                            parameter %in% c("alpha","smax","smsy")
+                            )
+
+tvbxp$model<-factor(tvbxp$model, levels=c("rwa","hmma",
+        "simple", 
+       "rwb",
+        "hmmb"))
+
+tvbxp$parameter2<-recode(tvbxp$parameter, "alpha"="parameter: alpha",
+    "smax"="parameter: smax",
+    "smsy"="parameter: smsy")
+
+tvbxp$paramch2<-recode(tvbxp$paramch, "a"="scenario: time-varying alpha", "b"="scenario: time-varying Smax")
+?geom_violin
+
+pbias_tv_v<-ggplot(tvbxp) + 
+geom_violin(aes(x=model,y=pbias, fill=modtype), scale="width", trim=TRUE, alpha=.7,adjust = 1.8)+
+geom_boxplot(aes(x=model,y=pbias, fill=modtype),outlier.shape = NA,width=0.1)+
+coord_cartesian(ylim =  c(-80, 80))+
+ scale_fill_viridis_d("estimation:",option = "E") +
+mytheme+
+facet_grid(parameter2~paramch2)+
+geom_hline(yintercept=0, linewidth=1.2) +
+ ylab(" % bias")
+
+pbias_tv_v
+
+
+
+
+#df_alpha<-df[df$parameter%in%c("alpha"),]
+df$col<-factor(df$variable,levels=c("median","mode", "sim"))
+
+
+
+df$scenario<-factor(df$scenario,levels=c("stationary",
+                                        "autocorr",
+                                        "sigmaShift",
+                                        "decLinearProd",
+                                        "sineProd", 
+                                        "regimeProd", 
+                                        "shiftProd",                       
+                                        "decLinearCap",
+                                        "regimeCap",
+                                        "shiftCap",                      
+                                        "regimeProdCap",         
+                                        "decLinearProdshiftCap"  ))
 #df_pbias<-df_mcmc[df_mcmc$variable%in%c("est"),]
 df_pbias<-df[df$variable%in%c("mode"),]
 
@@ -169,7 +234,17 @@ df_biasq$type[df_biasq$scenario%in%c("decLinearProdshiftCap" )]<-"combo"
 
 df_biasq<-df_biasq[df_biasq$method=="MLE",]
 
+head(df_biasq)
 
+pbias_tv_v<-ggplot(tvbxp) + 
+geom_violin(aes(x=model,y=pbias, fill=modtype), scale="width", trim=TRUE, alpha=.7,adjust = 1.8)+
+geom_boxplot(aes(x=model,y=pbias, fill=modtype),outlier.shape = NA,width=0.1)+
+coord_cartesian(ylim =  c(-80, 80))+
+ scale_fill_viridis_d("estimation:",option = "E") +
+mytheme+
+facet_grid(parameter2~paramch2)+
+geom_hline(yintercept=0, linewidth=1.2) +
+ ylab(" % bias")
 
 
 #===========================================================
@@ -183,7 +258,7 @@ df_amc<-reshape2::melt(resparam, id.vars=c("parameter","iteration","scenario","m
 #df_alpha<-df[df$parameter%in%c("alpha"),]
 df_amc$col<-factor(df_amc$variable,levels=c("est","sim"))
 
-df_mcmc_all<-df_amc[df_amc$method=="MCMC",]
+df_mcmc_all<-df_amc[df_amc$method=="HMC",]
 
 df_pbias_mcmc_all<-df_mcmc_all[df_mcmc_all$variable%in%c("mode"),]
 

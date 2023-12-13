@@ -44,7 +44,7 @@ source("code/utils.R")
 # of trials necessary)
 
 #Run and save simulated data
-for(u in 1:9){
+for(u in 1:11){
   if(u==1){
     print("base")
     simPars <- read.csv("data/generic/SimPars.csv")
@@ -86,6 +86,10 @@ for(u in 1:9){
     simPars <- read.csv("data/generic/SimPars_rw.csv")
     cuPar <- read.csv("data/generic/CUPars.csv")
 
+  }else if(u==11){
+    print("sensitivity a double alpha")
+    simPars <- read.csv("data/sensitivity/SimPars_da.csv")
+    cuPar <- read.csv("data/sensitivity/CUPars_doublealpha.csv")
   }
 
   scenNames <- unique(simPars$scenario)

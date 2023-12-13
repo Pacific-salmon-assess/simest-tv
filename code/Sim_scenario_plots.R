@@ -12,7 +12,7 @@ mytheme = list(
     theme_classic(14)+
         theme(panel.background = element_blank(),strip.background = element_rect(colour=NA, fill=NA),panel.border = element_rect(fill = NA, color = "black"),
               legend.title = element_blank(),legend.position="bottom", strip.text = element_text(face="bold", size=12),
-              axis.text=element_text(face="bold"),axis.title = element_text(face="bold"),plot.title = element_text(face = "bold", hjust = 0.5,size=15))
+              axis.text=element_text(face="bold"),axis.title = element_text(face="bold"),plot.title = element_text(face = "bold", hjust = 0.5,size=13))
 )
 
 
@@ -82,6 +82,28 @@ SRdf$scenario_f <-factor(SRdf$scenario, levels=c("stationary",
                                                   "decLinearProdshiftCap"))   
                                                                   
 
+SRdf$scencode<-dplyr::case_match(SRdf$scenario, 
+      "stationary"~"Base1",
+      "autocorr"~"Base2",
+      "sigmaShift"~"Base3", 
+      "decLinearProd"~"Base4",
+      "sineProd"~"Base5",
+      "regimeProd"~"Base6",
+      "shiftProd"~"Base7",
+      "decLinearCap"~"Base8",
+      "regimeCap"~"Base9",
+      "shiftCap"~"Base10", 
+      "regimeProdCap"~"Base11",
+      "decLinearProdshiftCap"~"Base12"
+      )   
+
+
+
+SRdf$scencode <-factor(SRdf$scencode, levels=c("Base1","Base2","Base3",
+             "Base4","Base5","Base6",
+              "Base7","Base8","Base9",
+               "Base10","Base11","Base12"))
+
 
 
 datdf$scenario_f <-factor(datdf$scenario, levels=c("stationary","autocorr","sigmaShift",
@@ -90,7 +112,29 @@ datdf$scenario_f <-factor(datdf$scenario, levels=c("stationary","autocorr","sigm
                "regimeProdCap",  "decLinearProdshiftCap"))
 
 
-aggregate(datdf$recruits,list(datdf$scenario_f),max)
+datdf$scencode<-dplyr::case_match(datdf$scenario, 
+      "stationary"~"Base1",
+      "autocorr"~"Base2",
+      "sigmaShift"~"Base3", 
+      "decLinearProd"~"Base4",
+      "sineProd"~"Base5",
+      "regimeProd"~"Base6",
+      "shiftProd"~"Base7",
+      "decLinearCap"~"Base8",
+      "regimeCap"~"Base9",
+      "shiftCap"~"Base10", 
+      "regimeProdCap"~"Base11",
+      "decLinearProdshiftCap"~"Base12"
+      )   
+
+
+datdf$scencode <-factor(datdf$scencode, levels=c("Base1","Base2","Base3",
+             "Base4","Base5","Base6",
+              "Base7","Base8","Base9",
+               "Base10","Base11","Base12"))
+
+
+
 
 SRexample<-  ggplot(SRdf) +
     geom_line(aes(x=spawners,y=recruits, col=as.factor(year)),linewidth=2) +
@@ -99,11 +143,11 @@ SRexample<-  ggplot(SRdf) +
     scale_colour_viridis_d(end=.85) +
     labs(col = "year") +
     geom_point(data=datdf,aes(x=spawners,y=recruits,col=as.factor(year)),alpha=.5) +
-    facet_wrap(~scenario_f)
+    facet_wrap(~scencode)
 SRexample    
  
 ggsave(
-      filename = "outs/SamSimOutputs/plotcheck/srcurve_basecase.png", 
+      filename = "C:/Users/worc/Documents/timevar/Best-Practices-time-varying-salmon-SR-models/figures/scenarios/srcurve_basecase.png",
       plot = SRexample, 
       width = 12, height = 6
     )
@@ -113,7 +157,7 @@ ggsave(
 
 paramdf<-reshape2::melt(datdf,id.vars=c("iteration","year","CU","spawners","recruits","obsSpawners","obsRecruits",
                                 "ER", "obsER", "targetER",   
-                                "sMSY", "sGen", "uMSY", "scenario", "scenario_f"))
+                                "sMSY", "sGen", "uMSY", "scenario", "scenario_f","scencode"))
 
 summary(paramdf)
 
@@ -132,15 +176,71 @@ paramdf$simulated<-dplyr::recode(paramdf$scenario,
       "decLinearProdshiftCap"="rw"
       )   
 
+
+
+paramdf$paramch<-dplyr::recode(paramdf$scenario, 
+      "stationary"="simple",
+      "autocorr"="simple",
+      "sigmaShift"="simple", 
+      "decLinearProd"="tva",
+      "sineProd"="tva",
+      "regimeProd"="tva",
+      "shiftProd"="tva",
+      "decLinearCap"="tvb",
+      "regimeCap"="tvb",
+      "shiftCap"="tvb", 
+      "regimeProdCap"="both",
+      "decLinearProdshiftCap"="both"
+      )   
+
+
 paramdf<-paramdf[paramdf$variable!="beta",]
 
- ggplot(paramdf) +
-    geom_line(aes(x=year,y=value,col=simulated), linewidth=2)+
+head(paramdf)
+ 
+paramdf$scencode<-dplyr::case_match(paramdf$scenario, 
+      "stationary"~"Base1",
+      "autocorr"~"Base2",
+      "sigmaShift"~"Base3", 
+      "decLinearProd"~"Base4",
+      "sineProd"~"Base5",
+      "regimeProd"~"Base6",
+      "shiftProd"~"Base7",
+      "decLinearCap"~"Base8",
+      "regimeCap"~"Base9",
+      "shiftCap"~"Base10", 
+      "regimeProdCap"~"Base11",
+      "decLinearProdshiftCap"~"Base12"
+      )   
+
+
+
+
+paramdf$scencode <-factor(paramdf$scencode, levels=c("Base1","Base2","Base3",
+             "Base4","Base5","Base6",
+              "Base7","Base8","Base9",
+               "Base10","Base11","Base12"))
+
+
+
+
+paramtraj<-ggplot(paramdf) +
+    geom_line(aes(x=year,y=value,col=paramch), linewidth=2)+
     mytheme + 
-    theme(legend.position="right") +
+    theme(legend.position="bottom") +
     scale_colour_viridis_d(end=.85) +
     labs(col = "year") +
-    facet_grid(variable~scenario_f, scales="free")
+    facet_grid(variable~scencode, scales="free")
+paramtraj
+
+ggsave(
+      filename = "C:/Users/worc/Documents/timevar/Best-Practices-time-varying-salmon-SR-models/figures/scenarios/params_basecase.png",
+      plot = paramtraj, 
+      width = 12, height = 6
+    )
+
+paramdf[paramdf$scencode=="Base5"&paramdf$variable=="alpha",]
+
 
 #----------------------------------------
 #equilibrium parameter plots                            |
