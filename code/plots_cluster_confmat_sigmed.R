@@ -146,7 +146,7 @@ conf_matrix$eqem_om <- dplyr::recode(conf_matrix$OM,
   ))      
 
 conf_matrix$diag<-conf_matrix$eqem_om==conf_matrix$EM
-
+s
 unique(conf_matrix$EM)
 unique( conf_matrix$eqem_om)
 
@@ -156,7 +156,7 @@ unique( conf_matrix$eqem_om)
 paic=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   geom_tile(aes(fill = w_AIC), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(w_AIC,2)), vjust = 1,size=6) +
-  ggtitle("AIC")+
+  ggtitle("AIC MLE sigmed")+
   scale_fill_gradient(low="white", high="#009194")  +
   geom_segment(data=transform(subset(conf_matrix, !!diag), 
                     simulated=as.numeric(OM), 

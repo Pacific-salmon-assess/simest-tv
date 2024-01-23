@@ -30,31 +30,35 @@ simPar <- read.csv("data/sensitivity/SimPars.csv")
 ## Store relevant object names to help run simulation 
 scenNames <- unique(simPar$scenario)
 
-resa1<-readRDS(file = "outs/simest/sensitivity/res_a1.rds")
-resa2<-readRDS(file = "outs/simest/sensitivity/res_a2.rds")
+resa1<-readRDS(file = "outs/simest/sensitivity/res_aq1.rds")
+resa2<-readRDS(file = "outs/simest/sensitivity/res_aq2.rds")
+resa3<-readRDS(file = "outs/simest/sensitivity/res_aq3.rds")
+resa4<-readRDS(file = "outs/simest/sensitivity/res_aq4.rds")
 
-resbase1<-readRDS(file = "outs/simest/generic/resbase1.rds")
-resbase2<-readRDS(file = "outs/simest/generic/resbase2.rds")
+#resbase1<-readRDS(file = "outs/simest/generic/resbase1.rds")
+#resbase2<-readRDS(file = "outs/simest/generic/resbase2.rds")
 
-resbase<-rbind(resbase1,resbase2)#,resstan16,resstan712)
-unique(resbase$scenario)
-res_logadec<-resbase[resbase$scenario%in%c("decLinearProd"),]
-res_logadec$scenario<-"trendLinearProd1.3"
+#resbase<-rbind(resbase1,resbase2)#,resstan16,resstan712)
+#unique(resbase$scenario)
+#res_logadec<-resbase[resbase$scenario%in%c("decLinearProd"),]
+#res_logadec$scenario<-"trendLinearProd1.3"
 
-restmb<-rbind(resa1,resa2,res_logadec)
+restmb<-rbind(resa1,resa2,resa3,resa4)
 
-resstana1<-readRDS(file = "outs/simest/sensitivity/resstan_a1.rds")
-resstana2<-readRDS(file = "outs/simest/sensitivity/resstan_a2.rds")
-
-
-resstan1<-readRDS(file = "outs/simest/generic/resstan1.rds")
-resstan2<-readRDS(file = "outs/simest/generic/resstan2.rds")
-resstanbase<-rbind(resstan1,resstan2)
-resstan_logadec<-resstanbase[resstanbase$scenario%in%c("decLinearProd"),]
-resstan_logadec$scenario<-"trendLinearProd1.3"
+resstana1<-readRDS(file = "outs/simest/sensitivity/resstan_aq1.rds")
+resstana2<-readRDS(file = "outs/simest/sensitivity/resstan_aq2.rds")
+resstana3<-readRDS(file = "outs/simest/sensitivity/resstan_aq3.rds")
+resstana4<-readRDS(file = "outs/simest/sensitivity/resstan_aq4.rds")
 
 
-resstan<-rbind(resstana1,resstana2,resstan_logadec)
+#resstan1<-readRDS(file = "outs/simest/generic/resstan1.rds")
+#resstan2<-readRDS(file = "outs/simest/generic/resstan2.rds")
+#resstanbase<-rbind(resstan1,resstan2)
+#resstan_logadec<-resstanbase[resstanbase$scenario%in%c("decLinearProd"),]
+#resstan_logadec$scenario<-"trendLinearProd1.3"
+
+
+resstan<-rbind(resstana1,resstana2,resstana3,resstana4)
 
 #resstan<-readRDS(file = "outs/simest/generic/resstan.rds")
 

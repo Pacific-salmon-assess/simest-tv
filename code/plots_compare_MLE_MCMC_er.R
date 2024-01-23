@@ -32,12 +32,14 @@ simPar <- read.csv("data/genericER/SimPars_ER.csv")
 ## Store relevant object names to help run simulation 
 scenNames <- unique(simPar$scenario)
 
-res1<-readRDS(file = "outs/simest/genericER/res_er1.rds")
-res2<-readRDS(file = "outs/simest/genericER/res_er2.rds")
-res138<-readRDS(file = "outs/simest/genericER/result_ER_138.rds")
+res1<-readRDS(file = "outs/simest/genericER/res_erq1.rds")
+res2<-readRDS(file = "outs/simest/genericER/res_erq2.rds")
+res3<-readRDS(file = "outs/simest/genericER/res_erq3.rds")
+res4<-readRDS(file = "outs/simest/genericER/res_erq4.rds")
 
 
-restmb<-rbind(res1,res2,res138)
+
+restmb<-rbind(res1,res2,res3,res4)
 
 head(restmb)
 unique(restmb$iteration)
@@ -53,6 +55,10 @@ res<-rbind(restmb,resstan)
 res$parameter[res$parameter=="Smax"]<-"smax"
 res$method[res$method=="MCMC"]<-"HMC"
 resparam<-res[res$parameter%in%c("alpha","smax","smsy","sgen","umsy"),]
+
+
+resparam$convergence[resparam$parameter=="alpha"&resparam$mode>40]<-1
+resparam$convergence[resparam$parameter=="smax"&resparam$mode>1e8]<-1
 
 
 convstat<-aggregate(resparam$convergence,

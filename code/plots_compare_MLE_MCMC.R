@@ -55,6 +55,12 @@ res$parameter[res$parameter=="Smax"]<-"smax"
 res$method[res$method=="MCMC"]<-"HMC"
 resparam<-res[res$parameter%in%c("alpha","smax","smsy","sgen","umsy"),]
 
+#exclude outliers
+
+resparam$convergence[resparam$parameter=="alpha"&resparam$mode>40]<-1
+resparam$convergence[resparam$parameter=="smax"&resparam$mode>1e8]<-1
+
+
 
 convstat<-aggregate(resparam$convergence,
     list(scenario=resparam$scenario,
@@ -164,11 +170,13 @@ df$model<-factor(df$model,levels=c("simple",
                                    "hmmab"  ))
 
 
-head(df)
+
 
 df_alpha_sim<- df[df$parameter=="alpha"&df$variable=="sim",]
 
 df_alpha_est<- df[df$parameter=="alpha"&df$variable=="mode",]
+
+head(df_alpha_sim)
 
 summarydf_alpha<-aggregate(df_alpha_est$value,by=list(scenario=df_alpha_est$scenario, 
     method=df_alpha_est$method, 
@@ -425,23 +433,24 @@ ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ba
 #-----------------------------------------------------------------------------------
 #new plots 
 
-
+unique(summarydf_alpha_sim$scenario)
+head(summarydf_alpha)
 # Bias in alpha
-summarydf_alpha_sim_redux<-summarydf_alpha_sim[summarydf_alpha_sim$scenario%in%c("decLinearProd", "shiftProd", "sineProd")&
+summarydf_alpha_sim_redux<-summarydf_alpha_sim[summarydf_alpha_sim$scenario%in%c("decLinearProd", "regimeProd", "sineProd")&
 summarydf_alpha$model%in%c("autocorr", "rwa", "hmma")&summarydf_alpha$method=="MLE",]
 
 summarydf_alpha_sim_redux$scenario2<-case_match(summarydf_alpha_sim_redux$scenario,
     "decLinearProd"~ "linear decline",
-     "shiftProd" ~ "shift decline" , 
+     "regimeProd" ~ "shift increase" , 
      "sineProd" ~ "sine fluctuation")
 
-summarydf_alpha_redux<-summarydf_alpha[summarydf_alpha$scenario%in%c( "decLinearProd", "shiftProd", "sineProd" )&
+summarydf_alpha_redux<-summarydf_alpha[summarydf_alpha$scenario%in%c( "decLinearProd", "regimeProd", "sineProd" )&
   summarydf_alpha$model%in%c("autocorr", "rwa", "hmma") &summarydf_alpha$method=="MLE",]
 
 
 summarydf_alpha_redux$scenario2<-case_match(summarydf_alpha_redux$scenario,
     "decLinearProd"~ "linear decline",
-     "shiftProd" ~ "shift decline" , 
+     "regimeProd" ~ "shift increase" , 
      "sineProd" ~ "sine fluctuation")
 
 head(summarydf_alpha_redux)
@@ -451,7 +460,7 @@ geom_pointrange(data=summarydf_alpha_redux,aes(x=by,y= x.50.,ymin = x.2.5., ymax
 geom_line(data=summarydf_alpha_sim_redux,aes(x=by,y= x),color="black", alpha=.8,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8,option = "E") +
 scale_fill_viridis_d(begin=.1, end=.8,option = "E") +
-coord_cartesian(ylim = c(0.2,2.0))+ 
+#coord_cartesian(ylim = c(0.2,3.0))+ 
 mytheme+ 
 ylab("log(alpha)") +
 xlab("year") +
@@ -478,8 +487,8 @@ geom_boxplot(aes(x=model,y=bias, fill=model),outlier.shape = NA, width=0.1)+
 geom_hline(yintercept=0,color="black", alpha=.6,linewidth=1.2)+
  scale_fill_viridis_d(begin=.1, end=.8,,option = "E") +
  facet_grid(scenario2~., scales="free_y")+
- 
-mytheme
+ mytheme
+palpha_violin
 
 multi.page <- ggarrange(palpha_line, palpha_violin,
                         nrow = 1, ncol = 2,
@@ -509,6 +518,89 @@ multi.page.abs
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/summary_figs/bias_trends_violins_log_alpha.png",
     plot=multi.page.abs)
 
+
+#------
+#GUIDELINES
+
+#cv for line plot
+
+
+#year based cv
+
+cvdf<-aggregate(resparam$mode, list(parameter=resparam$parameter,
+                               scenario=resparam$scenario,
+                               method=resparam$method,
+                               model=resparam$model,
+                               by=resparam$by ), function(x){sd(x,na.rm=T)/abs(mean(x,na.rm=T))})
+
+
+
+
+meancvdf<-aggregate(cvdf$x, list(parameter=cvdf$parameter,
+                               scenario=cvdf$scenario,
+                               method=cvdf$method,
+                               model=cvdf$model
+                              ), function(x){mean(x,na.rm=T)})
+
+meancvdf_redux<-meancvdf[meancvdf$parameter=="alpha"&
+meancvdf$scenario%in%c("decLinearProd", "regimeProd", "sineProd")&
+meancvdf$model%in%c("autocorr", "rwa", "hmma")&
+meancvdf$method=="MLE",]
+dim(meancvdf_redux)
+
+meancvdf_redux$meancv<-round(meancvdf_redux$x,2)
+meancvdf_redux$scenario2<-case_match(meancvdf_redux$scenario,
+    "decLinearProd"~ "linear decline",
+     "regimeProd" ~ "shift increase" , 
+     "sineProd" ~ "sine fluctuation")
+meancvdf_redux$model<-factor(meancvdf_redux$model, levels=c("autocorr", "rwa", "hmma"))
+
+
+palpha_line_cv<-ggplot() + 
+geom_pointrange(data=summarydf_alpha_redux,aes(x=by,y= x.50.,ymin = x.2.5., ymax = x.97.5., color=model),alpha=.9)+
+geom_line(data=summarydf_alpha_sim_redux,aes(x=by,y= x),color="black", alpha=.8,linewidth=1.2)+
+scale_color_viridis_d(begin=.1, end=.8,option = "E") +
+scale_fill_viridis_d(begin=.1, end=.8,option = "E") +
+#coord_cartesian(ylim = c(0.2,3.0))+ 
+mytheme+ 
+ylab("log(alpha)") +
+xlab("year") +
+theme( strip.text.y = element_blank(),strip.text.x = element_blank())+
+geom_text(data = meancvdf_redux, aes(x=-Inf,y=Inf,hjust=0,
+                vjust=1.0,label=meancv), size=6)+
+facet_grid(scenario2~model, scales="free_y")
+palpha_line_cv
+
+
+#pbias plots
+
+head(df)
+unique(df$variable)
+
+
+df_alpha_est_redux<- df[df$parameter=="alpha"&df$variable=="mode"&
+df$scenario%in%c("decLinearProd", "shiftProd", "sineProd")&
+df$model%in%c("autocorr", "rwa", "hmma")&
+df$method=="MLE",]
+
+
+
+palpha_violin_abspbias<-ggplot(df_alpha_est_redux) + 
+geom_violin(aes(x=model,y=(pbias), fill=model), scale="width", trim=TRUE, alpha=.7,adjust = 1.8)+
+geom_boxplot(aes(x=model,y=(pbias), fill=model),outlier.shape = NA, width=0.1)+
+geom_hline(yintercept=0,color="black", alpha=.6,linewidth=1.2)+
+ scale_fill_viridis_d(begin=.1, end=.8,,option = "E") +
+ facet_grid(scenario2~., scales="free_y")+
+ ylab("absolute bias in log(alpha)") +
+mytheme
+palpha_violin_abspbias
+
+
+multi.page.abs <- ggarrange(palpha_line_cv, palpha_violin_abs,
+                        nrow = 1, ncol = 2,
+                        common.legend = TRUE,
+                        legend="bottom")
+multi.page.abs
 #==================================================================
 # Bias in beta
 
@@ -614,7 +706,7 @@ multi.page.abs.smax <- ggarrange(psmax_line, psmax_violin_abs,
                         legend="bottom")
 multi.page.abs.smax
 
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/summary_figs/bias_trends_violins_smax.png",
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/summary_figs/bias_trends_violins_smax_filterbounds.png",
     plot=multi.page.abs.smax)
 
 

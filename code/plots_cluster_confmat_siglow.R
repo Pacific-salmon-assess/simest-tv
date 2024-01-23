@@ -7,6 +7,7 @@
 
 library(gridExtra)
 library(ggplot2)
+library(dplyr)
 source("code/utils.R")
 
 
@@ -18,6 +19,10 @@ mytheme = list(
 )
 
 
+#exclude outliers
+
+resparam$convergence[resparam$parameter=="alpha"&resparam$mode>40]<-1
+resparam$convergence[resparam$parameter=="smax"&resparam$mode>1e8]<-1
 
 #========================================================================================================
 #base case
@@ -33,9 +38,10 @@ res105<-readRDS(file = "outs/simest/sigmalow_sensitivity/res_siglow_105.rds")
 res<-rbind(res1,res2,res105)#,resstan16,resstan712)
 
 unique(res$scenario)
+
 res<-res[res$convergence==0,]
 
-
+head(res)
 
 res$scenario<-case_match(
   res$scenario,
