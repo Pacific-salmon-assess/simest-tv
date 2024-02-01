@@ -364,16 +364,16 @@ ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ba
 
 
 summarydf_umsy_sim2<-summarydf_umsy_sim[summarydf_umsy_sim$scenario%in%c(  "decLinearCap",   "sigmaShift",      
-"decLinearProdshiftCap", "regimeCap",  "regimeProdCap", "shiftCap"  ),]#&summarydf_smax_sim$model%in%c( "hmma","hmmb", "hmmab", "rwa", "rwb", "rwab", "simple" ),]
+"decLinearProdshiftCap", "regimeCap",  "regimeProdCap", "shiftCap"  ),]
 
 summarydf_umsy2<-summarydf_umsy[summarydf_umsy$scenario%in%c( "decLinearCap",   "sigmaShift",      
-"decLinearProdshiftCap", "regimeCap",  "regimeProdCap", "shiftCap" ),]#&summarydf_smax$model%in%c( "hmma","hmmb", "hmmab", "rwa", "rwb", "rwab", "simple" ),]
+"decLinearProdshiftCap", "regimeCap",  "regimeProdCap", "shiftCap" ),]
 
 
 
 umsy2base<-ggplot() + 
 geom_pointrange(data=summarydf_umsy2,aes(x=by,y=median,ymin = lower, ymax = upper, col=method),alpha=.6)+
-geom_line(data=summarydf_smsy_sim2,aes(x=by,y=median),color="black", alpha=.6,linewidth=1.2)+
+geom_line(data=summarydf_umsy_sim2,aes(x=by,y=median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 mytheme + 
@@ -382,7 +382,7 @@ xlab("year") +
 coord_cartesian(ylim = c(20000,150000))+ 
 facet_grid(scencode+scentype~model, scales="free_y")
 smsy2base
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/base/compareMCMC_MLE_smsy2.png",
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/base/compareMCMC_MLE_umsy2.png",
     plot=smsy2base)
 
 
@@ -414,8 +414,8 @@ summarydf_alpha_redux$scenario2<-case_match(summarydf_alpha_redux$scenario,
 head(summarydf_alpha_redux)
 
 palpha_line<-ggplot() + 
-geom_pointrange(data=summarydf_alpha_redux,aes(x=by,y= x.50.,ymin = x.2.5., ymax = x.97.5., color=model),alpha=.9)+
-geom_line(data=summarydf_alpha_sim_redux,aes(x=by,y= x),color="black", alpha=.8,linewidth=1.2)+
+geom_pointrange(data=summarydf_alpha_redux,aes(x=by,y= median,ymin =lower, ymax = upper, color=model),alpha=.9)+
+geom_line(data=summarydf_alpha_sim_redux,aes(x=by,y=median),color="black", alpha=.8,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8,option = "E") +
 scale_fill_viridis_d(begin=.1, end=.8,option = "E") +
 #coord_cartesian(ylim = c(0.2,3.0))+ 
@@ -504,7 +504,6 @@ meancvdf_redux<-meancvdf[meancvdf$parameter=="alpha"&
 meancvdf$scenario%in%c("decLinearProd", "regimeProd", "sineProd")&
 meancvdf$model%in%c("autocorr", "rwa", "hmma")&
 meancvdf$method=="MLE",]
-dim(meancvdf_redux)
 
 meancvdf_redux$meancv<-round(meancvdf_redux$x,2)
 meancvdf_redux$scenario2<-case_match(meancvdf_redux$scenario,
@@ -513,10 +512,11 @@ meancvdf_redux$scenario2<-case_match(meancvdf_redux$scenario,
      "sineProd" ~ "sine fluctuation")
 meancvdf_redux$model<-factor(meancvdf_redux$model, levels=c("autocorr", "rwa", "hmma"))
 
+head(summarydf_alpha_redux)
 
 palpha_line_cv<-ggplot() + 
-geom_pointrange(data=summarydf_alpha_redux,aes(x=by,y= x.50.,ymin = x.2.5., ymax = x.97.5., color=model),alpha=.9)+
-geom_line(data=summarydf_alpha_sim_redux,aes(x=by,y= x),color="black", alpha=.8,linewidth=1.2)+
+geom_pointrange(data=summarydf_alpha_redux,aes(x=by,y= median,ymin = lower, ymax = upper, color=model),alpha=.9)+
+geom_line(data=summarydf_alpha_sim_redux,aes(x=by,y= median),color="black", alpha=.8,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8,option = "E") +
 scale_fill_viridis_d(begin=.1, end=.8,option = "E") +
 #coord_cartesian(ylim = c(0.2,3.0))+ 
@@ -531,10 +531,6 @@ palpha_line_cv
 
 
 #pbias plots
-
-head(df)
-unique(df$variable)
-
 
 df_alpha_est_redux<- df[df$parameter=="alpha"&df$variable=="mode"&
 df$scenario%in%c("decLinearProd", "shiftProd", "sineProd")&
