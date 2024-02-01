@@ -531,13 +531,16 @@ palpha_line_cv
 
 
 #pbias plots
-
+head(df)
 df_alpha_est_redux<- df[df$parameter=="alpha"&df$variable=="mode"&
 df$scenario%in%c("decLinearProd", "shiftProd", "sineProd")&
 df$model%in%c("autocorr", "rwa", "hmma")&
 df$method=="MLE",]
 
-
+df_alpha_est_redux$scenario2<-case_match(df_alpha_est_redux$scenario,
+    "decLinearProd"~ "linear decline",
+     "regimeProd" ~ "shift increase" , 
+     "sineProd" ~ "sine fluctuation")
 
 palpha_violin_abspbias<-ggplot(df_alpha_est_redux) + 
 geom_violin(aes(x=model,y=(pbias), fill=model), scale="width", trim=TRUE, alpha=.7,adjust = 1.8)+
