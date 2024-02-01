@@ -24,6 +24,7 @@ mytheme = list(
 )
 
 
+source("code/read_base_data.R")
 
 
 #========================================================================================================
@@ -40,70 +41,10 @@ res2<-readRDS(file = "outs/simest/generic/resbase2.rds")
 
 restmb<-rbind(res1,res2)
 
-head(restmb)
-unique(restmb$iteration)
-
-resstan1<-readRDS(file = "outs/simest/generic/resstan1.rds")
-resstan2<-readRDS(file = "outs/simest/generic/resstan2.rds")
-resstan<-rbind(resstan1,resstan2)
-#resstan<-readRDS(file = "outs/simest/generic/resstan.rds")
-
-res<-rbind(restmb,resstan)
-head(res)
-#res<-resstan
-res$parameter[res$parameter=="Smax"]<-"smax"
-res$method[res$method=="MCMC"]<-"HMC"
-resparam<-res[res$parameter%in%c("alpha","smax","smsy","sgen","umsy"),]
-
-#exclude outliers
-
-resparam$convergence[resparam$parameter=="alpha"&resparam$mode>40]<-1
-resparam$convergence[resparam$parameter=="smax"&resparam$mode>1e8]<-1
 
 
-
-convstat<-aggregate(resparam$convergence,
-    list(scenario=resparam$scenario,
-        model=resparam$model,
-        method=resparam$method,
-        iteration=resparam$iteration),
-    function(x){sum(x)})
-convstatMLE<-convstat[convstat$x==0&convstat$method=="MLE",]
-convstatMCMC<-convstat[convstat$x==0&convstat$method=="HMC",]
-
-
-allconv<-inner_join(convstatMLE[,-3], convstatMCMC[,-3])
-
-convsum<-aggregate(allconv$iteration,
-    list(model=allconv$model,scenario=allconv$scenario),
-    function(x){length(unique(x))})
-
-
-
-conv_iter<-aggregate(allconv$iteration,
-    list(model=allconv$model,scenario=allconv$scenario),
-    function(x){(unique(x))})
-
-convsnc<-as.numeric(rownames(convsum))
-
-resl<-list()
-for(i in seq_along(convsnc)){
-
-    sel<-conv_iter[convsnc[i],]
-    resl[[i]]<-resparam %>% filter(model==sel$model&
-                            scenario==sel$scenario&
-                            iteration%in%sel$x[[1]])
-    
-}
-
-resparam<-as.data.frame(data.table::rbindlist(resl))
-
-
-
-df<-reshape2::melt(resparam, id.vars=c("parameter","iteration","scenario","method","model","by", "convergence","pbias","bias"))
-
-#df_alpha<-df[df$parameter%in%c("alpha"),]
-df$col<-factor(df$variable,levels=c("median","mode", "sim"))
+df<-reshape2::melt(resparam, id.vars=c("parameter","iteration","scenario","method","model","by", 
+                                      "convergence","conv_warning","pbias","bias"))
 
 
 df$scenario<-factor(df$scenario,levels=c("stationary",
@@ -170,35 +111,34 @@ df$model<-factor(df$model,levels=c("simple",
                                    "hmmab"  ))
 
 
+head(df)
+
+summarydf  <- df %>%
+   group_by(scenario,parameter,
+    method,model,by,variable,scencode,scentype) %>%
+   reframe(qs = quantile(value, c(0.025, .5, 0.975),na.rm=T), prob = c("lower","median", "upper"))
 
 
-df_alpha_sim<- df[df$parameter=="alpha"&df$variable=="sim",]
 
-df_alpha_est<- df[df$parameter=="alpha"&df$variable=="mode",]
+summarydf <- reshape2::dcast(data=summarydf,  
+    scenario + parameter + method + model + by + variable + scencode + scentype ~ prob, 
+    value.var= "qs",fun.aggregate=mean)
 
-head(df_alpha_sim)
 
-summarydf_alpha<-aggregate(df_alpha_est$value,by=list(scenario=df_alpha_est$scenario, 
-    method=df_alpha_est$method, 
-    model=df_alpha_est$model,
-    by=df_alpha_est$by,
-    scencode=df_alpha_est$scencode,
-    scentype=df_alpha_est$scentype ),
-    function(x) {quantile(x,probs = c(0.025, .5, 0.975))})
-summarydf_alpha<-do.call(data.frame, summarydf_alpha)
+head(summarydf)
+summarydf_alpha<-summarydf[summarydf$parameter=="alpha"&
+                            summarydf$variable=="mode",
+                            ]
 
-summarydf_alpha_sim<-aggregate(df_alpha_sim$value,by=list(scenario=df_alpha_est$scenario, 
-    method=df_alpha_sim$method, 
-    model=df_alpha_sim$model,
-    by=df_alpha_sim$by,
-    scencode=df_alpha_sim$scencode,
-    scentype=df_alpha_sim$scentype ),
-    function(x) {unique(x)})
+summarydf_alpha_sim<-summarydf[summarydf$parameter=="alpha"&
+                                summarydf$variable=="sim",
+                                ]
+
 
 
 alphabase<-ggplot() + 
-geom_pointrange(data=summarydf_alpha,aes(x=by,y= x.50.,ymin = x.2.5., ymax = x.97.5., col=method),alpha=.6)+
-geom_line(data=summarydf_alpha_sim,aes(x=by,y= x),color="black", alpha=.6,linewidth=1.2)+
+geom_pointrange(data=summarydf_alpha,aes(x=by,y= median,ymin = lower, ymax = upper, col=method),alpha=.6)+
+geom_line(data=summarydf_alpha_sim,aes(x=by,y= median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 coord_cartesian(ylim = c(0.2,2.7))+ 
@@ -218,8 +158,8 @@ summarydf_alpha1<-summarydf_alpha[summarydf_alpha$scenario%in%c(       "decLinea
 "regimeProd",   "shiftProd",  "sineProd",   "stationary","autocorr" ),]#&summarydf_alpha$model%in%c( "hmma", "hmmab", "rwa", "rwab", "simple" ),]
 
 alpha1base<-ggplot() + 
-geom_pointrange(data=summarydf_alpha1,aes(x=by,y= x.50.,ymin = x.2.5., ymax = x.97.5., col=method),alpha=.6)+
-geom_line(data=summarydf_alpha_sim1,aes(x=by,y= x),color="black", alpha=.6,linewidth=1.2)+
+geom_pointrange(data=summarydf_alpha1,aes(x=by,y=median,ymin =lower, ymax = upper, col=method),alpha=.6)+
+geom_line(data=summarydf_alpha_sim1,aes(x=by,y=median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 coord_cartesian(ylim = c(0.2,2.7))+ 
@@ -234,17 +174,16 @@ ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ba
 
 
 summarydf_alpha_sim2<-summarydf_alpha_sim[summarydf_alpha_sim$scenario%in%c(  "decLinearCap",  "sigmaShift",          
-"decLinearProdshiftCap", "regimeCap",  "regimeProdCap", "shiftCap" ),]#&summarydf_alpha_sim$model%in%c( "hmma","hmmb" "hmmab", "rwa",  "rwb", "rwab", "simple","autocorr" ),]
+"decLinearProdshiftCap", "regimeCap",  "regimeProdCap", "shiftCap" ),]
 
 summarydf_alpha2<-summarydf_alpha[summarydf_alpha$scenario%in%c(  "decLinearCap",  "sigmaShift",      
-"decLinearProdshiftCap", "regimeCap",  "regimeProdCap", "shiftCap" ),]#&summarydf_alpha$model%in%c( "hmma", "hmmab", "rwa", "rwab", "simple" ),]
+"decLinearProdshiftCap", "regimeCap",  "regimeProdCap", "shiftCap" ),]
 
-head(summarydf_alpha2)
-head(summarydf_alpha_sim2)
+
 
 alpha2base<-ggplot() + 
-geom_pointrange(data=summarydf_alpha2,aes(x=by,y= x.50.,ymin = x.2.5., ymax = x.97.5., col=method),alpha=.6)+
-geom_line(data=summarydf_alpha_sim2,aes(x=by,y= x),color="black", alpha=.6,linewidth=1.2)+
+geom_pointrange(data=summarydf_alpha2,aes(x=by,y=median,ymin =lower, ymax =upper, col=method),alpha=.6)+
+geom_line(data=summarydf_alpha_sim2,aes(x=by,y= median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 coord_cartesian(ylim = c(0.2,2.7))+ 
@@ -263,27 +202,13 @@ ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ba
 #=======================================================
 #b estimates
 
+summarydf_smax<-summarydf[summarydf$parameter=="smax"&
+                            summarydf$variable=="mode",
+                            ]
 
-df_smax_sim<- df[df$parameter=="smax"&df$variable=="sim",]
-df_smax_est<- df[df$parameter=="smax"&df$variable=="mode",]
-
-
-summarydf_smax<-aggregate(df_smax_est$value,by=list(scenario=df_smax_est$scenario, 
-    method=df_smax_est$method, 
-    model=df_smax_est$model,
-    by=df_smax_est$by,
-    scencode=df_smax_est$scencode,
-    scentype=df_smax_est$scentype ),
-    function(x) {quantile(x,probs = c(0.025, .5, 0.975))})
-summarydf_smax<-do.call(data.frame, summarydf_smax)
-
-summarydf_smax_sim<-aggregate(df_smax_sim$value,by=list(scenario=df_smax_sim$scenario, 
-    method=df_smax_sim$method, 
-    model=df_smax_sim$model,
-    by=df_smax_sim$by,
-    scencode=df_smax_sim$scencode,
-    scentype=df_smax_sim$scentype  ),
-    function(x) {unique(x)})
+summarydf_smax_sim<-summarydf[summarydf$parameter=="smax"&
+                                summarydf$variable=="sim",
+                                ]
 
 
 summarydf_smax_sim1<-summarydf_smax_sim[summarydf_smax_sim$scenario%in%c( "decLinearProd",        
@@ -295,8 +220,8 @@ summarydf_smax1<-summarydf_smax[summarydf_smax$scenario%in%c("decLinearProd",
 
 
 smax1base<-ggplot() + 
-geom_pointrange(data=summarydf_smax1,aes(x=by,y= x.50.,ymin = x.2.5., ymax = x.97.5., col=method),alpha=.6)+
-geom_line(data=summarydf_smax_sim1,aes(x=by,y= x),color="black", alpha=.6,linewidth=1.2)+
+geom_pointrange(data=summarydf_smax1,aes(x=by,y=median,ymin =lower, ymax = upper, col=method),alpha=.6)+
+geom_line(data=summarydf_smax_sim1,aes(x=by,y= median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 mytheme + 
@@ -311,15 +236,14 @@ ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ba
 
 
 summarydf_smax_sim2<-summarydf_smax_sim[summarydf_smax_sim$scenario%in%c(  "decLinearCap",   "sigmaShift",      
-"decLinearProdshiftCap", "regimeCap",  "regimeProdCap", "shiftCap" ),]#&summarydf_smax_sim$model%in%c( "hmma","hmmb", "hmmab", "rwa", "rwb", "rwab", "simple" ),]
+"decLinearProdshiftCap", "regimeCap",  "regimeProdCap", "shiftCap" ),]
 
 summarydf_smax2<-summarydf_smax[summarydf_smax$scenario%in%c( "decLinearCap",    "sigmaShift",     
-"decLinearProdshiftCap", "regimeCap",  "regimeProdCap", "shiftCap"),]#&summarydf_smax$model%in%c( "hmma","hmmb", "hmmab", "rwa", "rwb", "rwab", "simple" ),]
-head(summarydf_smax2)
+"decLinearProdshiftCap", "regimeCap",  "regimeProdCap", "shiftCap"),]
 
 smax2base<-ggplot() + 
-geom_pointrange(data=summarydf_smax2,aes(x=by,y= x.50.,ymin = x.2.5., ymax = x.97.5., col=method),alpha=.6)+
-geom_line(data=summarydf_smax_sim2,aes(x=by,y= x),color="black", alpha=.6,linewidth=1.2)+
+geom_pointrange(data=summarydf_smax2,aes(x=by,y=median,ymin =lower, ymax = upper, col=method),alpha=.6)+
+geom_line(data=summarydf_smax_sim2,aes(x=by,y= median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 mytheme + 
@@ -339,44 +263,13 @@ ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ba
 #smsy estimates
 
 
-df_smsy_sim<- df[df$parameter=="smsy"&df$variable=="sim",]
+summarydf_smsy<-summarydf[summarydf$parameter=="smsy"&
+                            summarydf$variable=="mode",
+                            ]
 
-df_smsy_est<- df[df$parameter=="smsy"&df$variable=="mode",]
-
-tdf<-df_smsy_est[df_smsy_est$model=="hmmab"&df_smsy_est$scenario=="sineProd"&df_smsy_est$iteration==40,]
-
-sdf<-df_smsy_sim[df_smsy_sim$method=="MLE"&df_smsy_sim$model=="hmmab"&
-df_smsy_sim$scenario=="sineProd"&df_smsy_sim$iteration==40,]
-
-
-summarydf_smsy<-aggregate(df_smsy_est$value,by=list(scenario=df_smsy_est$scenario, 
-    method=df_smsy_est$method, 
-    model=df_smsy_est$model,
-    by=df_smsy_est$by,
-    scencode=df_smsy_est$scencode,
-    scentype=df_smsy_est$scentype ),
-    function(x) {quantile(x,probs = c(0.025, .5, 0.975))})
-summarydf_smsy<-do.call(data.frame, summarydf_smsy)
-
-
-summarydf_smsy_sim<-aggregate(df_smsy_sim$value,by=list(scenario=df_smsy_sim$scenario, 
-    method=df_smsy_sim$method, 
-    model=df_smsy_sim$model,
-    by=df_smsy_sim$by,
-    scencode=df_smsy_sim$scencode,
-    scentype=df_smsy_sim$scentype ),
-    function(x) {unique(x)})
-
-summarydf_smsy_sim<-summarydf_smsy_sim[summarydf_smsy_sim$method=="MLE",]
-
-summarydf_smsy<-aggregate(df_smsy_est$value,by=list(scenario=df_smsy_est$scenario, 
-    method=df_smsy_est$method, 
-    model=df_smsy_est$model,
-    by=df_smsy_est$by,
-    scencode=df_smsy_est$scencode,
-    scentype=df_smsy_est$scentype  ),
-    function(x) {quantile(x,probs = c(0.025, .5, 0.975))})
-summarydf_smsy<-do.call(data.frame, summarydf_smsy)
+summarydf_smsy_sim<-summarydf[summarydf$parameter=="smsy"&
+                                summarydf$variable=="sim",
+                                ]
 
 
 
@@ -391,8 +284,8 @@ summarydf_smsy1[summarydf_smsy1$model=="hmmab"&summarydf_smsy1$scenario=="sinePr
 
 
 smsy1base<-ggplot() + 
-geom_pointrange(data=summarydf_smsy1,aes(x=by,y= x.50.,ymin = x.2.5., ymax = x.97.5., col=method),alpha=.6)+
-geom_line(data=summarydf_smsy_sim1,aes(x=by,y= x),color="black", alpha=.6,linewidth=1.2)+
+geom_pointrange(data=summarydf_smsy1,aes(x=by,y=median,ymin =lower, ymax = upper, col=method),alpha=.6)+
+geom_line(data=summarydf_smsy_sim1,aes(x=by,y= median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 mytheme + 
@@ -415,8 +308,8 @@ summarydf_smsy2<-summarydf_smsy[summarydf_smsy$scenario%in%c( "decLinearCap",   
 
 
 smsy2base<-ggplot() + 
-geom_pointrange(data=summarydf_smsy2,aes(x=by,y= x.50.,ymin = x.2.5., ymax = x.97.5., col=method),alpha=.6)+
-geom_line(data=summarydf_smsy_sim2,aes(x=by,y= x),color="black", alpha=.6,linewidth=1.2)+
+geom_pointrange(data=summarydf_smsy2,aes(x=by,y=median,ymin = lower, ymax = upper, col=method),alpha=.6)+
+geom_line(data=summarydf_smsy_sim2,aes(x=by,y=median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 mytheme + 
@@ -427,6 +320,71 @@ facet_grid(scencode+scentype~model, scales="free_y")
 smsy2base
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/base/compareMCMC_MLE_smsy2.png",
     plot=smsy2base)
+
+
+
+#=======================================================
+#smsy estimates
+
+
+summarydf_umsy<-summarydf[summarydf$parameter=="umsy"&
+                            summarydf$variable=="mode",
+                            ]
+
+summarydf_umsy_sim<-summarydf[summarydf$parameter=="umsy"&
+                                summarydf$variable=="sim",
+                                ]
+
+
+
+summarydf_umsy_sim1<-summarydf_umsy_sim[summarydf_umsy_sim$scenario%in%c( "decLinearProd",        
+"regimeProd",   "shiftProd",  "sineProd",   "stationary","autocorr"  ),]
+
+
+summarydf_umsy1<-summarydf_umsy[summarydf_umsy$scenario%in%c("decLinearProd",        
+"regimeProd",   "shiftProd",  "sineProd",   "stationary","autocorr"  ),]
+
+
+
+
+umsy1base<-ggplot() + 
+geom_pointrange(data=summarydf_umsy1,aes(x=by,y=median,ymin =lower, ymax = upper, col=method),alpha=.6)+
+geom_line(data=summarydf_umsy_sim1,aes(x=by,y= median),color="black", alpha=.6,linewidth=1.2)+
+scale_color_viridis_d(begin=.1, end=.8) +
+scale_fill_viridis_d(begin=.1, end=.8) +
+mytheme + 
+ylab(expression(U[MSY])) +
+xlab("year") +
+coord_cartesian(ylim = c(0,1))+ 
+facet_grid(scencode+scentype~model, scales="free_y")
+umsy1base
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/base/compareMCMC_MLE_umsy1.png",
+    plot=umsy1base)
+
+
+
+summarydf_umsy_sim2<-summarydf_umsy_sim[summarydf_umsy_sim$scenario%in%c(  "decLinearCap",   "sigmaShift",      
+"decLinearProdshiftCap", "regimeCap",  "regimeProdCap", "shiftCap"  ),]#&summarydf_smax_sim$model%in%c( "hmma","hmmb", "hmmab", "rwa", "rwb", "rwab", "simple" ),]
+
+summarydf_umsy2<-summarydf_umsy[summarydf_umsy$scenario%in%c( "decLinearCap",   "sigmaShift",      
+"decLinearProdshiftCap", "regimeCap",  "regimeProdCap", "shiftCap" ),]#&summarydf_smax$model%in%c( "hmma","hmmb", "hmmab", "rwa", "rwb", "rwab", "simple" ),]
+
+
+
+umsy2base<-ggplot() + 
+geom_pointrange(data=summarydf_umsy2,aes(x=by,y=median,ymin = lower, ymax = upper, col=method),alpha=.6)+
+geom_line(data=summarydf_smsy_sim2,aes(x=by,y=median),color="black", alpha=.6,linewidth=1.2)+
+scale_color_viridis_d(begin=.1, end=.8) +
+scale_fill_viridis_d(begin=.1, end=.8) +
+mytheme + 
+ylab(expression(S[MSY])) +
+xlab("year") +
+coord_cartesian(ylim = c(20000,150000))+ 
+facet_grid(scencode+scentype~model, scales="free_y")
+smsy2base
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/base/compareMCMC_MLE_smsy2.png",
+    plot=smsy2base)
+
 
 
 

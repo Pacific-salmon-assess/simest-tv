@@ -22,91 +22,23 @@ mytheme = list(
 )
 
 
-
+source("code/read_er_data.R")
 
 #========================================================================================================
-#base case
-#read in data
-simPar <- read.csv("data/genericER/SimPars_ER.csv")
+unique(resparam$scenario)
 
-## Store relevant object names to help run simulation 
-scenNames <- unique(simPar$scenario)
-
-res1<-readRDS(file = "outs/simest/genericER/res_erq1.rds")
-res2<-readRDS(file = "outs/simest/genericER/res_erq2.rds")
-res3<-readRDS(file = "outs/simest/genericER/res_erq3.rds")
-res4<-readRDS(file = "outs/simest/genericER/res_erq4.rds")
-
-
-
-restmb<-rbind(res1,res2,res3,res4)
-
-head(restmb)
-unique(restmb$iteration)
-
-resstan1<-readRDS(file = "outs/simest/genericER/resstan_baseER1.rds")
-resstan2<-readRDS(file = "outs/simest/genericER/resstan_baseER2.rds")
-resstan<-rbind(resstan1,resstan2)
-#resstan<-readRDS(file = "outs/simest/generic/resstan.rds")
-
-res<-rbind(restmb,resstan)
-
-#res<-resstan
-res$parameter[res$parameter=="Smax"]<-"smax"
-res$method[res$method=="MCMC"]<-"HMC"
-resparam<-res[res$parameter%in%c("alpha","smax","smsy","sgen","umsy"),]
-
-
-resparam$convergence[resparam$parameter=="alpha"&resparam$mode>40]<-1
-resparam$convergence[resparam$parameter=="smax"&resparam$mode>1e8]<-1
-
-
-convstat<-aggregate(resparam$convergence,
-    list(scenario=resparam$scenario,
-        model=resparam$model,
-        method=resparam$method,
-        iteration=resparam$iteration),
-    function(x){sum(x)})
-convstatMLE<-convstat[convstat$x==0&convstat$method=="MLE",]
-convstatMCMC<-convstat[convstat$x==0&convstat$method=="HMC",]
-
-
-allconv<-inner_join(convstatMLE[,-3], convstatMCMC[,-3])
-
-convsum<-aggregate(allconv$iteration,
-    list(model=allconv$model,scenario=allconv$scenario),
-    function(x){length(unique(x))})
-
-conv_iter<-aggregate(allconv$iteration,
-    list(model=allconv$model,scenario=allconv$scenario),
-    function(x){(unique(x))})
-
-convsnc<-as.numeric(rownames(convsum))
-
-resl<-list()
-for(i in seq_along(convsnc)){
-
-    sel<-conv_iter[convsnc[i],]
-    resl[[i]]<-resparam %>% filter(model==sel$model&
-                            scenario==sel$scenario&
-                            iteration%in%sel$x[[1]])
-    
-}
-
-resparam<-as.data.frame(data.table::rbindlist(resl))
-
-
-
-df<-reshape2::melt(resparam, id.vars=c("parameter","iteration","scenario","method","model","by", "convergence","pbias","bias"))
+df<-reshape2::melt(resparam, id.vars=c("parameter","iteration","scenario","method","model","by", 
+                                      "convergence","conv_warning","pbias","bias"))
 
 #df_alpha<-df[df$parameter%in%c("alpha"),]
-df$col<-factor(df$variable,levels=c("median","mode", "sim"))
+df$variable<-factor(df$variable,levels=c("median","mode", "sim"))
 
-unique(df$scenario)
 df$scenario<-factor(df$scenario,levels=c("decLinearProd_highERLowError",
-                                         "decLinearProd_ShiftERLowError", 
+                                         "decLinearProd_ShiftERLowError",
+                                         "decLinearProd_lowERLowError", 
                                          "incLinearProd_highERLowError",  
-                                         "incLinearProd_ShiftERLowError", 
+                                         "incLinearProd_ShiftERLowError",
+                                         "incLinearProd_lowERLowError", 
                                          "highERHighError",               
                                          "highERLowError",               
                                          "lowERHighError",                
@@ -114,13 +46,15 @@ df$scenario<-factor(df$scenario,levels=c("decLinearProd_highERLowError",
                                           "ShiftERHighError",              
                                           "ShiftERLowError",               
                                           "trendERHighError",              
-                                          "trendERLowError" )   
+                                          "trendERLowError" )  ) 
 
 
 df$ERtrend<-case_match(df$scenario,"decLinearProd_highERLowError"~"highER",
                                    "decLinearProd_ShiftERLowError"~"ShiftER", 
+                                   "decLinearProd_lowERLowError"~"lowER",
                                    "incLinearProd_highERLowError"~"highER",  
-                                   "incLinearProd_ShiftERLowError"~"ShiftER", 
+                                   "incLinearProd_ShiftERLowError"~"ShiftER",
+                                   "incLinearProd_lowERLowError"~"lowER",  
                                    "highERHighError"~"highER",               
                                    "highERLowError"~"highER",               
                                    "lowERHighError"~"lowER",                
@@ -136,6 +70,8 @@ df$ERerror<-case_match(df$scenario,"decLinearProd_highERLowError"~"LowError",
                                    "decLinearProd_ShiftERLowError"~"LowError", 
                                    "incLinearProd_highERLowError"~"LowError",  
                                    "incLinearProd_ShiftERLowError"~"LowError", 
+                                   "decLinearProd_lowERLowError"~"LowError",
+                                   "incLinearProd_lowERLowError"~"LowError",
                                    "highERHighError"~"HighError",               
                                    "highERLowError"~"LowError",               
                                    "lowERHighError"~"HighError",                
@@ -148,8 +84,10 @@ df$ERerror<-case_match(df$scenario,"decLinearProd_highERLowError"~"LowError",
 
 df$dynamics<-case_match(df$scenario,"decLinearProd_highERLowError"~"decLinear",
                                    "decLinearProd_ShiftERLowError"~"decLinear", 
+                                   "decLinearProd_lowERLowError"~"decLinear",
                                    "incLinearProd_highERLowError"~"incLinear",  
                                    "incLinearProd_ShiftERLowError"~"incLinear", 
+                                   "incLinearProd_lowERLowError"~"incLinear", 
                                    "highERHighError"~"stationary",               
                                    "highERLowError"~"stationary",               
                                    "lowERHighError"~"stationary",                
@@ -158,6 +96,7 @@ df$dynamics<-case_match(df$scenario,"decLinearProd_highERLowError"~"decLinear",
                                     "ShiftERLowError"~"stationary",               
                                     "trendERHighError"~"stationary",              
                                     "trendERLowError"~"stationary")
+
 df$model<-factor(df$model,levels=c("simple",
                                    "autocorr", 
                                    "rwa",
@@ -168,55 +107,57 @@ df$model<-factor(df$model,levels=c("simple",
                                    "hmmab"  ))
 
 
-df_alpha_sim<- df[df$parameter=="alpha"&df$variable=="sim",]
 
-df_alpha_est<- df[df$parameter=="alpha"&df$variable=="mode",]
 
-head(df_alpha_est)
-summarydf_alpha<-aggregate(df_alpha_est$value,by=list(scenario=df_alpha_est$scenario, 
-    method=df_alpha_est$method, 
-    model=df_alpha_est$model,
-    by=df_alpha_est$by ,
-    dynamics=df_alpha_est$dynamics,
-    ERerror=df_alpha_est$ERerror,
-    ERtrend=df_alpha_est$ERtrend),
-    function(x) {quantile(x,probs = c(0.025, .5, 0.975))})
-summarydf_alpha<-do.call(data.frame, summarydf_alpha)
+summarydf  <- df %>%
+   group_by(scenario,parameter,
+    method,model,by,variable,dynamics,
+    ERerror,ERtrend) %>%
+   reframe(qs = quantile(value, c(0.025, .5, 0.975),na.rm=T), prob = c("lower","median", "upper"))
 
-summarydf_alpha_sim<-aggregate(df_alpha_sim$value,by=list(scenario=df_alpha_sim$scenario, 
-    method=df_alpha_sim$method, 
-    model=df_alpha_sim$model,
-    by=df_alpha_sim$by ,
-    dynamics=df_alpha_sim$dynamics,
-    ERerror=df_alpha_sim$ERerror,
-    ERtrend=df_alpha_sim$ERtrend),
-    function(x) {unique(x)})
 
-head(df_alpha_sim)
-unique(df_alpha_sim$scenario)
+head(summarydf)
 
-summarydf_alpha_sim1<-summarydf_alpha_sim[summarydf_alpha_sim$scenario%in%c("decLinearProd_highERLowError",
+summarydf <- reshape2::dcast(data=summarydf,  
+    scenario + parameter + method + model + by + variable + dynamics + ERerror + ERtrend  ~prob, 
+    value.var= "qs",fun.aggregate=mean)
+
+#head(summarydf)
+
+unique(df$scenario)
+summarydf_alpha_sim1<-summarydf[summarydf$parameter=="alpha"&
+                                summarydf$variable=="sim"&
+                                summarydf$scenario%in%c("decLinearProd_highERLowError",
+                                  "decLinearProd_ShiftERLowError", 
+                                  "incLinearProd_highERLowError",  
+                                  "incLinearProd_ShiftERLowError",
+                                  "decLinearProd_lowERLowError",
+                                         "incLinearProd_lowERLowError"),
+                                ]
+
+summarydf_alpha1<-summarydf[summarydf$parameter=="alpha"&
+                            summarydf$variable=="mode"&
+                            summarydf$scenario%in%c("decLinearProd_highERLowError",
                                          "decLinearProd_ShiftERLowError", 
                                          "incLinearProd_highERLowError",  
-                                         "incLinearProd_ShiftERLowError"
-                                            ),]
+                                         "incLinearProd_ShiftERLowError",
+                                         "decLinearProd_lowERLowError",
+                                         "incLinearProd_lowERLowError"),
+                            ]
 
-summarydf_alpha1<-summarydf_alpha[summarydf_alpha$scenario%in%c("decLinearProd_highERLowError",
-                                         "decLinearProd_ShiftERLowError", 
-                                         "incLinearProd_highERLowError",  
-                                         "incLinearProd_ShiftERLowError"
-                                          ),]
-scenlab1<-c("highER","ShiftER", "highER","ShiftER")
+scenlab1<-c("highER","ShiftER","lowER", "highER", "ShiftER", "lowER")
 names(scenlab1) <- c("decLinearProd_highERLowError",
-                                         "decLinearProd_ShiftERLowError", 
+                                         "decLinearProd_ShiftERLowError",
+                                         "decLinearProd_lowERLowError", 
                                          "incLinearProd_highERLowError",  
-                                         "incLinearProd_ShiftERLowError")
+                                         "incLinearProd_ShiftERLowError",
+                                         "incLinearProd_lowERLowError")
 
-head(summarydf_alpha)
+head(summarydf_alpha1)
 
 er_alpha1<-ggplot() + 
-geom_pointrange(data=summarydf_alpha1,aes(x=by,y= x.50.,ymin = x.2.5., ymax = x.97.5., col=method),alpha=.6)+
-geom_line(data=summarydf_alpha_sim1,aes(x=by,y= x),color="black", alpha=.6,linewidth=1.2)+
+geom_pointrange(data=summarydf_alpha1,aes(x=by,y= median,ymin = lower, ymax = upper, col=method),alpha=.6)+
+geom_line(data=summarydf_alpha_sim1,aes(x=by,y= median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 coord_cartesian(ylim = c(0.2,2.7))+ 
@@ -225,21 +166,27 @@ ylab("alpha") +
 xlab("year") +
 facet_grid(dynamics+scenario~model, scales="free_y",labeller = labeller(scenario= scenlab1))
 er_alpha1
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_alpha1.png")
-#MLE estimates are less biased and higher than MCMC
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_alpha_trendascn.png",
+    plot=er_alpha1)
 
 
-summarydf_alpha_sim2<-summarydf_alpha_sim[summarydf_alpha_sim$scenario%in%c(    "highERHighError",                              
+summarydf_alpha_sim2<-summarydf[summarydf$parameter=="alpha"&
+                                summarydf$variable=="sim"&
+                                summarydf$scenario%in%c("highERHighError",                              
                                          "lowERHighError",                           
                                           "ShiftERHighError",                                                                   
-                                          "trendERHighError"),]#&summarydf_alpha_sim$model%in%c( "hmma","hmmb" "hmmab", "rwa",  "rwb", "rwab", "simple","autocorr" ),]
+                                          "trendERHighError"),
+                                ]
 
-summarydf_alpha2<-summarydf_alpha[summarydf_alpha$scenario%in%c( "highERHighError",                              
+summarydf_alpha2<-summarydf[summarydf$parameter=="alpha"&
+                            summarydf$variable=="mode"&
+                            summarydf$scenario%in%c("highERHighError",                              
                                          "lowERHighError",                           
                                           "ShiftERHighError",                                                                   
-                                          "trendERHighError"),]#&summarydf_alpha$model%in%c( "hmma", "hmmab", "rwa", "rwab", "simple" ),]
+                                          "trendERHighError"),
+                            ]
 
-                                       ),]
+                                      
 scenlab2<-c("highER","lowER", "ShiftER","trendER")
 names(scenlab2) <- c( "highERHighError",                              
                                          "lowERHighError",                           
@@ -247,8 +194,8 @@ names(scenlab2) <- c( "highERHighError",
                                           "trendERHighError")
 
 er_alpha2<-ggplot() + 
-geom_pointrange(data=summarydf_alpha2,aes(x=by,y= x.50.,ymin = x.2.5., ymax = x.97.5., col=method),alpha=.6)+
-geom_line(data=summarydf_alpha_sim2,aes(x=by,y= x),color="black", alpha=.6,linewidth=1.2)+
+geom_pointrange(data=summarydf_alpha2,aes(x=by,y= median,ymin = lower, ymax = upper, col=method),alpha=.6)+
+geom_line(data=summarydf_alpha_sim2,aes(x=by,y= median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 coord_cartesian(ylim = c(0.2,2.7))+ 
@@ -257,21 +204,28 @@ ylab("alpha") +
 xlab("year") +
 facet_grid(dynamics+scenario~model, scales="free_y",labeller = labeller(scenario= scenlab2))
 er_alpha2
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_alpha2.png",
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_alpha_higherrerscn.png",
     plot=er_alpha2)
 #MLE estimates are less biased and higher than MCMC
 
 
-summarydf_alpha_sim3<-summarydf_alpha_sim[summarydf_alpha_sim$scenario%in%c(               
-                                         "highERLowError", 
-                                         "lowERLowError",  
-                                          "ShiftERLowError",      
-                                          "trendERLowError"),]#&summarydf_alpha_sim$model%in%c( "hmma","hmmb" "hmmab", "rwa",  "rwb", "rwab", "simple","autocorr" ),]
 
-summarydf_alpha3<-summarydf_alpha[summarydf_alpha$scenario%in%c(  "highERLowError", 
+summarydf_alpha_sim3<-summarydf[summarydf$parameter=="alpha"&
+                                summarydf$variable=="sim"&
+                                summarydf$scenario%in%c("highERLowError", 
                                          "lowERLowError",  
                                           "ShiftERLowError",      
-                                          "trendERLowError" ),]#&summarydf_alpha$model%in%c( "hmma", "hmmab", "rwa", "rwab", "simple" ),]
+                                          "trendERLowError"),
+                                ]
+
+summarydf_alpha3<-summarydf[summarydf$parameter=="alpha"&
+                            summarydf$variable=="mode"&
+                            summarydf$scenario%in%c("highERLowError", 
+                                         "lowERLowError",  
+                                          "ShiftERLowError",      
+                                          "trendERLowError"),
+                            ]
+
 
 
                                      
@@ -284,8 +238,8 @@ names(scenlab3) <- c( "highERLowError",
 
 
 er_alpha3<-ggplot() + 
-geom_pointrange(data=summarydf_alpha3,aes(x=by,y= x.50.,ymin = x.2.5., ymax = x.97.5., col=method),alpha=.6)+
-geom_line(data=summarydf_alpha_sim3,aes(x=by,y= x),color="black", alpha=.6,linewidth=1.2)+
+geom_pointrange(data=summarydf_alpha3,aes(x=by,y= median,ymin = lower, ymax = upper, col=method),alpha=.6)+
+geom_line(data=summarydf_alpha_sim3,aes(x=by,y= median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 coord_cartesian(ylim = c(0.2,2.7))+ 
@@ -294,54 +248,46 @@ ylab("alpha") +
 xlab("year") +
 facet_grid(dynamics+scenario~model, scales="free_y",labeller = labeller(scenario= scenlab3))
 er_alpha3
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_alpha3.png",
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_alpha_lowererrscn.png",
     plot=er_alpha3)
 
 
 #=======================================================
-#b estimates
+#smax estimates
 
 
-df_smax_sim<- df[df$parameter=="smax"&df$variable=="sim",]
-df_smax_est<- df[df$parameter=="smax"&df$variable=="mode",]
+summarydf_smax_sim1<-summarydf[summarydf$parameter=="smax"&
+                                summarydf$variable=="sim"&
+                                summarydf$scenario%in%c("decLinearProd_highERLowError",
+                                  "decLinearProd_ShiftERLowError", 
+                                  "incLinearProd_highERLowError",  
+                                  "incLinearProd_ShiftERLowError",
+                                  "decLinearProd_lowERLowError",
+                                         "incLinearProd_lowERLowError"),
+                                ]
 
-
-summarydf_smax<-aggregate(df_smax_est$value,by=list(scenario=df_smax_est$scenario, 
-    method=df_smax_est$method, 
-    model=df_smax_est$model,
-    by=df_smax_est$by,
-    dynamics=df_smax_est$dynamics,
-    ERerror=df_smax_est$ERerror,
-    ERtrend=df_smax_est$ERtrend ),
-    function(x) {quantile(x,probs = c(0.025, .5, 0.975))})
-summarydf_smax<-do.call(data.frame, summarydf_smax)
-
-summarydf_smax_sim<-aggregate(df_smax_sim$value,by=list(scenario=df_smax_sim$scenario, 
-    method=df_smax_sim$method, 
-    model=df_smax_sim$model,
-    by=df_smax_sim$by,
-     dynamics=df_smax_sim$dynamics,
-    ERerror=df_smax_sim$ERerror,
-    ERtrend=df_smax_sim$ERtrend ),
-    function(x) {unique(x)})
-
-
-
-
-summarydf_smax_sim1<-summarydf_smax_sim[summarydf_smax_sim$scenario%in%c( "decLinearProd_highERLowError",
+summarydf_smax1<-summarydf[summarydf$parameter=="smax"&
+                            summarydf$variable=="mode"&
+                            summarydf$scenario%in%c("decLinearProd_highERLowError",
                                          "decLinearProd_ShiftERLowError", 
                                          "incLinearProd_highERLowError",  
-                                         "incLinearProd_ShiftERLowError" ),]
+                                         "incLinearProd_ShiftERLowError",
+                                         "decLinearProd_lowERLowError",
+                                         "incLinearProd_lowERLowError"),
+                            ]
 
-summarydf_smax1<-summarydf_smax[summarydf_smax$scenario%in%c("decLinearProd_highERLowError",
-                                         "decLinearProd_ShiftERLowError", 
+scenlab1<-c("highER","ShiftER","lowER", "highER", "ShiftER", "lowER")
+names(scenlab1) <- c("decLinearProd_highERLowError",
+                                         "decLinearProd_ShiftERLowError",
+                                         "decLinearProd_lowERLowError", 
                                          "incLinearProd_highERLowError",  
-                                         "incLinearProd_ShiftERLowError" ),]
+                                         "incLinearProd_ShiftERLowError",
+                                         "incLinearProd_lowERLowError")
 
 
 er_smax1<-ggplot() + 
-geom_pointrange(data=summarydf_smax1,aes(x=by,y= x.50.,ymin = x.2.5., ymax = x.97.5., col=method),alpha=.6)+
-geom_line(data=summarydf_smax_sim1,aes(x=by,y= x),color="black", alpha=.6,linewidth=1.2)+
+geom_pointrange(data=summarydf_smax1,aes(x=by,y=median,ymin = lower, ymax = upper,  col=method),alpha=.6)+
+geom_line(data=summarydf_smax_sim1,aes(x=by,y= median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 mytheme + 
@@ -350,25 +296,33 @@ xlab("year") +
 coord_cartesian(ylim = c(60000,400000))+ 
 facet_grid(dynamics+scenario~model, scales="free_y",labeller = labeller(scenario= scenlab1))
 er_smax1
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_smax1.png",
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_smax_trendascn.png",
     plot=er_smax1)
 
 
 
-summarydf_smax_sim2<-summarydf_smax_sim[summarydf_smax_sim$scenario%in%c(  "highERHighError",                              
-                                         "lowERHighError",                           
-                                          "ShiftERHighError",                                                                   
-                                          "trendERHighError" ),]
 
-summarydf_smax2<-summarydf_smax[summarydf_smax$scenario%in%c( "highERHighError",                              
+
+summarydf_smax_sim2<-summarydf[summarydf$parameter=="smax"&
+                                summarydf$variable=="sim"&
+                                summarydf$scenario%in%c("highERHighError",                              
                                          "lowERHighError",                           
                                           "ShiftERHighError",                                                                   
-                                          "trendERHighError" ),]#&summarydf_smax$model%in%c( "hmma","hmmb", "hmmab", "rwa", "rwb", "rwab", "simple" ),]
-head(summarydf_smax2)
+                                          "trendERHighError"),
+                                ]
+
+summarydf_smax2<-summarydf[summarydf$parameter=="smax"&
+                            summarydf$variable=="mode"&
+                            summarydf$scenario%in%c("highERHighError",                              
+                                         "lowERHighError",                           
+                                          "ShiftERHighError",                                                                   
+                                          "trendERHighError"),
+                            ]
+
 
 er_smax2<-ggplot() + 
-geom_pointrange(data=summarydf_smax2,aes(x=by,y= x.50.,ymin = x.2.5., ymax = x.97.5., col=method),alpha=.6)+
-geom_line(data=summarydf_smax_sim2,aes(x=by,y= x),color="black", alpha=.6,linewidth=1.2)+
+geom_pointrange(data=summarydf_smax2,aes(x=by,y=median,ymin = lower, ymax = upper, col=method),alpha=.6)+
+geom_line(data=summarydf_smax_sim2,aes(x=by,y=median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 mytheme + 
@@ -377,89 +331,90 @@ xlab("year") +
 coord_cartesian(ylim = c(60000,400000))+ 
 facet_grid(dynamics+scenario~model, scales="free_y",labeller = labeller(scenario= scenlab2))
 er_smax2
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_smax2.png")
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_highererrscn.png",
+    plot=er_smax2)
 
 
 
 
-summarydf_smax_sim3<-summarydf_smax_sim[summarydf_smax_sim$scenario%in%c(  "highERHighError",                              
-                                         "lowERHighError",                           
-                                          "ShiftERHighError",                                                                   
-                                          "trendERHighError" ),]
 
-summarydf_smax3<-summarydf_smax[summarydf_smax$scenario%in%c( "highERHighError",                              
-                                         "lowERHighError",                           
-                                          "ShiftERHighError",                                                                   
-                                          "trendERHighError" ),]#&summarydf_smax$model%in%c( "hmma","hmmb", "hmmab", "rwa", "rwb", "rwab", "simple" ),]
+
+
+summarydf_smax_sim3<-summarydf[summarydf$parameter=="smax"&
+                                summarydf$variable=="sim"&
+                                summarydf$scenario%in%c("highERLowError",                              
+                                         "lowERLowError",                           
+                                          "ShiftERLowError",                                                                   
+                                          "trendERLowError"),
+                                ]
+
+summarydf_smax3<-summarydf[summarydf$parameter=="smax"&
+                            summarydf$variable=="mode"&
+                            summarydf$scenario%in%c("highERLowError",                              
+                                         "lowERLowError",                           
+                                          "ShiftERLowError",                                                                   
+                                          "trendERLowError"),
+                            ]
+
+unique(summarydf$scenario)
+summarydf_smax_sim3<-summarydf_smax_sim[summarydf_smax_sim$scenario%in%c(  "highERLowError",                              
+                                         "lowERLowError",                           
+                                          "ShiftERLowError",                                                                   
+                                          "trendERLowError" ),]
+
+summarydf_smax3<-summarydf_smax[summarydf_smax$scenario%in%c( "highERLowError",                              
+                                         "lowERLowError",                           
+                                          "ShiftERLowError",                                                                   
+                                          "trendERLowError" ),]#&summarydf_smax$model%in%c( "hmma","hmmb", "hmmab", "rwa", "rwb", "rwab", "simple" ),]
 
 
 er_smax3<-ggplot() + 
-geom_pointrange(data=summarydf_smax3,aes(x=by,y= x.50.,ymin = x.2.5., ymax = x.97.5., col=method),alpha=.6)+
-geom_line(data=summarydf_smax_sim3,aes(x=by,y= x),color="black", alpha=.6,linewidth=1.2)+
+geom_pointrange(data=summarydf_smax3,aes(x=by,y=median,ymin =lower, ymax =upper, col=method),alpha=.6)+
+geom_line(data=summarydf_smax_sim3,aes(x=by,y=median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 mytheme + 
 ylab("Smax") +
 xlab("year") +
 coord_cartesian(ylim = c(60000,400000))+ 
-facet_grid(dynamics+scenario~model, scales="free_y",labeller = labeller(scenario= scenlab2))
+facet_grid(dynamics+scenario~model, scales="free_y",labeller = labeller(scenario= scenlab3))
 er_smax3
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_smax2.png")
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_lowererrscn.png",
+    plot=er_smax3)
 
 
 #=======================================================
 #smsy estimates
 
 
-df_smsy_sim<- df[df$parameter=="smsy"&df$variable=="sim",]
-
-df_smsy_est<- df[df$parameter=="smsy"&df$variable=="mode",]
-
-df<-df_smsy_est[df_smsy_est$model=="hmmab"&df_smsy_est$scenario=="sineProd"&df_smsy_est$iteration==40,]
-
-df<-df_smsy_sim[df_smsy_sim$method=="MLE"&df_smsy_sim$model=="hmmab"&
-df_smsy_sim$scenario=="sineProd"&df_smsy_sim$iteration==40,]
 
 
-summarydf_smsy<-aggregate(df_smsy_est$value,by=list(scenario=df_smsy_est$scenario, 
-    method=df_smsy_est$method, 
-    model=df_smsy_est$model,
-    by=df_smsy_est$by,
-     dynamics=df_smsy_est$dynamics,
-    ERerror=df_smsy_est$ERerror,
-    ERtrend=df_smsy_est$ERtrend ),
-    function(x) {quantile(x,probs = c(0.025, .5, 0.975))})
-summarydf_smsy<-do.call(data.frame, summarydf_smsy)
+summarydf_smsy_sim1<-summarydf[summarydf$parameter=="smsy"&
+                                summarydf$variable=="sim"&
+                                summarydf$scenario%in%c("decLinearProd_highERLowError",
+                                  "decLinearProd_ShiftERLowError", 
+                                  "incLinearProd_highERLowError",  
+                                  "incLinearProd_ShiftERLowError",
+                                  "decLinearProd_lowERLowError",
+                                         "incLinearProd_lowERLowError"),
+                                ]
 
-summary(df_smsy_sim)
-
-summarydf_smsy_sim<-aggregate(df_smsy_sim$value,by=list(scenario=df_smsy_sim$scenario, 
-    method=df_smsy_sim$method, 
-    model=df_smsy_sim$model,
-    by=df_smsy_sim$by,
-    dynamics=df_smsy_sim$dynamics,
-    ERerror=df_smsy_sim$ERerror,
-    ERtrend=df_smsy_sim$ERtrend ),
-    function(x) {unique(x)})
-
-
-
-
-summarydf_smsy_sim1<-summarydf_smsy_sim[summarydf_smsy_sim$scenario%in%c( "decLinearProd_highERLowError",
+summarydf_smsy1<-summarydf[summarydf$parameter=="smsy"&
+                            summarydf$variable=="mode"&
+                            summarydf$scenario%in%c("decLinearProd_highERLowError",
                                          "decLinearProd_ShiftERLowError", 
                                          "incLinearProd_highERLowError",  
-                                         "incLinearProd_ShiftERLowError" ),]
-
-summarydf_smsy1<-summarydf_smsy[summarydf_smsy$scenario%in%c("decLinearProd_highERLowError",
-                                         "decLinearProd_ShiftERLowError", 
-                                         "incLinearProd_highERLowError",  
-                                         "incLinearProd_ShiftERLowError" ),]#&summarydf_smax$model%in%c( "hmma","hmmb", "hmmab", "rwa", "rwb", "rwab", "simple" ),]
+                                         "incLinearProd_ShiftERLowError",
+                                         "decLinearProd_lowERLowError",
+                                         "incLinearProd_lowERLowError"),
+                            ]
 
 
+unique(summarydf_smsy1$scenario)
 
 er_smsy1<-ggplot() + 
-geom_pointrange(data=summarydf_smsy1,aes(x=by,y= x.50.,ymin = x.2.5., ymax = x.97.5., col=method),alpha=.6)+
-geom_line(data=summarydf_smsy_sim1,aes(x=by,y= x),color="black", alpha=.6,linewidth=1.2)+
+geom_pointrange(data=summarydf_smsy1,aes(x=by,y=median,ymin = lower, ymax = upper,  col=method),alpha=.6)+
+geom_line(data=summarydf_smsy_sim1,aes(x=by,y= median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 mytheme + 
@@ -468,116 +423,167 @@ xlab("year") +
 coord_cartesian(ylim = c(20000,150000))+ 
 facet_grid(dynamics+scenario~model, scales="free_y",labeller = labeller(scenario= scenlab1))
 er_smsy1
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/base/compareMCMC_MLE_smsy1.png",
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_smsy_trendascn.png",
     plot=er_smsy1)
 
 
 
-summarydf_smsy_sim2<-summarydf_smsy_sim[summarydf_smsy_sim$scenario%in%c( "highERHighError",                              
+
+
+
+
+summarydf_smsy_sim2<-summarydf[summarydf$parameter=="smsy"&
+                                summarydf$variable=="sim"&
+                                summarydf$scenario%in%c( "highERHighError",                              
                                          "lowERHighError",                           
                                           "ShiftERHighError",                                                                   
-                                          "trendERHighError"  ),]
+                                          "trendERHighError"),
+                                ]
 
-summarydf_smsy2<-summarydf_smsy[summarydf_smsy$scenario%in%c( "highERHighError",                              
+summarydf_smsy2<-summarydf[summarydf$parameter=="smsy"&
+                            summarydf$variable=="mode"&
+                            summarydf$scenario%in%c( "highERHighError",                              
                                          "lowERHighError",                           
                                           "ShiftERHighError",                                                                   
-                                          "trendERHighError" ),]
+                                          "trendERHighError"),
+                            ]
 
-
-
-head(summarydf_smsy2)
-
-er_smsy2 <- ggplot() + 
-geom_pointrange(data=summarydf_smsy2,aes(x=by,y= x.50.,ymin = x.2.5., ymax = x.97.5., col=method),alpha=.6)+
-geom_line(data=summarydf_smsy_sim2,aes(x=by,y= x),color="black", alpha=.6,linewidth=1.2)+
+er_smsy2<-ggplot() + 
+geom_pointrange(data=summarydf_smsy2,aes(x=by,y=median,ymin = lower, ymax = upper,  col=method),alpha=.6)+
+geom_line(data=summarydf_smsy_sim2,aes(x=by,y= median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 mytheme + 
-ylab("Smax") +
+ylab("Smsy") +
 xlab("year") +
 coord_cartesian(ylim = c(20000,150000))+ 
 facet_grid(dynamics+scenario~model, scales="free_y",labeller = labeller(scenario= scenlab2))
 er_smsy2
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_smsy2.png")
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_smsy_higherscn.png",
+    plot=er_smsy2)
 
 
 
-summarydf_smsy_sim3<-summarydf_smsy_sim[summarydf_smsy_sim$scenario%in%c( "highERHighError",                              
-                                         "lowERHighError",                           
-                                          "ShiftERHighError",                                                                   
-                                          "trendERHighError"  ),]
-
-summarydf_smsy3<-summarydf_smsy[summarydf_smsy$scenario%in%c( "highERHighError",                              
-                                         "lowERHighError",                           
-                                          "ShiftERHighError",                                                                   
-                                          "trendERHighError" ),]
 
 
 
-head(summarydf_smsy2)
 
-er_smsy3 <- ggplot() + 
-geom_pointrange(data=summarydf_smsy3,aes(x=by,y= x.50.,ymin = x.2.5., ymax = x.97.5., col=method),alpha=.6)+
-geom_line(data=summarydf_smsy_sim3,aes(x=by,y= x),color="black", alpha=.6,linewidth=1.2)+
+
+summarydf_smsy_sim3<-summarydf[summarydf$parameter=="smsy"&
+                                summarydf$variable=="sim"&
+                                summarydf$scenario%in%c( "highERLowError",                              
+                                         "lowERLowError",                           
+                                          "ShiftERLowError",                                                                   
+                                          "trendERLowError"),
+                                ]
+
+summarydf_smsy3<-summarydf[summarydf$parameter=="smsy"&
+                            summarydf$variable=="mode"&
+                            summarydf$scenario%in%c( "highERLowError",                              
+                                         "lowERLowError",                           
+                                          "ShiftERLowError",                                                                   
+                                          "trendERLowError"),
+                            ]
+
+er_smsy3<-ggplot() + 
+geom_pointrange(data=summarydf_smsy3,aes(x=by,y=median,ymin = lower, ymax = upper,  col=method),alpha=.6)+
+geom_line(data=summarydf_smsy_sim3,aes(x=by,y= median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 mytheme + 
-ylab("Smax") +
+ylab("Smsy") +
 xlab("year") +
 coord_cartesian(ylim = c(20000,150000))+ 
-facet_grid(dynamics+scenario~model, scales="free_y",labeller = labeller(scenario= scenlab2))
+facet_grid(dynamics+scenario~model, scales="free_y",labeller = labeller(scenario= scenlab3))
 er_smsy3
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_smsy3.png")
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_smsy_lowerscn.png",
+    plot=er_smsy3)
+
 
 
 
 
 #-----------------------------------------------------------------------------------
 #summary plots 
-unique(summarydf_smsy_sim$scenario)
 
 
-summarydf_smsy_sim_redux<-summarydf_smsy_sim[summarydf_smsy_sim$scenario%in%c("highERLowError",  "ShiftERLowError", 
-    "decLinearProd_highERLowError",
-  "incLinearProd_highERLowError", "decLinearProd_ShiftERLowError", "incLinearProd_ShiftERLowError")&
-summarydf_smsy_sim$model%in%c("autocorr", "rwa")&summarydf_smsy_sim$method=="MLE",]
+head(summarydf_smsy_sim_redux)
+unique(summarydf$ERtrend)
 
 
-summarydf_smsy_redux<-summarydf_smsy[summarydf_smsy$scenario%in%c( "highERLowError",  "ShiftERLowError", 
-    "decLinearProd_highERLowError",
-  "incLinearProd_highERLowError","decLinearProd_ShiftERLowError", "incLinearProd_ShiftERLowError" )&
-  summarydf_smsy$model%in%c("autocorr", "rwa") &summarydf_smsy$method=="MLE",]
+
+summarydf_smsy_sim_redux<-summarydf[summarydf$parameter=="smsy"&
+                                summarydf$variable=="sim"&
+                                summarydf$scenario%in%c("highERLowError", 
+                                                        "ShiftERLowError",
+                                                        "lowERLowError", 
+                                                        "decLinearProd_highERLowError",
+                                                        "incLinearProd_highERLowError", 
+                                                        "decLinearProd_ShiftERLowError", 
+                                                        "incLinearProd_ShiftERLowError",
+                                                        "decLinearProd_lowERLowError", 
+                                                        "incLinearProd_lowERLowError")&
+                                summarydf$model%in%c("autocorr", "rwa")&
+                                summarydf$method=="MLE",]
+
+summarydf_smsy_sim_redux$ERtrend<-factor(summarydf_smsy_sim_redux$ERtrend,levels=c("highER", "ShiftER", "lowER"))
 
 
+summarydf_smsy_redux<-summarydf[summarydf$variable=="mode"&
+                                summarydf$parameter=="smsy"&
+                                summarydf$scenario%in%c("highERLowError", 
+                                                        "ShiftERLowError", 
+                                                        "lowERLowError",
+                                                        "decLinearProd_highERLowError",
+                                                        "incLinearProd_highERLowError", 
+                                                        "decLinearProd_ShiftERLowError", 
+                                                        "incLinearProd_ShiftERLowError",
+                                                        "decLinearProd_lowERLowError", 
+                                                        "incLinearProd_lowERLowError")&
+                                    summarydf$model%in%c("autocorr", "rwa")&
+                                    summarydf$method=="MLE",]
+
+
+summarydf_smsy_redux$ERtrend<-factor(summarydf_smsy_redux$ERtrend,levels=c("highER", "ShiftER", "lowER"))
+
+
+
+unique(summarydf$scenario)
+unique(summarydf_smsy_sim_redux$scenario)
 
 head(summarydf_smsy)
-head(summarydf_smsy_redux_alpha)
+head(summarydf_smsy_redux)
 
 psmsy_highERscn_line<-ggplot() + 
-geom_pointrange(data=summarydf_smsy_redux,aes(x=by,y= x.50.,ymin = x.2.5., ymax = x.97.5., color=model),alpha=.9)+
-geom_line(data=summarydf_smsy_sim_redux,aes(x=by,y= x),color="black", alpha=.8,linewidth=1.2)+
+geom_pointrange(data=summarydf_smsy_redux,aes(x=by,y= median,ymin = lower, ymax = upper, color=model),alpha=.9)+
+geom_line(data=summarydf_smsy_sim_redux,aes(x=by,y=median),color="black", alpha=.8,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8,option = "E") +
 scale_fill_viridis_d(begin=.1, end=.8,option = "E") +
 coord_cartesian(ylim = c(20000,180000))+ 
 mytheme+ 
 ylab("Smsy") +
 xlab("year") +
-#theme( strip.text.y = element_blank(),strip.text.x = element_blank())+
 facet_grid(dynamics+ERtrend ~model, scales="free_y")
 psmsy_highERscn_line
 
 
-head(df$scenario)
-df_smsy_est_redux<- df[df$parameter=="smsy"&df$variable=="mode"&
-df$scenario%in%c("highERLowError",  "ShiftERLowError", 
-    "decLinearProd_highERLowError",
-  "incLinearProd_highERLowError","decLinearProd_ShiftERLowError", "incLinearProd_ShiftERLowError")&
-df$model%in%c("autocorr", "rwa")&
-df$method=="MLE",]
+
+df_smsy_est_redux<- df[df$parameter=="smsy"&
+                    df$variable=="mode"&
+                    df$scenario%in%c("highERLowError",  
+                                     "ShiftERLowError", 
+                                     "lowERLowError",
+                                     "decLinearProd_highERLowError",
+                                     "incLinearProd_highERLowError",
+                                     "decLinearProd_ShiftERLowError", 
+                                     "incLinearProd_ShiftERLowError",
+                                     "decLinearProd_lowERLowError", 
+                                     "incLinearProd_lowERLowError")&
+                    df$model%in%c("autocorr", "rwa")&
+                    df$method=="MLE",]
+df_smsy_est_redux$ERtrend<-factor(df_smsy_est_redux$ERtrend,levels=c("highER", "ShiftER", "lowER"))
 
 
-
-head(df_smsy_est_redux)
 
 psmsy_erscn_violin_abs<-ggplot(df_smsy_est_redux) + 
 geom_violin(aes(x=model,y=abs(bias), fill=model), scale="width", trim=TRUE, alpha=.7,adjust = 1.8)+
@@ -606,38 +612,70 @@ ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/summary_figs/bia
 unique(summarydf_smsy_sim$scenario)
 
 
-summarydf_smsy_sim_redux2<-summarydf_smsy_sim[summarydf_smsy_sim$scenario%in%c("highERLowError",  "ShiftERLowError", "lowERLowError",
-    "decLinearProd_highERLowError",
-  "incLinearProd_highERLowError", "decLinearProd_ShiftERLowError", "incLinearProd_ShiftERLowError")&
-summarydf_smsy_sim$model%in%c("autocorr", "rwa")&summarydf_smsy_sim$method=="MLE",]
+
+summarydf_smsy_sim_redux2<-summarydf[summarydf$parameter=="smsy"&
+                                     summarydf$variable=="sim"&
+                                    summarydf$scenario%in%c("highERLowError",  
+                                                             "ShiftERLowError", 
+                                                             "lowERLowError",
+                                                             "decLinearProd_highERLowError",
+                                                              "incLinearProd_highERLowError", 
+                                                              "decLinearProd_ShiftERLowError", 
+                                                              "incLinearProd_ShiftERLowError",
+                                                              "decLinearProd_lowERLowError", 
+                                                              "incLinearProd_lowERLowError")&
+                                    summarydf$model%in%c("autocorr", "rwa")&
+                                    summarydf$method=="MLE",]
 
 
-summarydf_smsy_redux2<-summarydf_smsy[summarydf_smsy$scenario%in%c( "highERLowError",  "ShiftERLowError", "lowERLowError",
-    "decLinearProd_highERLowError","incLinearProd_highERLowError","decLinearProd_ShiftERLowError", "incLinearProd_ShiftERLowError" )&
-  summarydf_smsy$model%in%c("autocorr", "rwa") &summarydf_smsy$method=="MLE",]
+summarydf_smsy_sim_redux2$ERtrend<-factor(summarydf_smsy_sim_redux2$ERtrend,levels=c("highER", "ShiftER", "lowER"))
 
+
+summarydf_smsy_redux2<-summarydf[summarydf$parameter=="smsy"&
+                                summarydf$variable=="mode"&
+                                summarydf$scenario%in%c("highERLowError", 
+                                                        "ShiftERLowError", 
+                                                        "lowERLowError",
+                                                             "decLinearProd_highERLowError",
+                                                             "incLinearProd_highERLowError",
+                                                             "decLinearProd_ShiftERLowError", 
+                                                             "incLinearProd_ShiftERLowError",
+                                                             "decLinearProd_lowERLowError", 
+                                                             "incLinearProd_lowERLowError" )&
+                                summarydf$model%in%c("autocorr", "rwa")&
+                                summarydf$method=="MLE",]
+
+
+summarydf_smsy_redux2$ERtrend<-factor(summarydf_smsy_redux2$ERtrend,levels=c("highER", "ShiftER", "lowER"))
 
 
 psmsy_highERscn_line2<-ggplot() + 
-geom_pointrange(data=summarydf_smsy_redux2,aes(x=by,y= x.50.,ymin = x.2.5., ymax = x.97.5., color=model),alpha=.9)+
-geom_line(data=summarydf_smsy_sim_redux2,aes(x=by,y= x),color="black", alpha=.8,linewidth=1.2)+
+geom_pointrange(data=summarydf_smsy_redux2,aes(x=by,y=median,ymin =lower, ymax =upper, color=model),alpha=.9)+
+geom_line(data=summarydf_smsy_sim_redux2,aes(x=by,y=median),color="black", alpha=.8,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8,option = "E") +
 scale_fill_viridis_d(begin=.1, end=.8,option = "E") +
 coord_cartesian(ylim = c(20000,180000))+ 
 mytheme+ 
 ylab("Smsy") +
 xlab("year") +
-#theme( strip.text.y = element_blank(),strip.text.x = element_blank())+
 facet_grid(dynamics+ERtrend ~model, scales="free_y")
 psmsy_highERscn_line2
 
 
 head(df$scenario)
-df_smsy_est_redux2<- df[df$parameter=="smsy"&df$variable=="mode"&
-df$scenario%in%c("highERLowError",  "ShiftERLowError", "lowERLowError","decLinearProd_highERLowError", 
-    "incLinearProd_highERLowError","decLinearProd_ShiftERLowError", "incLinearProd_ShiftERLowError")&
-df$model%in%c("autocorr", "rwa")&
-df$method=="MLE",]
+df_smsy_est_redux2<- df[df$parameter=="smsy"&
+                        df$variable=="mode"&
+                        df$scenario%in%c("highERLowError", 
+                                         "ShiftERLowError", 
+                                         "lowERLowError",
+                                         "decLinearProd_highERLowError",
+                                         "incLinearProd_highERLowError",
+                                         "decLinearProd_ShiftERLowError", 
+                                         "incLinearProd_ShiftERLowError",
+                                         "decLinearProd_lowERLowError", 
+                                         "incLinearProd_lowERLowError" )&
+                        df$model%in%c("autocorr", "rwa")&
+                        df$method=="MLE",]
 
 
 
@@ -667,40 +705,73 @@ ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/summary_figs/bia
 #Smax
 
 
-summarydf_smax_sim_redux<-summarydf_smax_sim[summarydf_smax_sim$scenario%in%c("highERLowError",  "ShiftERLowError", "lowERLowError",
-    "decLinearProd_highERLowError",
-  "incLinearProd_highERLowError", "decLinearProd_ShiftERLowError", "incLinearProd_ShiftERLowError")&
-summarydf_smax_sim$model%in%c("autocorr", "rwa")&summarydf_smax_sim$method=="MLE",]
+summarydf_smax_sim_redux<-summarydf[summarydf$parameter=="smax"&
+                                    summarydf$variable=="mode"&
+                                    summarydf$scenario%in%c("highERLowError", 
+                                                            "ShiftERLowError", 
+                                                            "lowERLowError",
+                                                            "decLinearProd_highERLowError",
+                                                            "incLinearProd_highERLowError",
+                                                            "decLinearProd_ShiftERLowError", 
+                                                            "incLinearProd_ShiftERLowError",
+                                                            "decLinearProd_lowERLowError", 
+                                                            "incLinearProd_lowERLowError" )&
+                                    summarydf$model%in%c("autocorr", "rwa")&
+                                    summarydf$method=="MLE",]
 
 
-summarydf_smax_redux<-summarydf_smax[summarydf_smax$scenario%in%c( "highERLowError",  "ShiftERLowError", "lowERLowError",
-    "decLinearProd_highERLowError","incLinearProd_highERLowError","decLinearProd_ShiftERLowError", "incLinearProd_ShiftERLowError" )&
-  summarydf_smax$model%in%c("autocorr", "rwa") &summarydf_smax$method=="MLE",]
+summarydf_smax_sim_redux$ERtrend<-factor(summarydf_smax_sim_redux$ERtrend,levels=c("highER", "ShiftER", "lowER"))
+
+summarydf_smax_redux<-summarydf[summarydf$parameter=="smax"&
+                                summarydf$variable=="mode"&
+                                summarydf$scenario%in%c("highERLowError", 
+                                                        "ShiftERLowError", 
+                                                        "lowERLowError",
+                                                        "decLinearProd_highERLowError",
+                                                        "incLinearProd_highERLowError",
+                                                        "decLinearProd_ShiftERLowError", 
+                                                        "incLinearProd_ShiftERLowError",
+                                                        "decLinearProd_lowERLowError", 
+                                                        "incLinearProd_lowERLowError" )&
+                                summarydf$model%in%c("autocorr", "rwa") &
+                                summarydf$method=="MLE",]
 
 
+
+
+summarydf_smax_redux$ERtrend<-factor(summarydf_smax_redux$ERtrend,levels=c("highER", "ShiftER", "lowER"))
 
 
 psmax_highERscn_line<-ggplot() + 
-geom_pointrange(data=summarydf_smax_redux,aes(x=by,y= x.50.,ymin = x.2.5., ymax = x.97.5., color=model),alpha=.9)+
-geom_line(data=summarydf_smax_sim_redux,aes(x=by,y= x),color="black", alpha=.8,linewidth=1.2)+
+geom_pointrange(data=summarydf_smax_redux,aes(x=by,y=median,ymin =lower, ymax = upper, color=model),alpha=.9)+
+geom_line(data=summarydf_smax_sim_redux,aes(x=by,y=median),color="black", alpha=.8,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8,option = "E") +
 scale_fill_viridis_d(begin=.1, end=.8,option = "E") +
 coord_cartesian(ylim = c(50000,400000))+ 
 mytheme+ 
 ylab("Smax") +
 xlab("year") +
-#theme( strip.text.y = element_blank(),strip.text.x = element_blank())+
 facet_grid(dynamics+ERtrend ~model, scales="free_y")
 psmax_highERscn_line
 
 
 head(df$scenario)
-df_smax_est_redux<- df[df$parameter=="smax"&df$variable=="mode"&
-df$scenario%in%c("highERLowError",  "ShiftERLowError", "lowERLowError","decLinearProd_highERLowError", 
-    "incLinearProd_highERLowError","decLinearProd_ShiftERLowError", "incLinearProd_ShiftERLowError")&
-df$model%in%c("autocorr", "rwa")&
-df$method=="MLE",]
+df_smax_est_redux<- df[df$parameter=="smax"&
+                       df$variable=="mode"&
+                       df$scenario%in%c("highERLowError", 
+                                        "ShiftERLowError", 
+                                        "lowERLowError",
+                                        "decLinearProd_highERLowError",
+                                        "incLinearProd_highERLowError",
+                                        "decLinearProd_ShiftERLowError", 
+                                        "incLinearProd_ShiftERLowError",
+                                        "decLinearProd_lowERLowError", 
+                                        "incLinearProd_lowERLowError")&
+                        df$model%in%c("autocorr", "rwa")&
+                        df$method=="MLE",]
 
+
+df_smax_est_redux$ERtrend<-factor(df_smax_est_redux$ERtrend,levels=c("highER", "ShiftER", "lowER"))
 
 
 head(df_smsy_est_redux)
@@ -730,43 +801,71 @@ ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/summary_figs/bia
 #alpha
 
 
-summarydf_alpha_sim_redux<-summarydf_alpha_sim[summarydf_alpha_sim$scenario%in%c("highERLowError",  "ShiftERLowError", 
-    "lowERLowError","decLinearProd_highERLowError",
-  "incLinearProd_highERLowError", "decLinearProd_ShiftERLowError", "incLinearProd_ShiftERLowError")&
-summarydf_alpha_sim$model%in%c("autocorr", "rwa")&summarydf_alpha_sim$method=="MLE",]
+summarydf_alpha_sim_redux<-summarydf[summarydf$parameter=="alpha"&
+                                    summarydf$variable=="sim"&
+                                    summarydf$scenario%in%c("highERLowError", 
+                                                            "ShiftERLowError", 
+                                                            "lowERLowError",
+                                                            "decLinearProd_highERLowError",
+                                                            "incLinearProd_highERLowError",
+                                                            "decLinearProd_ShiftERLowError", 
+                                                            "incLinearProd_ShiftERLowError",
+                                                            "decLinearProd_lowERLowError", 
+                                                            "incLinearProd_lowERLowError")&
+                                    summarydf$model%in%c("autocorr", "rwa")&
+                                    summarydf$method=="MLE",]
+
+summarydf_alpha_sim_redux$ERtrend<-factor(summarydf_alpha_sim_redux$ERtrend,levels=c("highER", "ShiftER", "lowER"))
+
+summarydf_alpha_redux<-summarydf[summarydf$parameter=="alpha"&
+                                       summarydf$variable=="mode"&
+                                       summarydf$scenario%in%c("highERLowError", 
+                                                            "ShiftERLowError", 
+                                                            "lowERLowError",
+                                                            "decLinearProd_highERLowError",
+                                                            "incLinearProd_highERLowError",
+                                                            "decLinearProd_ShiftERLowError", 
+                                                            "incLinearProd_ShiftERLowError",
+                                                            "decLinearProd_lowERLowError", 
+                                                            "incLinearProd_lowERLowError")&
+                                       summarydf$model%in%c("autocorr", "rwa") &
+                                       summarydf$method=="MLE",]
 
 
-summarydf_alpha_redux<-summarydf_alpha[summarydf_alpha$scenario%in%c( "highERLowError",  "ShiftERLowError", 
-    "lowERLowError", "decLinearProd_highERLowError","incLinearProd_highERLowError",
-    "decLinearProd_ShiftERLowError", "incLinearProd_ShiftERLowError" )&
-  summarydf_alpha$model%in%c("autocorr", "rwa") &summarydf_alpha$method=="MLE",]
-
+summarydf_alpha_redux$ERtrend<-factor(summarydf_alpha_redux$ERtrend,levels=c("highER", "ShiftER", "lowER"))
 
 
 
 palpha_highERscn_line<-ggplot() + 
-geom_pointrange(data=summarydf_alpha_redux,aes(x=by,y= x.50.,ymin = x.2.5., ymax = x.97.5., color=model),alpha=.9)+
-geom_line(data=summarydf_alpha_sim_redux,aes(x=by,y= x),color="black", alpha=.8,linewidth=1.2)+
+geom_pointrange(data=summarydf_alpha_redux,aes(x=by,y=median,ymin = lower, ymax = upper, color=model),alpha=.9)+
+geom_line(data=summarydf_alpha_sim_redux,aes(x=by,y=median),color="black", alpha=.8,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8,option = "E") +
 scale_fill_viridis_d(begin=.1, end=.8,option = "E") +
 coord_cartesian(ylim = c(0,2.3))+ 
 mytheme+ 
 ylab("log(alpha)") +
 xlab("year") +
-#theme( strip.text.y = element_blank(),strip.text.x = element_blank())+
 facet_grid(dynamics+ERtrend ~model, scales="free_y")
 palpha_highERscn_line
 
 
 df_alpha_est_redux<- df[df$parameter=="alpha"&df$variable=="mode"&
-df$scenario%in%c("highERLowError",  "ShiftERLowError", "lowERLowError","decLinearProd_highERLowError", 
-    "incLinearProd_highERLowError","decLinearProd_ShiftERLowError", "incLinearProd_ShiftERLowError")&
-df$model%in%c("autocorr", "rwa")&
-df$method=="MLE",]
+                        df$scenario%in%c("highERLowError", 
+                                        "ShiftERLowError", 
+                                        "lowERLowError",
+                                        "decLinearProd_highERLowError",
+                                        "incLinearProd_highERLowError",
+                                        "decLinearProd_ShiftERLowError", 
+                                        "incLinearProd_ShiftERLowError",
+                                        "decLinearProd_lowERLowError", 
+                                        "incLinearProd_lowERLowError")&
+                        df$model%in%c("autocorr", "rwa")&
+                        df$method=="MLE",]
 
 
 
-head(df_smsy_est_redux)
+df_alpha_est_redux$ERtrend<-factor(df_alpha_est_redux$ERtrend,levels=c("highER", "ShiftER", "lowER"))
+
 
 palpha_erscn_violin_abs<-ggplot(df_alpha_est_redux) + 
 geom_violin(aes(x=model,y=abs(bias), fill=model), scale="width", trim=TRUE, alpha=.7,adjust = 1.8)+
