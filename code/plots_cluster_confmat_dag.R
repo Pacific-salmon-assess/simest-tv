@@ -111,7 +111,8 @@ for(a in seq_along(scn)){
   wb1=apply(w1,1,max)
   
   mwaic_set[[a]]=data.frame(sc1,wb1) |> dplyr::group_by(sc1) |> dplyr::summarize(m=mean(wb1),mn.w=min(wb1),mx.w=max(wb1),n=dplyr::n())
-  
+  mwaic_set[[a]]$OM=rep(simPar$nameOM[a],nrow(mwaic_set[[a]]))
+    
   cn1[[a]]=summary(factor(sc1,levels=seq(1:ncol(aic_set[[a]]))))/naicsim
 
   bica=subset(bic,scenario==scn[a])
@@ -127,6 +128,7 @@ for(a in seq_along(scn)){
   wb2=apply(w2,1,max)
   
   mwbic_set[[a]]=data.frame(sc2,wb2) |> dplyr::group_by(sc2) |> dplyr::summarize(m=mean(wb2),mn.w=min(wb2),mx.w=max(wb2),n=dplyr::n())
+  mwbic_set[[a]]$OM=rep(simPar$nameOM[a],nrow(mwbic_set[[a]]))
   
   cn2[[a]]=summary(factor(sc2,levels=seq(1:ncol(bic_set[[a]]))))/nbicsim
 
@@ -145,6 +147,7 @@ for(a in seq_along(scn)){
   wb3=apply(w3,1,max)
   
   mwlfo_set[[a]]=data.frame(sc3,wb3) |> dplyr::group_by(sc3) |> dplyr::summarize(m=mean(wb3),mn.w=min(wb3),mx.w=max(wb3),n=dplyr::n())
+  mwlfo_set[[a]]$OM=rep(simPar$nameOM[a],nrow(mwlfo_set[[a]]))
   
   myseq<-seq(from=o+1, length.out=length(EM))
   conf_matrix$w_AIC[myseq]<-cn1[[a]]
@@ -228,6 +231,16 @@ plfo=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
 plfo
 
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/LFO_MLE.png", plot=plfo)
+
+#AIC table - Sx
+aict=do.call(rbind.data.frame, mwaic_set)
+write.csv(aict,'./outs/AIC_model_weights_topmodels.csv')
+
+bict=do.call(rbind.data.frame, mwbic_set)
+write.csv(bict,'./outs/BIC_model_weights_topmodels.csv')
+
+lfot=do.call(rbind.data.frame, mwlfo_set)
+write.csv(lfot,'./outs/LFO_model_weights_topmodels.csv')
 
 
 #---------------------------------------------------------------------------------------------
