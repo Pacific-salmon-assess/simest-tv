@@ -29,3 +29,9 @@ sumpair <- function(x,k=2){
   # experiment with the multiplier to find the perfect position
 } 
 
+mw_tmblfo=function(x){
+  w=NA
+  for(i in 1:length(x)){w[i]=exp(0.5*x[i])/sum(exp(0.5*x))}
+  return(w)
+  }
+
