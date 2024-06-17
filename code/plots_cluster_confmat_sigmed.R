@@ -35,6 +35,7 @@ res<-res[res$convergence==0,]
 #
 
 
+res$sigscenario<-"medium"
 res$scenario<-case_match(
 res$scenario,
  "sigmamed_stationary"~"stationary",
@@ -95,7 +96,7 @@ for(a in seq_along(scn)){
   aica<-subset(aic,scenario==scn[a])
   aic_set[[a]]=tidyr::spread(aica[,-c(10,11,12,13)],key=model,value=mode)
   naicsim<-length(unique(aic_set[[a]]$iteration))
-  aic_set[[a]]=aic_set[[a]][c(15,8,12,9,14,11,13,10)] #reorder estimation models
+  aic_set[[a]]=aic_set[[a]][c(16,9,13,10,15,12,14,11)] #reorder estimation models
   #head(aic_set[[a]])
   sc1=apply(aic_set[[a]],1,which.min)
   
@@ -104,7 +105,7 @@ for(a in seq_along(scn)){
   bica=subset(bic,scenario==scn[a])
   bic_set[[a]]=tidyr::spread(bica[,-c(10,11,12,13)],key=model,value=mode)
   nbicsim<-length(unique( bic_set[[a]]$iteration))
-  bic_set[[a]]=bic_set[[a]][c(15,8,12,9,14,11,13,10)] #reorder estimation models
+  bic_set[[a]]=bic_set[[a]][c(16,9,13,10,15,12,14,11)] #reorder estimation models
 
   sc2=apply(bic_set[[a]],1,which.min)
  
@@ -113,7 +114,7 @@ for(a in seq_along(scn)){
   lfoa=subset(lfo,scenario==scn[a])
   lfo_set[[a]]=tidyr::spread(lfoa[,-c(10,11,12,13)],key=model,value=mode)
   nlfosim <- length(unique( lfo_set[[a]]$iteration))
-  lfo_set[[a]]=lfo_set[[a]][c(15,8,12,9,14,11,13,10)] #reorder estimation models
+  lfo_set[[a]]=lfo_set[[a]][c(16,9,13,10,15,12,14,11)] #reorder estimation models
   #head(lfo_set[[a]])
 
   sc3=apply(lfo_set[[a]],1,which.max)
@@ -128,7 +129,7 @@ for(a in seq_along(scn)){
 
 }
 
-unique(conf_matrix$OM)
+
 conf_matrix$eqem_om <- dplyr::recode(conf_matrix$OM, 
       "stationary"="stationary", 
       "decLinearProd"="dynamic.a",
@@ -146,17 +147,13 @@ conf_matrix$eqem_om <- dplyr::recode(conf_matrix$OM,
   ))      
 
 conf_matrix$diag<-conf_matrix$eqem_om==conf_matrix$EM
-s
-unique(conf_matrix$EM)
-unique( conf_matrix$eqem_om)
-
 
 
 
 paic=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   geom_tile(aes(fill = w_AIC), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(w_AIC,2)), vjust = 1,size=6) +
-  ggtitle("AIC MLE sigmed")+
+  ggtitle(expression(paste("AIC", ~sigma, "=0.3")))+
   scale_fill_gradient(low="white", high="#009194")  +
   geom_segment(data=transform(subset(conf_matrix, !!diag), 
                     simulated=as.numeric(OM), 
@@ -167,14 +164,15 @@ paic=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   xlab("Simulation Scenario")+ylab("Estimation Model")
 paic
 
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sig_med/AIC_MLE.png", plot=paic)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sig_med/AIC_MLE_sigmed.png",
+ plot=paic, width = 8,height = 7)
 
 
 
 pbic=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   geom_tile(aes(fill = BIC), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(BIC,2)), vjust = 1,size=6) +
-  ggtitle("BIC")+
+  ggtitle(expression(paste("BIC", ~sigma, "=0.3")))+
   scale_fill_gradient(low="white", high="#009194")  +
   geom_segment(data=transform(subset(conf_matrix, !!diag), 
                     simulated=as.numeric(OM), 
@@ -185,14 +183,15 @@ pbic=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   xlab("Simulation Scenario")+ylab("Estimation Model")
 pbic
 
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sig_med/BIC_MLE.png", plot=pbic)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sig_med/BIC_MLE_sigmed.png", 
+  plot=pbic, width = 8,height = 7)
 
 
 
 plfo=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   geom_tile(aes(fill = LFO), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(LFO,2)), vjust = 1, size=6) +
-  ggtitle("LFO MLE")+
+   ggtitle(expression(paste("LFO MLE", ~sigma, "=0.3")))+
   scale_fill_gradient(low="white", high="#009194")  +
   geom_segment(data=transform(subset(conf_matrix, !!diag), 
                     simulated=as.numeric(OM), 
@@ -203,7 +202,377 @@ plfo=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   xlab("Simulation Scenario")+ylab("Estimation Model")
 plfo
 
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sig_med/LFO_MLE.png", plot=plfo)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sig_med/LFO_MLE_sigmed.png", 
+  plot=plfo, width = 8,height = 7)
+
+
+
+#===============================================================================
+# add in base case scenarios for the line plots. 
+
+
+
+
+
+res1siglow<-readRDS(file = "outs/simest/sigmalow_sensitivity/res_siglow1.rds")
+res2siglow<-readRDS(file = "outs/simest/sigmalow_sensitivity/res_siglow2.rds")
+res105siglow<-readRDS(file = "outs/simest/sigmalow_sensitivity/res_siglow_105.rds")
+ressiglow<-rbind(res1siglow,res2siglow,res105siglow)#,resstan16,resstan712)
+
+unique(ressiglow$scenario)
+
+ressiglow<-ressiglow[ressiglow$convergence==0,]
+
+
+ressiglow$sigscenario<-"low"
+ressiglow$scenario<-case_match(
+  ressiglow$scenario,
+  "sigmalow_stationary"~"stationary",
+  "sigmalow_decLinearProd"~"decLinearProd",
+  "sigmalow_regimeProd"~ "regimeProd",  
+ "sigmalow_sineProd"~ "sineProd",     
+ "sigmalow_regimeCap"~ "regimeCap",    
+ "sigmalow_decLinearCap"~ "decLinearCap", 
+ "sigmalow_regimeProdCap"~ "regimeProdCap",
+ "sigmalow_shiftCap"~"shiftCap",
+ "sigmalow_decLinearProdshiftCap"~"decLinearProdshiftCap")
+
+
+aic_siglow=subset(ressiglow,parameter=='AIC'&method=='MLE')
+bic_siglow=subset(ressiglow,parameter=='BIC'&method=='MLE')
+lfo_siglow=subset(ressiglow,parameter=='LFO'&method=='MLE')
+
+lfo_siglow<-lfo_siglow[lfo_siglow$model %in% c("simple","autocorr","rwa","rwb","rwab",
+    "hmma","hmmb","hmmab"),]
+
+
+scn_siglow<-factor(unique(aic_siglow$scenario), levels=c(
+  "stationary", 
+  "decLinearProd",  
+  "sineProd",
+  "regimeProd", 
+  "decLinearCap",
+  "regimeCap", 
+  "shiftCap",
+  "regimeProdCap",
+  "decLinearProdshiftCap" ) )
+
+
+##Confusion matrices
+conf_matrix_siglow<-expand.grid(EM=EM,OM=scn_siglow)
+conf_matrix_siglow$w_AIC=NA
+conf_matrix_siglow$BIC=NA
+conf_matrix_siglow$LFO=NA
+
+cn1_siglow<-list()
+cn2_siglow<-list()
+cn3_siglow<-list()
+
+aic_set_siglow<-list()
+bic_set_siglow<-list()
+lfo_set_siglow<-list()
+o=0
+for(a in seq_along(scn_siglow)){
+
+  #head(aic_set[[a]][c(15,8,12,9,14,11,13,10)])
+  #AIC
+  aica_siglow<-subset(aic_siglow,scenario==scn_siglow[a])
+  aic_set_siglow[[a]]=tidyr::spread(aica_siglow[,-c(10,11,12,13)],key=model,value=mode)
+  naicsim<-length(unique(aic_set_siglow[[a]]$iteration))
+  aic_set_siglow[[a]]=aic_set_siglow[[a]][c(16,9,13,10,15,12,14,11)] #reorder estimation models
+  #head(aic_set[[a]])
+  sc1_siglow=apply(aic_set_siglow[[a]],1,which.min)
+  
+  cn1_siglow[[a]]=summary(factor(sc1_siglow,levels=seq(1:ncol(aic_set_siglow[[a]]))))/naicsim
+
+  bica_siglow=subset(bic_siglow,scenario==scn_siglow[a])
+  bic_set_siglow[[a]]=tidyr::spread(bica_siglow[,-c(10,11,12,13)],key=model,value=mode)
+  nbicsim<-length(unique( bic_set_siglow[[a]]$iteration))
+  bic_set_siglow[[a]]=bic_set_siglow[[a]][c(16,9,13,10,15,12,14,11)] #reorder estimation models
+
+  sc2_siglow=apply(bic_set_siglow[[a]],1,which.min)
+ 
+  cn2_siglow[[a]]=summary(factor(sc2_siglow,levels=seq(1:ncol(bic_set_siglow[[a]]))))/nbicsim
+
+  lfoa_siglow=subset(lfo_siglow,scenario==scn_siglow[a])
+  lfo_set_siglow[[a]]=tidyr::spread(lfoa_siglow[,-c(10,11,12,13)],key=model,value=mode)
+  nlfosim <- length(unique(lfo_set_siglow[[a]]$iteration))
+  lfo_set_siglow[[a]]=lfo_set_siglow[[a]][c(16,9,13,10,15,12,14,11)] #reorder estimation models
+  #head(lfo_set[[a]])
+
+  sc3_siglow=apply(lfo_set_siglow[[a]],1,which.max)
+  cn3_siglow[[a]]=summary(factor(sc3_siglow,levels=seq(1:ncol(lfo_set_siglow[[a]]))))/ nlfosim
+
+
+  myseq<-seq(from=o+1, length.out=length(EM))
+  conf_matrix_siglow$w_AIC[myseq]<-cn1_siglow[[a]]
+  conf_matrix_siglow$BIC[myseq]<-cn2_siglow[[a]]
+  conf_matrix_siglow$LFO[myseq]<-cn3_siglow[[a]]
+  o=max(myseq)
+
+}
+
+
+conf_matrix_siglow$eqem_om <- dplyr::recode(conf_matrix_siglow$OM, 
+      "stationary"="stationary",  
+      "decLinearProd"="dynamic.a",
+      "sineProd"="dynamic.a",
+      "decLinearCap"="dynamic.b",
+      "regimeProd"="regime.a",
+      "regimeCap"="regime.b",
+      "shiftCap"="regime.b", 
+      "regimeProdCap"="regime.ab",
+      "decLinearProdshiftCap"="dynamic.ab"
+      ) 
+
+      conf_matrix_siglow$eqem_om<-factor(conf_matrix_siglow$eqem_om,levels=c("stationary",
+     "autocorr",
+     "dynamic.a","regime.a",
+     "dynamic.b","regime.b",
+     "dynamic.ab",
+     "regime.ab"))  
+conf_matrix_siglow$diag<-conf_matrix_siglow$eqem_om==conf_matrix_siglow$EM
+
+
+
+
+
+#========================================================================================================
+#base case - sigma=0.6
+
+res1base<-readRDS(file = "outs/simest/generic/resbase1.rds")
+res2base<-readRDS(file = "outs/simest/generic/resbase2.rds")
+
+resbase<-rbind(res1base,res2base)#,resstan16,resstan712)
+
+resbase<-resbase[resbase$convergence==0,]
+
+resbase$sigscenario<-"high"
+
+unique(resbase$scenario)[unique(resbase$scenario)%in%c("stationary",
+                                       "decLinearProd",
+                                       "sineProd",
+                                       "regimeProd",
+                                       "decLinearCap",         
+                                       "regimeCap",
+                                       "shiftCap",
+                                       "decLinearProdshiftCap",
+                                       "regimeProdCap")]
+
+resbase<-resbase[resbase$scenario%in%c("stationary",
+                                       "decLinearProd",
+                                       "sineProd",
+                                       "regimeProd",
+                                       "decLinearCap",         
+                                       "regimeCap",
+                                       "shiftCap",
+                                       "decLinearProdshiftCap",
+                                       "regimeProdCap"),]
+
+
+aicbase=subset(resbase,parameter=='AIC'&method=='MLE')
+bicbase=subset(resbase,parameter=='BIC'&method=='MLE')
+lfobase=subset(resbase,parameter=='LFO'&method=='MLE')
+
+lfobase<-lfobase[lfobase$model %in% c("simple","autocorr","rwa","rwb","rwab",
+    "hmma","hmmb","hmmab"),]
+
+
+##Confusion matrices
+conf_matrix_base<-expand.grid(EM=EM,OM=scn)
+conf_matrix_base$w_AIC=NA
+conf_matrix_base$BIC=NA
+conf_matrix_base$LFO=NA
+
+cn1_base<-list()
+cn2_base<-list()
+cn3_base<-list()
+
+aic_set_base<-list()
+bic_set_base<-list()
+lfo_set_base<-list()
+o=0
+for(a in seq_along(scn)){
+
+  #AIC
+  aica_base<-subset(aicbase,scenario==scn[a])
+  aic_set_base[[a]]=tidyr::spread(aica_base[,-c(10,11,12,13)],key=model,value=mode)
+  naicsim<-length(unique(aic_set_base[[a]]$iteration))
+  aic_set_base[[a]]=aic_set_base[[a]][c(16,9,13,10,15,12,14,11)] #reorder estimation models
+  #head(aic_set[[a]])
+  sc1_base=apply(aic_set_base[[a]],1,which.min)
+  
+  cn1_base[[a]]=summary(factor(sc1_base,levels=seq(1:ncol(aic_set_base[[a]]))))/naicsim
+
+  bica_base=subset(bicbase,scenario==scn[a])
+  bic_set_base[[a]]=tidyr::spread(bica_base[,-c(10,11,12,13)],key=model,value=mode)
+  nbicsim<-length(unique( bic_set_base[[a]]$iteration))
+  bic_set_base[[a]]=bic_set_base[[a]][c(16,9,13,10,15,12,14,11)] #reorder estimation models
+
+  sc2_base=apply(bic_set_base[[a]],1,which.min)
+ 
+  cn2_base[[a]]=summary(factor(sc2_base,levels=seq(1:ncol(bic_set_base[[a]]))))/nbicsim
+
+  lfoa_base=subset(lfobase,scenario==scn[a])
+  lfo_set_base[[a]]=tidyr::spread(lfoa_base[,-c(10,11,12,13)],key=model,value=mode)
+  nlfosim <- length(unique( lfo_set_base[[a]]$iteration))
+  lfo_set_base[[a]]=lfo_set_base[[a]][c(16,9,13,10,15,12,14,11)] #reorder estimation models
+  #head(lfo_set[[a]])
+
+  sc3_base=apply(lfo_set_base[[a]],1,which.max)
+  cn3_base[[a]]=summary(factor(sc3_base,levels=seq(1:ncol(lfo_set_base[[a]]))))/ nlfosim
+
+
+  myseq<-seq(from=o+1, length.out=length(EM))
+  conf_matrix_base$w_AIC[myseq]<-cn1_base[[a]]
+  conf_matrix_base$BIC[myseq]<-cn2_base[[a]]
+  conf_matrix_base$LFO[myseq]<-cn3_base[[a]]
+  o=max(myseq)
+
+}
+
+
+conf_matrix_base$eqem_om <- dplyr::recode(conf_matrix_base$OM, 
+      "stationary"="stationary", 
+      "decLinearProd"="dynamic.a",
+      "sineProd"="dynamic.a",
+      "decLinearCap"="dynamic.b",
+      "decLinearProdshiftCap"="dynamic.ab",
+      "regimeProd"="regime.a",
+      "shiftProd"="regime.a",
+      "regimeCap"="regime.b",
+      "shiftCap"="regime.b", 
+      "regimeProdCap"="regime.ab",
+      )  
+ conf_matrix_base$eqem_om<-factor( conf_matrix_base$eqem_om,levels=c( "stationary",
+ "autocorr", "dynamic.a", "regime.a", "dynamic.b", "regime.b", "dynamic.ab", "regime.ab"
+  ))      
+
+conf_matrix_base$diag<-conf_matrix_base$eqem_om==conf_matrix_base$EM
+
+
+
+
+#======================================================================================================================
+#aggregate plot
+
+conf_matrix$sigma<-0.3
+conf_matrix_base$sigma<-0.6
+conf_matrix_siglow$sigma<-0.1
+
+
+conf_matrix_sigcomp<-rbind(conf_matrix,conf_matrix_base)#,conf_matrix_siglow)
+conf_matrix_sigcomp$OM
+
+conf_matrix_sigcomp<-conf_matrix_sigcomp[conf_matrix_sigcomp$OM%in%c("decLinearProd","regimeProd","decLinearCap","shiftCap"), ]
+
+conf_matrix_sigcomp$OM<-as.character(conf_matrix_sigcomp$OM)
+conf_matrix_a$EM<-as.character(conf_matrix_a$EM)
+
+conf_matrix_siglow[conf_matrix_siglow$OM=="regimeProd",]
+conf_matrix[conf_matrix$OM=="regimeProd",]
+conf_matrix_base[conf_matrix_base$OM=="regimeProd",]
+
+conf_matrix_sigcomp_sc1<-conf_matrix_sigcomp[conf_matrix_sigcomp$OM=="decLinearProd"&conf_matrix_sigcomp$EM=="dynamic.a",]
+conf_matrix_sigcomp_sc2<-conf_matrix_sigcomp[conf_matrix_sigcomp$OM=="regimeProd"&conf_matrix_sigcomp$EM%in%c("dynamic.a"),]
+conf_matrix_sigcomp_sc3<-conf_matrix_sigcomp[conf_matrix_sigcomp$OM=="decLinearCap"&conf_matrix_sigcomp$EM=="dynamic.b",]
+conf_matrix_sigcomp_sc4<-conf_matrix_sigcomp[conf_matrix_sigcomp$OM=="shiftCap"&conf_matrix_sigcomp$EM%in%c("dynamic.b"),]
+#conf_matrix_sigcomp_sc5<-conf_matrix_sigcomp[conf_matrix_sigcomp$OM=="decLinearProdshiftCap"&conf_matrix_sigcomp$EM=="dynamic.ab",]
+
+
+
+conf_matrix_sigcomp_right<-rbind(conf_matrix_sigcomp_sc1,
+  conf_matrix_sigcomp_sc2,
+  conf_matrix_sigcomp_sc3,
+  conf_matrix_sigcomp_sc4)
+
+unique(conf_matrix_sigcomp$OM)
+
+conf_matrix_sigcomp_right$OM2<-case_match(
+  conf_matrix_sigcomp_right$OM,
+  "decLinearProd" ~"decline log(a)",
+  "regimeProd" ~ "shift up log(a)",   
+  "decLinearCap" ~"decline Smax",  
+  "shiftCap"  ~"shift down Smax")
+conf_matrix_sigcomp_right$OM2<-factor(conf_matrix_sigcomp_right$OM2,levels=c("shift up log(a)","decline log(a)",
+  "shift down Smax", "decline Smax"))
+
+head(conf_matrix_sigcomp)
+
+lineAIC_sig<-ggplot(conf_matrix_sigcomp_right)+
+geom_point(aes(x=sigma,y=w_AIC,color=OM2),size=4,show.legend = F)+
+geom_line(aes(x=sigma,y=w_AIC,color=OM2),linewidth=1.2)+
+#scale_colour_manual(values = c("#95D840FF","#482677FF", "#95D840FF", "#482677FF"))+
+#scale_linetype_manual(values = c(1,1,2,2))+
+ylab("proportion of correct model assignment with AICc")+
+xlab(expression(paste("value of", ~sigma)))+
+scale_color_viridis_d(begin=.1, end=.8,option = "A") +
+#coord_cartesian(ylim=c(0.1,0.88))+
+mytheme+
+theme(axis.title=element_text(size=14,face="bold"),legend.key.width = unit(3, "line"))+
+ guides(color=guide_legend(nrow=2, byrow=TRUE)) 
+lineAIC_sig
+
+
+
+lineBIC_sig<-ggplot(conf_matrix_sigcomp_right)+
+geom_point(aes(x=sigma,y=BIC,color=OM2),size=4,show.legend = F)+
+geom_line(aes(x=sigma,y=BIC,color=OM2),linewidth=1.2)+
+#scale_colour_manual(values = c("#95D840FF","#482677FF", "#95D840FF", "#482677FF"))+
+#scale_linetype_manual(values = c(1,1,2,2))+
+ylab("proportion of correct model assignment with BIC")+
+xlab(expression(paste("value of", ~sigma)))+
+scale_color_viridis_d(begin=.1, end=.8,option = "A") +
+#coord_cartesian(ylim=c(0.1,0.88))+
+mytheme+
+theme(axis.title=element_text(size=14,face="bold"),legend.key.width = unit(1.5, "line"))+
+guides(color=guide_legend(nrow=2, byrow=TRUE)) 
+lineBIC_sig
+
+
+
+#----------------------------------
+#need to run plots_cluster_confmat_sensa before this works
+#require that you run confmat_sens_a first
+linesAIC_alpha_smax <- ggarrange(lineAIC_a, lineAICsmax, lineAIC_sig,
+                        nrow = 1, ncol = 2,
+                        common.legend = TRUE,
+                        legend="bottom")
+linesAIC_alpha_smax
+
+plot_grid(linesAIC_alpha_smax,lineAIC_sig,  rel_widths = c(2, 1) )
+
+
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/lineAICsens_alpha_smax.png",
+ plot=linesAIC_alpha_smax, width = 13,height = 6)
+
+
+
+
+linesBIC_alpha_smax <- ggarrange(lineBIC_a, lineBICsmax, 
+                        nrow = 1, ncol = 2,
+                        common.legend = TRUE,
+                        legend="bottom")
+linesBIC_alpha_smax
+
+
+linesBIC_alpha_smax_sig<-plot_grid(linesBIC_alpha_smax,lineBIC_sig,  rel_widths = c(2, 1) )
+
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/lineBICsens_alpha_smax_sig.png",
+ plot=linesBIC_alpha_smax_sig, width = 18,height = 6)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #---------------------------------------------------------------------------------------------
@@ -213,14 +582,16 @@ ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matric
 resstan1<-readRDS(file = "outs/simest/generic/resstan1.rds")
 resstan2<-readRDS(file = "outs/simest/generic/resstan2.rds")
 resstan<-rbind(resstan1,resstan2)
-head(resstan)
 
 
-unique(resstan$parameter)
+
+
 
 aic=subset(resstan,parameter=='AIC')
 bic=subset(resstan,parameter=='BIC')
 
+
+head(aic)
 
 scn<-factor(unique(aic$scenario), levels=c(
   "stationary", 

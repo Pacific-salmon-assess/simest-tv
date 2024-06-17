@@ -5,13 +5,14 @@
 library(ggplot2)
 library(dplyr)
 library(samEst)
+library(cowplot)
 
 
 
 mytheme = list(
     theme_classic(14)+
         theme(panel.background = element_blank(),strip.background = element_rect(colour=NA, fill=NA),panel.border = element_rect(fill = NA, color = "black"),
-              legend.title = element_blank(),legend.position="bottom", strip.text = element_text(face="bold", size=12),
+              legend.title = element_blank(),legend.position="bottom", strip.text = element_text(face="bold", size=13),
               axis.text=element_text(face="bold"),axis.title = element_text(face="bold"),plot.title = element_text(face = "bold", hjust = 0.5,size=13))
 )
 
@@ -153,6 +154,90 @@ ggsave(
     )
 
 
+#select scenarios for main paper
+datdfselec<-datdf[datdf$scenario%in%c("autocorr","decLinearProd","sineProd","shiftProd",
+    "decLinearCap","shiftCap","regimeProdCap","decLinearProdshiftCap"),]
+
+
+
+datdfselec$genericscenario<-dplyr::case_match(datdfselec$scenario, 
+     "autocorr"~"stationary",
+      "decLinearProd"~"linear~decline",
+      "sineProd"~"sine~fluctuation",
+      "shiftProd"~"shift~decline",
+    "decLinearCap"~"linear~decline",
+    "shiftCap"~"shift~decline",
+    "regimeProdCap"~ "shift~-~both",
+    "decLinearProdshiftCap"~"mixed~trend"
+      )   
+
+datdfselec$paramvary<-dplyr::case_match(datdfselec$scenario, 
+      "autocorr"~"stationary",
+      "decLinearProd"~"log(alpha)",
+      "sineProd"~"log(alpha)",
+      "shiftProd"~"log(alpha)",
+    "decLinearCap"~"S[max]",
+    "shiftCap"~"S[max]",
+    "regimeProdCap"~ "both",
+    "decLinearProdshiftCap"~"both"
+      ) 
+
+
+
+datdfselec$paramvary<-factor(datdfselec$paramvary, 
+    levels=c("stationary","log(alpha)","S[max]","both"))
+
+
+SRdfselec<-SRdf[SRdf$scenario%in%c("autocorr","decLinearProd","sineProd","shiftProd",
+    "decLinearCap","shiftCap","regimeProdCap","decLinearProdshiftCap"),]
+
+
+
+SRdfselec$genericscenario<-dplyr::case_match(SRdfselec$scenario, 
+      "autocorr"~"stationary",
+      "decLinearProd"~"linear~decline",
+      "sineProd"~"sine~fluctuation",
+      "shiftProd"~"shift~decline",
+    "decLinearCap"~"linear~decline",
+    "shiftCap"~"shift~decline",
+    "regimeProdCap"~ "shift~-~both",
+    "decLinearProdshiftCap"~"mixed~trend"
+      )   
+
+SRdfselec$paramvary<-dplyr::case_match(SRdfselec$scenario, 
+      "autocorr"~"stationary",
+      "decLinearProd"~"log(alpha)",
+      "sineProd"~"log(alpha)",
+      "shiftProd"~"log(alpha)",
+    "decLinearCap"~"S[max]",
+    "shiftCap"~"S[max]",
+    "regimeProdCap"~ "both",
+    "decLinearProdshiftCap"~"both"
+      ) 
+
+
+SRdfselec$paramvary<-factor(SRdfselec$paramvary, 
+    levels=c("stationary","log(alpha)","S[max]","both"))
+
+
+SRexampleselec<-  ggplot(SRdfselec) +
+    geom_line(aes(x=spawners,y=recruits, col=as.factor(year)),linewidth=2) +
+    mytheme + 
+    coord_cartesian(ylim = c(-0, 600000))+
+    scale_colour_viridis_d(end=.85) +
+    labs(col = "year") +
+    geom_point(data=datdfselec,aes(x=spawners,y=recruits,col=as.factor(year)),alpha=.5) +
+    facet_wrap(paramvary~genericscenario, ncol=8,  labeller=label_parsed)+ 
+    theme(legend.position = "none",axis.text.x = element_text(angle = 45, vjust = 1.0, hjust=1))
+SRexampleselec
+
+unique(SRdfselec$genericscenario)
+
+ggsave(
+      filename = "C:/Users/worc/Documents/timevar/Best-Practices-time-varying-salmon-SR-models/figures/scenarios/srcurve_selecmain.png",
+      plot = SRexampleselec, 
+      width = 8, height = 4
+    )
 
 
 paramdf<-reshape2::melt(datdf,id.vars=c("iteration","year","CU","spawners","recruits","obsSpawners","obsRecruits",
@@ -215,13 +300,28 @@ paramdf$scencode<-dplyr::case_match(paramdf$scenario,
 
 
 
+paramdf$scenario <-factor(paramdf$scenario, levels=c("stationary",
+      "autocorr",
+      "sigmaShift", 
+      "decLinearProd",
+      "sineProd",
+      "regimeProd",
+      "shiftProd",
+      "decLinearCap",
+      "regimeCap",
+      "shiftCap", 
+      "regimeProdCap",
+      "decLinearProdshiftCap"))
+
+
+
 
 paramdf$scencode <-factor(paramdf$scencode, levels=c("Base1","Base2","Base3",
              "Base4","Base5","Base6",
               "Base7","Base8","Base9",
                "Base10","Base11","Base12"))
 
-
+head(paramdf)
 
 
 paramtraj<-ggplot(paramdf) +
@@ -239,8 +339,170 @@ ggsave(
       width = 12, height = 6
     )
 
+paramtraj2<-ggplot(paramdf) +
+    geom_line(aes(x=year,y=value,col=paramch), linewidth=2)+
+    mytheme + 
+    theme(legend.position="bottom") +
+    scale_colour_viridis_d(end=.85) +
+    labs(col = "year") +
+    facet_grid(variable~scenario_f, scales="free")
+paramtraj2
+
+ggsave(
+      filename = "C:/Users/worc/Documents/timevar/Best-Practices-time-varying-salmon-SR-models/figures/scenarios/params_basecase_scnname.png",
+      plot = paramtraj2, 
+      width = 19, height = 6
+    )
+
 paramdf[paramdf$scencode=="Base5"&paramdf$variable=="alpha",]
 
+
+#selected scenarios
+
+
+paramdfselec <- paramdf[paramdf$scenario%in%c("autocorr","decLinearProd","sineProd","shiftProd",
+    "decLinearCap","shiftCap","regimeProdCap","decLinearProdshiftCap")&
+     paramdf$variable!="sigma",]
+
+paramdfselec$variable<-as.character(paramdfselec$variable)
+paramdfselec$variable[paramdfselec$variable=="capacity"]<-paste("S[max]")
+paramdfselec$variable[paramdfselec$variable=="alpha"]<-paste("log(alpha)")
+
+unique(paramdfselec$variable)
+
+paramdfselec$genericscenario<-dplyr::case_match(paramdfselec$scenario, 
+      "autocorr"~"stationary",
+      "decLinearProd"~"linear~decline",
+      "sineProd"~"sine~fluctuation",
+      "shiftProd"~"shift~decline",
+    "decLinearCap"~"linear~decline",
+    "shiftCap"~"shift~decline",
+    "regimeProdCap"~ "shift~-~both",
+    "decLinearProdshiftCap"~"mixed~trend"
+      )   
+
+paramdfselec$paramvary<-dplyr::case_match(paramdfselec$scenario, 
+      "autocorr"~".",
+      "decLinearProd"~"log(alpha)",
+      "sineProd"~"log(alpha)",
+      "shiftProd"~"log(alpha)",
+    "decLinearCap"~"S[max]",
+    "shiftCap"~"S[max]",
+    "regimeProdCap"~ "both",
+    "decLinearProdshiftCap"~"both"
+      ) 
+
+
+
+paramdfselec$paramvary<-factor(paramdfselec$paramvary, 
+    levels=c(".","log(alpha)","S[max]","both"))
+
+unique(paramdfselec$paramvary)
+
+
+paramtrajselec<-ggplot(paramdfselec) +
+    geom_line(aes(x=year-54,y=value,col=paramch), linewidth=2)+
+    mytheme + 
+    theme(legend.position="bottom") +
+    scale_colour_viridis_d(end=.85,option="A") +
+    labs(col = "year") +
+    ylab("")+
+    theme(legend.position="none")+
+    facet_grid(variable~paramvary+genericscenario, scales="free", labeller=label_parsed)
+paramtrajselec
+
+
+
+
+
+
+
+
+
+ggsave(
+      filename = "C:/Users/worc/Documents/timevar/Best-Practices-time-varying-salmon-SR-models/figures/scenarios/params_selecmain.png",
+      plot = SRexampleselec, 
+      width = 8, height = 4
+    )
+
+
+
+multi.page.scenario <- ggarrange( paramtrajselec,SRexampleselec,
+                        nrow = 2, ncol = 1,
+                        legend="none",
+                        heights=c(1,1),
+                        align="v")
+multi.page.scenario
+
+
+
+
+#use cowplot
+
+
+
+logatrajselec<-ggplot(paramdfselec[paramdfselec$variable=="log(alpha)",]) +
+    geom_line(aes(x=year-54,y=value,col=paramch), linewidth=2)+
+    mytheme + 
+    theme(legend.position="bottom") +
+    scale_colour_viridis_d(end=.85,option="A") +
+    xlab( "year") +
+    ylab(expression(log(alpha)))+
+    theme(legend.position="none",axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())+
+    facet_grid(~paramvary+genericscenario, scales="free", labeller=label_parsed)
+logatrajselec
+
+
+
+yrcol<-viridis::viridis(n = 5)
+
+length(unique(paramdfselec$year)))
+
+smaxtrajselec<-ggplot(paramdfselec[paramdfselec$variable=="S[max]",]) +
+    geom_line(aes(x=year-54,y=value/1000,col=paramch), linewidth=2)+
+    mytheme + 
+    theme(legend.position="bottom") +
+    scale_colour_viridis_d(end=.85,option="A") +
+    xlab( "year") +
+    ylab(expression(paste(S[max]~"(1000s)")))+
+    theme(legend.position="none",  strip.text.x = element_blank())+
+    facet_grid(~paramvary+genericscenario, scales="free")
+smaxtrajselec
+
+
+
+#xLabVals <- as.numeric(ggplot_build(smaxtrajselec)$layout$panel_params[[1]]$x$get_labels()) 
+#yrcol<-viridis::viridis(length(unique(xLabVals )),end=.85)
+
+
+#smaxtrajselec<-smaxtrajselec+theme(axis.text.x = element_text(angle = 0, hjust = 1, colour = yrcol))
+
+
+
+
+SRexampleselec<-  ggplot(SRdfselec) +
+    geom_line(aes(x=spawners/1000,y=recruits/1000, col=as.factor(year)),linewidth=2) +
+    mytheme + 
+    coord_cartesian(ylim = c(0, 570))+
+    scale_colour_viridis_d(end=.85) +
+    xlab("spawners") +
+    ylab("recruits") +
+    geom_point(data=datdfselec,aes(x=spawners/1000,y=recruits/1000,col=as.factor(year)),alpha=.5) +
+    facet_wrap(paramvary~genericscenario, ncol=8)+ 
+    theme(legend.position = "none",axis.text.x = element_text(angle = 45, vjust = 1.0, hjust=1), strip.text.x = element_blank())
+SRexampleselec
+
+
+plot2<-logatrajselec/ smaxtrajselec/SRexampleselec
+plot2
+
+ggsave(
+      filename = "C:/Users/worc/Documents/timevar/Best-Practices-time-varying-salmon-SR-models/figures/scenarios/multi.page.scenario_basecase.png",
+      plot = plot2, 
+      width = 12, height = 6
+    )
 
 #----------------------------------------
 #equilibrium parameter plots                            |

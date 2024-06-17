@@ -13,14 +13,18 @@ simPar <- read.csv("data/genericER/SimPars_ER.csv")
 ## Store relevant object names to help run simulation 
 scenNames <- unique(simPar$scenario)
 
-res1<-readRDS(file = "outs/simest/genericER/res_erq1.rds")
-res2<-readRDS(file = "outs/simest/genericER/res_erq2.rds")
-res3<-readRDS(file = "outs/simest/genericER/res_erq3.rds")
-res4<-readRDS(file = "outs/simest/genericER/res_erq4.rds")
+#res1<-readRDS(file = "outs/simest/genericER/res_erq1.rds")
+#res2<-readRDS(file = "outs/simest/genericER/res_erq2.rds")
+#res3<-readRDS(file = "outs/simest/genericER/res_erq3.rds")
+#res4<-readRDS(file = "outs/simest/genericER/res_erq4.rds")
+
+
+res1<-readRDS(file = "outs/simest/genericER/resbase_ER1.rds")
+res2<-readRDS(file = "outs/simest/genericER/resbase_ER2.rds")
 
 
 
-restmb<-rbind(res1,res2,res3,res4)
+restmb<-rbind(res1,res2)#,res3,res4)
 
 
 

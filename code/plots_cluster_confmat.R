@@ -31,7 +31,7 @@ scenNames <- unique(simPar$scenario)
 res1<-readRDS(file = "outs/simest/generic/resbase1.rds")
 res2<-readRDS(file = "outs/simest/generic/resbase2.rds")
 
-res<-rbind(res1,res2)#,resstan16,resstan712)
+res<-rbind(res1,res2)
 
 res<-res[res$convergence==0,]
 
@@ -42,18 +42,6 @@ lfo=subset(res,parameter=='LFO'&method=='MLE')
 lfo<-lfo[lfo$model %in% c("simple","autocorr","rwa","rwb","rwab",
     "hmma","hmmb","hmmab"),]
 unique(lfo$model)
-
-
-#lfo$model<-dplyr::recode(lfo$model, 
-#      "simple"="simple",
-#      "autocorr"="autocorr",
-#      "rwa_last5"="rwa",
-#      "rwb_last5"="rwb",
-#      "rwab_last5"="rwab",
-#    "hmma_last5"="hmma",
-#    "hmmb_last5"="hmmb",
-#    "hmmab_last5"="hmmab"
-#      )   
 
 
 
@@ -167,7 +155,8 @@ paic=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   xlab("Simulation Scenario")+ylab("Estimation Model")
 paic
 
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/AIC_MLE.png", plot=paic)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/AIC_MLE.png", 
+  plot=paic, width = 10, height = 8)
 
 
 
@@ -185,7 +174,8 @@ pbic=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   xlab("Simulation Scenario")+ylab("Estimation Model")
 pbic
 
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/BIC_MLE.png", plot=pbic)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/BIC_MLE.png",
+  plot=pbic, width = 10, height = 8)
 
 
 
@@ -203,7 +193,8 @@ plfo=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   xlab("Simulation Scenario")+ylab("Estimation Model")
 plfo
 
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/LFO_MLE.png", plot=plfo)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/LFO_MLE.png", 
+  plot=plfo, width = 10, height = 8)
 
 
 #---------------------------------------------------------------------------------------------

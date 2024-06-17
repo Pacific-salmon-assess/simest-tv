@@ -36,12 +36,6 @@ res2<-readRDS(file = "outs/simest/sigmamed_sensitivity/res_sigmed_227.rds")
 
 restmb<-rbind(res1,res2)
 
-dim(restmb)
-unique(restmb$scenario)
-
-umm<-restmb[restmb$scenario=="sigmamed_decLinearProdshiftCap",]
-umm[umm$convergence==11,]
-unique(umm$convergence)
 
 resstan1<-readRDS(file = "outs/simest/sigmamed_sensitivity/resstan_sigmed1.rds")
 resstan2<-readRDS(file = "outs/simest/sigmamed_sensitivity/resstan_sigmed2.rds")

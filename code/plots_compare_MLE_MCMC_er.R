@@ -15,7 +15,7 @@ source("code/cluster_func_plots.R")
 library("ggpubr")
 
 mytheme = list(
-    theme_classic(16)+
+    theme_classic(14)+
         theme(panel.background = element_blank(),strip.background = element_rect(colour=NA, fill=NA),panel.border = element_rect(fill = NA, color = "black"),
               legend.title = element_blank(),legend.position="bottom", strip.text = element_text(face="bold", size=12),
               axis.text=element_text(face="bold"),axis.title = element_text(face="bold"),plot.title = element_text(face = "bold", hjust = 0.5,size=15))
@@ -33,6 +33,8 @@ df<-reshape2::melt(resparam, id.vars=c("parameter","iteration","scenario","metho
 #df_alpha<-df[df$parameter%in%c("alpha"),]
 df$variable<-factor(df$variable,levels=c("median","mode", "sim"))
 
+df$method[df$method=="MLE"]<-"MAP"
+unique(df$method)
 df$scenario<-factor(df$scenario,levels=c("decLinearProd_highERLowError",
                                          "decLinearProd_ShiftERLowError",
                                          "decLinearProd_lowERLowError", 
@@ -107,8 +109,6 @@ df$model<-factor(df$model,levels=c("simple",
                                    "hmmab"  ))
 
 
-
-
 summarydf  <- df %>%
    group_by(scenario,parameter,
     method,model,by,variable,dynamics,
@@ -116,15 +116,23 @@ summarydf  <- df %>%
    reframe(qs = quantile(value, c(0.025, .5, 0.975),na.rm=T), prob = c("lower","median", "upper"))
 
 
-head(summarydf)
 
 summarydf <- reshape2::dcast(data=summarydf,  
     scenario + parameter + method + model + by + variable + dynamics + ERerror + ERtrend  ~prob, 
     value.var= "qs",fun.aggregate=mean)
 
-#head(summarydf)
 
-unique(df$scenario)
+summarydf$model2<-case_match(summarydf$model,
+     "simple"~"stationary",
+    "autocorr"~"autocorr", 
+     "rwa"~ "rw.a",
+     "hmma" ~"hmm.a",
+      "rwb" ~"rw.b",
+      "hmmb" ~"hmm.b", 
+       "rwab"~"rw.ab",
+        "hmmab"~ "hmm.ab" )
+summarydf$model2<-factor(summarydf$model2, levels=c("stationary","autocorr","rw.a","hmm.a","rw.b","hmm.b","rw.ab", "hmm.ab"))
+
 summarydf_alpha_sim1<-summarydf[summarydf$parameter=="alpha"&
                                 summarydf$variable=="sim"&
                                 summarydf$scenario%in%c("decLinearProd_highERLowError",
@@ -153,21 +161,20 @@ names(scenlab1) <- c("decLinearProd_highERLowError",
                                          "incLinearProd_ShiftERLowError",
                                          "incLinearProd_lowERLowError")
 
-head(summarydf_alpha1)
 
 er_alpha1<-ggplot() + 
-geom_pointrange(data=summarydf_alpha1,aes(x=by,y= median,ymin = lower, ymax = upper, col=method),alpha=.6)+
-geom_line(data=summarydf_alpha_sim1,aes(x=by,y= median),color="black", alpha=.6,linewidth=1.2)+
+geom_pointrange(data=summarydf_alpha1,aes(x=by-54,y= median,ymin = lower, ymax = upper, col=method),alpha=.6)+
+geom_line(data=summarydf_alpha_sim1,aes(x=by-54,y= median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 coord_cartesian(ylim = c(0.2,2.7))+ 
 mytheme+ 
-ylab("alpha") +
+ylab(expression(log(alpha))) +
 xlab("year") +
-facet_grid(dynamics+scenario~model, scales="free_y",labeller = labeller(scenario= scenlab1))
+facet_grid(dynamics+scenario~model2, scales="free_y",labeller = labeller(scenario= scenlab1))
 er_alpha1
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_alpha_trendascn.png",
-    plot=er_alpha1)
+    plot=er_alpha1, width = 15,height = 8)
 
 
 summarydf_alpha_sim2<-summarydf[summarydf$parameter=="alpha"&
@@ -194,18 +201,18 @@ names(scenlab2) <- c( "highERHighError",
                                           "trendERHighError")
 
 er_alpha2<-ggplot() + 
-geom_pointrange(data=summarydf_alpha2,aes(x=by,y= median,ymin = lower, ymax = upper, col=method),alpha=.6)+
-geom_line(data=summarydf_alpha_sim2,aes(x=by,y= median),color="black", alpha=.6,linewidth=1.2)+
+geom_pointrange(data=summarydf_alpha2,aes(x=by-54,y= median,ymin = lower, ymax = upper, col=method),alpha=.6)+
+geom_line(data=summarydf_alpha_sim2,aes(x=by-54,y= median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 coord_cartesian(ylim = c(0.2,2.7))+ 
 mytheme + 
-ylab("alpha") +
+ylab(expression(log(alpha))) +
 xlab("year") +
-facet_grid(dynamics+scenario~model, scales="free_y",labeller = labeller(scenario= scenlab2))
+facet_grid(dynamics+scenario~model2, scales="free_y",labeller = labeller(scenario= scenlab2))
 er_alpha2
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_alpha_higherrerscn.png",
-    plot=er_alpha2)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_alpha_higherscn.png",
+    plot=er_alpha2, width = 15,height = 6)
 #MLE estimates are less biased and higher than MCMC
 
 
@@ -238,18 +245,18 @@ names(scenlab3) <- c( "highERLowError",
 
 
 er_alpha3<-ggplot() + 
-geom_pointrange(data=summarydf_alpha3,aes(x=by,y= median,ymin = lower, ymax = upper, col=method),alpha=.6)+
-geom_line(data=summarydf_alpha_sim3,aes(x=by,y= median),color="black", alpha=.6,linewidth=1.2)+
+geom_pointrange(data=summarydf_alpha3,aes(x=by-54,y= median,ymin = lower, ymax = upper, col=method),alpha=.6)+
+geom_line(data=summarydf_alpha_sim3,aes(x=by-54,y= median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 coord_cartesian(ylim = c(0.2,2.7))+ 
 mytheme + 
-ylab("alpha") +
+ylab(expression(log(alpha))) +
 xlab("year") +
-facet_grid(dynamics+scenario~model, scales="free_y",labeller = labeller(scenario= scenlab3))
+facet_grid(dynamics+scenario~model2, scales="free_y",labeller = labeller(scenario= scenlab3))
 er_alpha3
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_alpha_lowererrscn.png",
-    plot=er_alpha3)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_alpha_lowerscn.png",
+    plot=er_alpha3, width = 15,height = 6)
 
 
 #=======================================================
@@ -286,20 +293,18 @@ names(scenlab1) <- c("decLinearProd_highERLowError",
 
 
 er_smax1<-ggplot() + 
-geom_pointrange(data=summarydf_smax1,aes(x=by,y=median,ymin = lower, ymax = upper,  col=method),alpha=.6)+
-geom_line(data=summarydf_smax_sim1,aes(x=by,y= median),color="black", alpha=.6,linewidth=1.2)+
+geom_pointrange(data=summarydf_smax1,aes(x=by-54,y=median,ymin = lower, ymax = upper,  col=method),alpha=.6)+
+geom_line(data=summarydf_smax_sim1,aes(x=by-54,y= median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 mytheme + 
-ylab("Smax") +
+ylab(expression(S[max])) +
 xlab("year") +
 coord_cartesian(ylim = c(60000,400000))+ 
-facet_grid(dynamics+scenario~model, scales="free_y",labeller = labeller(scenario= scenlab1))
+facet_grid(dynamics+scenario~model2, scales="free_y",labeller = labeller(scenario= scenlab1))
 er_smax1
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_smax_trendascn.png",
-    plot=er_smax1)
-
-
+    plot=er_smax1, width = 15,height = 8)
 
 
 
@@ -321,21 +326,18 @@ summarydf_smax2<-summarydf[summarydf$parameter=="smax"&
 
 
 er_smax2<-ggplot() + 
-geom_pointrange(data=summarydf_smax2,aes(x=by,y=median,ymin = lower, ymax = upper, col=method),alpha=.6)+
-geom_line(data=summarydf_smax_sim2,aes(x=by,y=median),color="black", alpha=.6,linewidth=1.2)+
+geom_pointrange(data=summarydf_smax2,aes(x=by-54,y=median,ymin = lower, ymax = upper, col=method),alpha=.6)+
+geom_line(data=summarydf_smax_sim2,aes(x=by-54,y=median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 mytheme + 
-ylab("Smax") +
+ylab(expression(S[max])) +
 xlab("year") +
 coord_cartesian(ylim = c(60000,400000))+ 
-facet_grid(dynamics+scenario~model, scales="free_y",labeller = labeller(scenario= scenlab2))
+facet_grid(dynamics+scenario~model2, scales="free_y",labeller = labeller(scenario= scenlab2))
 er_smax2
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_highererrscn.png",
-    plot=er_smax2)
-
-
-
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_smax_higherscn.png",
+    plot=er_smax2, width = 15,height = 6)
 
 
 
@@ -356,31 +358,21 @@ summarydf_smax3<-summarydf[summarydf$parameter=="smax"&
                                           "trendERLowError"),
                             ]
 
-unique(summarydf$scenario)
-summarydf_smax_sim3<-summarydf_smax_sim[summarydf_smax_sim$scenario%in%c(  "highERLowError",                              
-                                         "lowERLowError",                           
-                                          "ShiftERLowError",                                                                   
-                                          "trendERLowError" ),]
-
-summarydf_smax3<-summarydf_smax[summarydf_smax$scenario%in%c( "highERLowError",                              
-                                         "lowERLowError",                           
-                                          "ShiftERLowError",                                                                   
-                                          "trendERLowError" ),]#&summarydf_smax$model%in%c( "hmma","hmmb", "hmmab", "rwa", "rwb", "rwab", "simple" ),]
 
 
 er_smax3<-ggplot() + 
-geom_pointrange(data=summarydf_smax3,aes(x=by,y=median,ymin =lower, ymax =upper, col=method),alpha=.6)+
-geom_line(data=summarydf_smax_sim3,aes(x=by,y=median),color="black", alpha=.6,linewidth=1.2)+
+geom_pointrange(data=summarydf_smax3,aes(x=by-54,y=median,ymin =lower, ymax =upper, col=method),alpha=.6)+
+geom_line(data=summarydf_smax_sim3,aes(x=by-54,y=median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 mytheme + 
-ylab("Smax") +
+ylab(expression(S[max])) +
 xlab("year") +
 coord_cartesian(ylim = c(60000,400000))+ 
-facet_grid(dynamics+scenario~model, scales="free_y",labeller = labeller(scenario= scenlab3))
+facet_grid(dynamics+scenario~model2, scales="free_y",labeller = labeller(scenario= scenlab3))
 er_smax3
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_lowererrscn.png",
-    plot=er_smax3)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_smax_lowerscn.png",
+    plot=er_smax3, width = 15,height = 6)
 
 
 #=======================================================
@@ -410,24 +402,20 @@ summarydf_smsy1<-summarydf[summarydf$parameter=="smsy"&
                             ]
 
 
-unique(summarydf_smsy1$scenario)
 
 er_smsy1<-ggplot() + 
-geom_pointrange(data=summarydf_smsy1,aes(x=by,y=median,ymin = lower, ymax = upper,  col=method),alpha=.6)+
-geom_line(data=summarydf_smsy_sim1,aes(x=by,y= median),color="black", alpha=.6,linewidth=1.2)+
+geom_pointrange(data=summarydf_smsy1,aes(x=by-54,y=median,ymin = lower, ymax = upper,  col=method),alpha=.6)+
+geom_line(data=summarydf_smsy_sim1,aes(x=by-54,y= median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 mytheme + 
-ylab("Smsy") +
+ylab(expression(S[MSY])) +
 xlab("year") +
 coord_cartesian(ylim = c(20000,150000))+ 
-facet_grid(dynamics+scenario~model, scales="free_y",labeller = labeller(scenario= scenlab1))
+facet_grid(dynamics+scenario~model2, scales="free_y",labeller = labeller(scenario= scenlab1))
 er_smsy1
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_smsy_trendascn.png",
-    plot=er_smsy1)
-
-
-
+    plot=er_smsy1, width = 15,height = 8)
 
 
 
@@ -449,23 +437,18 @@ summarydf_smsy2<-summarydf[summarydf$parameter=="smsy"&
                             ]
 
 er_smsy2<-ggplot() + 
-geom_pointrange(data=summarydf_smsy2,aes(x=by,y=median,ymin = lower, ymax = upper,  col=method),alpha=.6)+
-geom_line(data=summarydf_smsy_sim2,aes(x=by,y= median),color="black", alpha=.6,linewidth=1.2)+
+geom_pointrange(data=summarydf_smsy2,aes(x=by-54,y=median,ymin = lower, ymax = upper,  col=method),alpha=.6)+
+geom_line(data=summarydf_smsy_sim2,aes(x=by-54,y= median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 mytheme + 
-ylab("Smsy") +
+ylab(expression(S[MSY])) +
 xlab("year") +
 coord_cartesian(ylim = c(20000,150000))+ 
-facet_grid(dynamics+scenario~model, scales="free_y",labeller = labeller(scenario= scenlab2))
+facet_grid(dynamics+scenario~model2, scales="free_y",labeller = labeller(scenario= scenlab2))
 er_smsy2
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_smsy_higherscn.png",
-    plot=er_smsy2)
-
-
-
-
-
+    plot=er_smsy2, width = 15,height = 6)
 
 
 
@@ -486,18 +469,18 @@ summarydf_smsy3<-summarydf[summarydf$parameter=="smsy"&
                             ]
 
 er_smsy3<-ggplot() + 
-geom_pointrange(data=summarydf_smsy3,aes(x=by,y=median,ymin = lower, ymax = upper,  col=method),alpha=.6)+
-geom_line(data=summarydf_smsy_sim3,aes(x=by,y= median),color="black", alpha=.6,linewidth=1.2)+
+geom_pointrange(data=summarydf_smsy3,aes(x=by-54,y=median,ymin = lower, ymax = upper,  col=method),alpha=.6)+
+geom_line(data=summarydf_smsy_sim3,aes(x=by-54,y= median),color="black", alpha=.6,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8) +
 scale_fill_viridis_d(begin=.1, end=.8) +
 mytheme + 
-ylab("Smsy") +
+ylab(expression(S[MSY])) +
 xlab("year") +
 coord_cartesian(ylim = c(20000,150000))+ 
-facet_grid(dynamics+scenario~model, scales="free_y",labeller = labeller(scenario= scenlab3))
+facet_grid(dynamics+scenario~model2, scales="free_y",labeller = labeller(scenario= scenlab3))
 er_smsy3
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/ER/compareMCMC_MLE_smsy_lowerscn.png",
-    plot=er_smsy3)
+    plot=er_smsy3, width = 15,height = 6)
 
 
 
@@ -524,9 +507,15 @@ summarydf_smsy_sim_redux<-summarydf[summarydf$parameter=="smsy"&
                                                         "decLinearProd_lowERLowError", 
                                                         "incLinearProd_lowERLowError")&
                                 summarydf$model%in%c("autocorr", "rwa")&
-                                summarydf$method=="MLE",]
+                                summarydf$method=="MAP",]
 
 summarydf_smsy_sim_redux$ERtrend<-factor(summarydf_smsy_sim_redux$ERtrend,levels=c("highER", "ShiftER", "lowER"))
+
+summarydf_smsy_sim_redux$dynamics2<-case_match(summarydf_smsy_sim_redux$dynamics,
+    "decLinear"~"decline",
+    "incLinear"~"increase",
+    "stationary"~"stationary")
+
 
 
 summarydf_smsy_redux<-summarydf[summarydf$variable=="mode"&
@@ -541,32 +530,49 @@ summarydf_smsy_redux<-summarydf[summarydf$variable=="mode"&
                                                         "decLinearProd_lowERLowError", 
                                                         "incLinearProd_lowERLowError")&
                                     summarydf$model%in%c("autocorr", "rwa")&
-                                    summarydf$method=="MLE",]
+                                    summarydf$method=="MAP",]
 
 
 summarydf_smsy_redux$ERtrend<-factor(summarydf_smsy_redux$ERtrend,levels=c("highER", "ShiftER", "lowER"))
 
 
-
-unique(summarydf$scenario)
-unique(summarydf_smsy_sim_redux$scenario)
-
-head(summarydf_smsy)
 head(summarydf_smsy_redux)
+unique(summarydf_smsy_redux$dynamics)
+
+summarydf_smsy_redux$dynamics2<-case_match(summarydf_smsy_redux$dynamics,
+    "decLinear"~"decline",
+    "incLinear"~"increase",
+    "stationary"~"stationary")
+
+summarydf_smsy_redux$dynamics
+
 
 psmsy_highERscn_line<-ggplot() + 
-geom_pointrange(data=summarydf_smsy_redux,aes(x=by,y= median,ymin = lower, ymax = upper, color=model),alpha=.9)+
-geom_line(data=summarydf_smsy_sim_redux,aes(x=by,y=median),color="black", alpha=.8,linewidth=1.2)+
+geom_pointrange(data=summarydf_smsy_redux,aes(x=by-54,y= median,ymin = lower, ymax = upper, color=model2),alpha=.9)+
+geom_line(data=summarydf_smsy_sim_redux,aes(x=by-54,y=median),color="black", alpha=.8,linewidth=1.2)+
 scale_color_viridis_d(begin=.1, end=.8,option = "E") +
 scale_fill_viridis_d(begin=.1, end=.8,option = "E") +
 coord_cartesian(ylim = c(20000,180000))+ 
 mytheme+ 
-ylab("Smsy") +
+ylab(expression(S[MSY])) +
 xlab("year") +
-facet_grid(dynamics+ERtrend ~model, scales="free_y")
+facet_grid(dynamics2+ERtrend ~model2, scales="free_y")+
+theme(strip.text = element_text(
+    size =11))
 psmsy_highERscn_line
 
 
+
+df$model2<-case_match(df$model,
+     "simple"~"stationary",
+    "autocorr"~"autocorr", 
+     "rwa"~ "rw.a",
+     "hmma" ~"hmm.a",
+      "rwb" ~"rw.b",
+      "hmmb" ~"hmm.b", 
+       "rwab"~"rw.ab",
+        "hmmab"~ "hmm.ab" )
+df$model2<-factor(df$model2, levels=c("stationary","autocorr","rw.a","hmm.a","rw.b","hmm.b","rw.ab", "hmm.ab"))
 
 df_smsy_est_redux<- df[df$parameter=="smsy"&
                     df$variable=="mode"&
@@ -580,18 +586,23 @@ df_smsy_est_redux<- df[df$parameter=="smsy"&
                                      "decLinearProd_lowERLowError", 
                                      "incLinearProd_lowERLowError")&
                     df$model%in%c("autocorr", "rwa")&
-                    df$method=="MLE",]
+                    df$method=="MAP",]
 df_smsy_est_redux$ERtrend<-factor(df_smsy_est_redux$ERtrend,levels=c("highER", "ShiftER", "lowER"))
 
 
+df_smsy_est_redux$dynamics2<-case_match(df_smsy_est_redux$dynamics,
+    "decLinear"~"decline",
+    "incLinear"~"increase",
+    "stationary"~"stationary")
+
 
 psmsy_erscn_violin_abs<-ggplot(df_smsy_est_redux) + 
-geom_violin(aes(x=model,y=abs(bias), fill=model), scale="width", trim=TRUE, alpha=.7,adjust = 1.8)+
-geom_boxplot(aes(x=model,y=abs(bias), fill=model),outlier.shape = NA, width=0.1)+
+geom_violin(aes(x=model2,y=abs(bias), fill=model2), scale="width", trim=TRUE, alpha=.7,adjust = 1.8)+
+geom_boxplot(aes(x=model2,y=abs(bias), fill=model2),outlier.shape = NA, width=0.1)+
 geom_hline(yintercept=0,color="black", alpha=.6,linewidth=1.2)+
  scale_fill_viridis_d(begin=.1, end=.8,,option = "E") +
- facet_grid(dynamics ~ERtrend, scales="free_y")+
- ylab("absolute bias in Smsy") +
+ facet_grid(dynamics2 ~ERtrend, scales="free_y")+
+ ylab(expression("absolute bias in"~S[MSY])) +
  coord_cartesian(ylim = c(0,75000))+ 
 mytheme
 psmsy_erscn_violin_abs
@@ -602,8 +613,16 @@ multi.page.abs.smsy_erscn <- ggarrange(psmsy_highERscn_line, psmsy_erscn_violin_
                         legend="bottom")
 multi.page.abs.smsy_erscn
 
+
+multi.page.abs.smsy_erscn_title<-annotate_figure(multi.page.abs.smsy_erscn, 
+    top = text_grob(expression("Sensitivity to exploitation history and time-varying"~log(alpha)), 
+               face = "bold" , size = 14))
+
+
+
+
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/summary_figs/bias_trends_violins_smsy_ERscn.png",
-    plot=multi.page.abs.smsy_erscn)
+    plot=multi.page.abs.smsy_erscn_title, width = 12,height = 9, bg = "white")
 
 
 #=======================================================================================================

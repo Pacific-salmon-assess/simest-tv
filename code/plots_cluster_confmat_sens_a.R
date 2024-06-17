@@ -4,9 +4,10 @@
 #============================================
 
 
-
+library("ggpubr")
 library(gridExtra)
 library(ggplot2)
+library(cowplot)
 source("code/utils.R")
 
 
@@ -29,17 +30,8 @@ resa2<-readRDS(file = "outs/simest/sensitivity/res_aq2.rds")
 resa3<-readRDS(file = "outs/simest/sensitivity/res_aq3.rds")
 resa4<-readRDS(file = "outs/simest/sensitivity/res_aq4.rds")
 
-
-#resbase1<-readRDS(file = "outs/simest/generic/resbase1.rds")
-#resbase2<-readRDS(file = "outs/simest/generic/resbase2.rds")
-
-#resbase<-rbind(resbase1,resbase2)#,resstan16,resstan712)
-#res_logadec<-resbase[resbase$scenario%in%c("decLinearProd"),]
-#res_logadec$scenario<-"trendLinearProd1.3"
 res_a<-rbind(resa1,resa2,resa3,resa4)
 
-head(res_a)
-#res_a <- res_a[res_a$convergence==0,]
 
 aic_a=subset(res_a, parameter=='AIC'&method=='MLE')
 bic_a=subset(res_a, parameter=='BIC'&method=='MLE')
@@ -155,8 +147,36 @@ conf_matrix_a$eqem_om<-factor(conf_matrix_a$eqem_om,
 conf_matrix_a$diag<-conf_matrix_a$eqem_om==conf_matrix_a$EM
 
 
+head(conf_matrix_a)
 
-pa_aic_a=ggplot(data =  conf_matrix_a, mapping = aes(x = OM, y = EM)) +
+conf_matrix_a$OM2<-dplyr::case_match(conf_matrix_a$OM,
+  "trendLinearProd1"~"trend log(a) 1.3 -> 0.0", 
+  "trendLinearProd1.3"~"trend log(a) 1.3 -> 0.3",
+       "trendLinearProd2"~"trend log(a) 1.3 -> 0.6", 
+       "trendLinearProd5"~"trend log(a) 1.3 -> 1.6",
+       "trendLinearProd7"~"trend log(a) 1.3 -> 2.0",
+       "trendLinearProd10"~"trend log(a) 1.3 -> 2.3",
+       "regimeProd1"~"regime log(a) 1.3 -> 0.0", 
+       "regimeProd1.3"~"regime log(a) 1.3 -> 0.3",
+       "regimeProd2"~"regime log(a) 1.3 -> 0.6",      
+       "regimeProd5"~"regime log(a) 1.3 -> 1.6",      
+       "regimeProd7"~"regime log(a) 1.3 -> 2.0",
+       "regimeProd10"~"regime log(a) 1.3 -> 2.3")
+
+conf_matrix_a$OM2<-factor(conf_matrix_a$OM2, levels=c( "trend log(a) 1.3 -> 0.0", 
+ "trend log(a) 1.3 -> 0.3",
+  "trend log(a) 1.3 -> 0.6", 
+  "trend log(a) 1.3 -> 1.6",
+  "trend log(a) 1.3 -> 2.0",
+  "trend log(a) 1.3 -> 2.3",
+  "regime log(a) 1.3 -> 0.0", 
+  "regime log(a) 1.3 -> 0.3",
+  "regime log(a) 1.3 -> 0.6",      
+  "regime log(a) 1.3 -> 1.6",      
+   "regime log(a) 1.3 -> 2.0",
+   "regime log(a) 1.3 -> 2.3"))
+
+pa_aic_a=ggplot(data =  conf_matrix_a, mapping = aes(x = OM2, y = EM)) +
   geom_tile(aes(fill = w_AIC), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(w_AIC,2)), vjust = 1,size=6) +
   ggtitle("AIC sens a")+
@@ -170,11 +190,11 @@ pa_aic_a=ggplot(data =  conf_matrix_a, mapping = aes(x = OM, y = EM)) +
   xlab("Simulation Scenario")+ylab("Estimation Model")
 pa_aic_a
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/AIC_MLE_sensa.png",
- plot=pa_aic_a)
+ plot=pa_aic_a, width = 9,height = 7)
 
 
 
-pa_bic_a=ggplot(data =  conf_matrix_a, mapping = aes(x = OM, y = EM)) +
+pa_bic_a=ggplot(data =  conf_matrix_a, mapping = aes(x = OM2, y = EM)) +
   geom_tile(aes(fill = BIC), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(BIC,2)), vjust = 1,size=6) +
   ggtitle("BIC sens a")+
@@ -188,11 +208,11 @@ pa_bic_a=ggplot(data =  conf_matrix_a, mapping = aes(x = OM, y = EM)) +
   xlab("Simulation Scenario")+ylab("Estimation Model")
 pa_bic_a
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/BIC_MLE_sensa.png", 
-  plot=pa_bic_a)
+  plot=pa_bic_a, width = 9,height = 7)
 
 
 
-p_lfo_a=ggplot(data =  conf_matrix_a, mapping = aes(x = OM, y = EM)) +
+p_lfo_a=ggplot(data =  conf_matrix_a, mapping = aes(x = OM2, y = EM)) +
   geom_tile(aes(fill = LFO), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(LFO,2)), vjust = 1, size=6) +
   ggtitle("LFO")+
@@ -206,8 +226,7 @@ p_lfo_a=ggplot(data =  conf_matrix_a, mapping = aes(x = OM, y = EM)) +
   xlab("Simulation Scenario")+ylab("Estimation Model")
 p_lfo_a
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/LFO_MLE_sensa.png",
- plot=p_lfo_a)
-
+ plot=p_lfo_a, width = 9,height = 7)
 
 
 
@@ -276,44 +295,42 @@ conf_matrix_a$type<- dplyr::case_match(conf_matrix_a$OM,
 conf_matrix_right_a<-conf_matrix_a[conf_matrix_a$EM=="dynamic.a",]
 
 lineAIC_a<-ggplot(conf_matrix_right_a)+
-geom_point(aes(x=difflog_a,y=w_AIC,color=type),size=4)+
+geom_point(aes(x=difflog_a,y=w_AIC,color=type),size=4,show.legend = F)+
 geom_line(aes(x=difflog_a,y=w_AIC,color=type,linetype=type),linewidth=1.2)+
 scale_colour_manual(values = c("#95D840FF","#482677FF", "#95D840FF", "#482677FF"))+
 scale_linetype_manual(values = c(1,1,2,2))+
-ylab("% of correct model assignment with AICc")+
+ylab("proportion of correct model assignment with AICc")+
 xlab("difference in log(alpha)")+
 #scale_color_viridis_d(begin=.1, end=.8) +
 coord_cartesian(ylim=c(0.1,0.88))+
 mytheme+
-theme(axis.title=element_text(size=14,face="bold"))
+theme(axis.title=element_text(size=14,face="bold"),legend.key.width = unit(3, "line"))+
+ guides(color=guide_legend(nrow=2, byrow=TRUE)) 
 lineAIC_a
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/lineAICsensa.png",
- plot=lineAIC)
+ plot=lineAIC_a,width = 10,height = 6)
 
 
 
-lineBIC<-ggplot(conf_matrix_right)+
-geom_point(aes(x=difflog_a,y=BIC,color=type),size=4)+
+lineBIC_a<-ggplot(conf_matrix_right_a)+
+geom_point(aes(x=difflog_a,y=BIC,color=type),size=4,show.legend = F)+
 geom_line(aes(x=difflog_a,y=BIC,color=type,linetype=type),linewidth=1.2)+
 scale_colour_manual(values = c("#95D840FF","#482677FF", "#95D840FF", "#482677FF"))+
 scale_linetype_manual(values = c(1,1,2,2))+
-ylab("% of correct model assignment with BIC")+
-xlab("magnitude of change: difference in log(alpha)")+
-#scale_color_viridis_d(begin=.1, end=.8) +
-mytheme
-lineBIC
-
+ylab("proportion of correct model assignment with BIC")+
+xlab("difference in log(alpha)")+
+coord_cartesian(ylim=c(0.1,0.88))+
+mytheme+
+theme(axis.title=element_text(size=14,face="bold"),legend.key.width = unit(3, "line"))+
+ guides(color=guide_legend(nrow=2, byrow=TRUE)) 
+lineBIC_a
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/lineBICsensa.png",
- plot=lineBIC)
-
-
-
+ plot=lineBIC_a,width = 10,height = 6)
 
 
 
 #LFO
 reslfo<-readRDS(file = "outs/simest/sensitivity/resstanloo_a.rds")
-head(reslfo)
 
 
 ##Confusion matrices
@@ -348,11 +365,13 @@ for(a in seq_along(scn)){
 
 conf_matrix$eqem_om <- dplyr::recode(conf_matrix$OM, 
        "trendLinearProd1"="dynamic.a", 
+        "trendLinearProd1.3"="dynamic.a", 
        "trendLinearProd2"="dynamic.a", 
        "trendLinearProd5"="dynamic.a",
        "trendLinearProd7"="dynamic.a",
        "trendLinearProd10"="dynamic.a",
        "regimeProd1"="regime.a",
+       "regimeProd1.3"="regime.a",
        "regimeProd2"="regime.a",      
        "regimeProd5"="regime.a",      
        "regimeProd7"="regime.a",
@@ -378,7 +397,7 @@ conf_matrix$diag<-conf_matrix$eqem_om==conf_matrix$EM
 pmclfo_sensa=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   geom_tile(aes(fill = LFOmcmc), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(LFOmcmc,2)), vjust = 1, size=6) +
-  ggtitle("sens a LFO MCMC")+
+  ggtitle("sens a LFO")+
   scale_fill_gradient(low="white", high="#009194")  +
   geom_segment(data=transform(subset(conf_matrix, !!diag), 
                     simulated=as.numeric(OM), 
@@ -388,7 +407,8 @@ pmclfo_sensa=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
   xlab("Simulation Scenario")+ylab("Estimation Model")
 pmclfo_sensa
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/LFO_MCMC_sensa.png", plot=pmclfo_sensa)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/LFO_HMC_sensa.png",
+ plot=pmclfo_sensa,  width = 9,height = 7)
 
 
 #lfo with 3 last yrs average
@@ -446,7 +466,7 @@ conf_matrix$diag<-conf_matrix$eqem_om==conf_matrix$EM
 pmclfo3_sensa=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   geom_tile(aes(fill = LFO3mcmc), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(LFO3mcmc,2)), vjust = 1, size=6) +
-  ggtitle("sens a LFO MCMC avg 3 yrs")+
+  ggtitle("sens a LFO HMC avg 3 yrs")+
   scale_fill_gradient(low="white", high="#009194")  +
   geom_segment(data=transform(subset(conf_matrix, !!diag), 
                     simulated=as.numeric(OM), 
@@ -456,7 +476,8 @@ pmclfo3_sensa=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
   xlab("Simulation Scenario")+ylab("Estimation Model")
 pmclfo3_sensa
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/LFO_MCMC_3yrs.png", plot=pmclfo3_sensa)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/LFO_HMC_3yrs.png", 
+  plot=pmclfo3_sensa,width = 9,height = 7)
 
 
 
@@ -514,7 +535,7 @@ conf_matrix$diag<-conf_matrix$eqem_om==conf_matrix$EM
 pmclfo5_sensa=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   geom_tile(aes(fill = LFO5mcmc), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(LFO5mcmc,2)), vjust = 1, size=6) +
-  ggtitle("sens a LFO MCMC avg 5 yrs")+
+  ggtitle("sens a LFO HMC avg 5 yrs")+
   scale_fill_gradient(low="white", high="#009194")  +
   geom_segment(data=transform(subset(conf_matrix, !!diag), 
                     simulated=as.numeric(OM), 
@@ -524,7 +545,7 @@ pmclfo5_sensa=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
   xlab("Simulation Scenario")+ylab("Estimation Model")
 pmclfo5_sensa
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/LFO_MCMC_5yrs.png", plot=pmclfo5_sensa)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/LFO_HMC_5yrs.png", plot=pmclfo5_sensa)
 
 
 
@@ -532,51 +553,55 @@ ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matric
 
 
 #========================================================================================================
-#sensitivity a scenario -half Smax
+#sensitivity smax scenario 
 #read in data
-simPar <- read.csv("data/sensitivity_halfSmax/SimPars.csv")
 
-## Store relevant object names to help run simulation 
-scenNames <- unique(simPar$scenario)
+#read in data
+resb1<-readRDS(file = "outs/simest/Smax_sensitivity/res_smax1.rds")
+resb2<-readRDS(file = "outs/simest/Smax_sensitivity/res_smax2.rds")
+resb240<-readRDS(file = "outs/simest/Smax_sensitivity/res_smax_240.rds")
 
-res_asmax<-readRDS(file = "outs/simest/sensitivity_halfSmax/res_asmax.rds")
-
-aic_asmax=subset(res_asmax, parameter=='AIC'&method=='MLE')
-bic_asmax=subset(res_asmax, parameter=='BIC'&method=='MLE')
-lfo_asmax=subset(res_asmax, parameter=='LFO'&method=='MLE')
+restmb_smax<-rbind(resb1,resb2,resb240)
 
 
-lfo_asmax<-lfo_asmax[lfo_asmax$model %in% c("simple","autocorr","rwa","rwb","rwab","hmma","hmmb","hmmab"),]
-lfo_asmax[is.na(lfo_asmax$est),]<--Inf
+#res_a <- res_a[res_a$convergence==0,]
 
-lfo_asmax<-lfo_asmax[lfo_asmax$model %in% c("simple","autocorr","rwa","rwb","rwab","hmma","hmmb","hmmab"),]
+aic_smax=subset(restmb_smax, parameter=='AIC'&method=='MLE')
+bic_smax=subset(restmb_smax, parameter=='BIC'&method=='MLE')
+lfo_smax=subset(restmb_smax, parameter=='LFO'&method=='MLE')
 
-lfo_asmax[is.na(lfo_asmax$est),]<--Inf
-aic_asmax$est[aic_asmax$convergence>0]<-Inf
-bic_asmax$est[aic_asmax$convergence>0]<-Inf
 
-scn<-factor(unique(aic_asmax$scenario), levels=c(
-  "trendLinearProd1_halfSmax", 
-  "trendLinearProd2_halfSmax", 
-  "trendLinearProd5_halfSmax",
-  "trendLinearProd7_halfSmax",
-  "trendLinearProd10_halfSmax",
-  "regimeProd1_halfSmax",
-  "regimeProd2_halfSmax",      
-  "regimeProd5_halfSmax",      
-  "regimeProd7_halfSmax",
-  "regimeProd10_halfSmax" ) )
+lfo_smax<-lfo_smax[lfo_smax$model %in% c("simple","autocorr","rwa","rwb","rwab","hmma","hmmb","hmmab"),]
+
+
+aic_smax$mode[aic_smax$convergence>0]<-Inf
+bic_smax$mode[aic_smax$convergence>0]<-Inf
+
+scn<-factor(unique(aic_smax$scenario), levels=c(
+  "trendLinearSmax025", 
+  "trendLinearSmax050",
+  "trendLinearSmax150", 
+  "trendLinearSmax200", 
+  "trendLinearSmax300",
+  "regimeSmax025",      
+  "regimeSmax050",      
+  "regimeSmax150",      
+  "regimeSmax200",      
+  "regimeSmax300" 
+ ) )
 
 
 EM=c("stationary",
      "autocorr",
-     "dynamic.a","dynamic.b","dynamic.ab",
-     "regime.a","regime.b","regime.ab")
+     "dynamic.a","regime.a",
+     "dynamic.b","regime.b",
+     "dynamic.ab",
+     "regime.ab")
 ##Confusion matrices
-conf_matrix<-expand.grid(EM=EM,OM=scn)
-conf_matrix$w_AIC=NA
-conf_matrix$BIC=NA
-conf_matrix$LFO=NA
+conf_matrix_smax<-expand.grid(EM=EM,OM=scn)
+conf_matrix_smax$w_AIC=NA
+conf_matrix_smax$BIC=NA
+conf_matrix_smax$LFO=NA
 
 cn1<-list()
 cn2<-list()
@@ -592,120 +617,303 @@ lfo_set=list()
 o=0
 for(a in seq_along(scn)){
 
-  #AIC
-  aica<-subset(aic,scenario==scn[a])
-  dim(aica)
-  unique(aica$scenario)
-
+  #head(aic_set[[a]])
 
    #AIC
-  aica<-subset(aic_asmax,scenario==scn[a])
-  aic_set[[a]]=tidyr::spread(aica[,-9],key=model,value=est)
-  aic_set[[a]]=aic_set[[a]][c(15,8,12,14,13,9,11,10)] #reorder estimation models
+  aica<-subset(aic_smax,scenario==scn[a])
+  aic_set[[a]]=tidyr::spread(aica[,-c(10,11,12,13)],key=model,value=mode)
+  aic_set[[a]]=aic_set[[a]][c(15,8,12,9,14,11,13,10)] #reorder estimation models
+
 
   sc1=apply(aic_set[[a]],1,which.min)
   cn1[[a]]=summary(factor(sc1,levels=seq(1:ncol(aic_set[[a]]))))/1000
 
-  bica=subset(bic_asmax,scenario==scn[a])
-  bic_set[[a]]=tidyr::spread(bica[,-9],key=model,value=est)
-  bic_set[[a]]=bic_set[[a]][c(15,8,12,14,13,9,11,10)] #reorder estimation models
+  bica=subset(bic_smax,scenario==scn[a])
+  bic_set[[a]]=tidyr::spread(bica[,-c(10,11,12,13)],key=model,value=mode)
+  bic_set[[a]]=bic_set[[a]][c(15,8,12,9,14,11,13,10)] #reorder estimation models
+    head( bic_set[[a]])
 
   sc2=apply(bic_set[[a]],1,which.min)
   cn2[[a]]=summary(factor(sc2,levels=seq(1:ncol(bic_set[[a]]))))/1000
 
-  lfoa=subset(lfo_asmax,scenario==scn[a])
-  lfo_set[[a]]=tidyr::spread(lfoa[,-9],key=model,value=est)
-  lfo_set[[a]]=lfo_set[[a]][c(15,8,12,14,13,9,11,10)] #reorder estimation models
+  lfoa=subset(lfo_smax,scenario==scn[a])
+  lfo_set[[a]]=tidyr::spread(lfoa[,-c(10,11,12,13)],key=model,value=mode)
+  lfo_set[[a]]=lfo_set[[a]][c(15,8,12,9,14,11,13,10)] #reorder estimation models
 
   sc3=apply(lfo_set[[a]],1,which.max)
   cn3[[a]]=summary(factor(sc3,levels=seq(1:ncol(lfo_set[[a]]))))/1000
 
 
   myseq<-seq(from=o+1, length.out=length(EM))
-  conf_matrix$w_AIC[myseq]<-cn1[[a]]
-  conf_matrix$BIC[myseq]<-cn2[[a]]
-  conf_matrix$LFO[myseq]<-cn3[[a]]
+  conf_matrix_smax$w_AIC[myseq]<-cn1[[a]]
+  conf_matrix_smax$BIC[myseq]<-cn2[[a]]
+  conf_matrix_smax$LFO[myseq]<-cn3[[a]]
   o=max(myseq)
 
   
 }
 
 
-conf_matrix$eqem_om <- dplyr::recode(conf_matrix$OM, 
-       "trendLinearProd1_halfSmax"="dynamic.a", 
-       "trendLinearProd2_halfSmax"="dynamic.a", 
-       "trendLinearProd5_halfSmax"="dynamic.a",
-       "trendLinearProd7_halfSmax"="dynamic.a",
-       "trendLinearProd10_halfSmax"="dynamic.a",
-       "regimeProd1_halfSmax"="regime.a",
-       "regimeProd2_halfSmax"="regime.a",      
-       "regimeProd5_halfSmax"="regime.a",      
-       "regimeProd7_halfSmax"="regime.a",
-       "regimeProd10_halfSmax"="regime.a",
+conf_matrix_smax$eqem_om <- dplyr::recode(conf_matrix_smax$OM, 
+      "trendLinearSmax025"="dynamic.b", 
+       "trendLinearSmax050"="dynamic.b",
+       "trendLinearSmax150"="dynamic.b", 
+       "trendLinearSmax200"="dynamic.b", 
+       "trendLinearSmax300"="dynamic.b",
+       "regimeSmax025"="regime.b",      
+       "regimeSmax050"="regime.b",      
+       "regimeSmax150"="regime.b",      
+       "regimeSmax200"="regime.b",      
+       "regimeSmax300"="regime.b"         
       )   
 
-conf_matrix$eqem_om<-factor(conf_matrix$eqem_om, 
+conf_matrix_smax$eqem_om<-factor(conf_matrix_smax$eqem_om, 
     levels=c("stationary", 
         "autocorr", 
-        "dynamic.a", 
-        "dynamic.b", 
-        "dynamic.ab", 
-        "regime.a", 
-        "regime.b", 
-        "regime.ab"))
-conf_matrix$diag<-conf_matrix$eqem_om==conf_matrix$EM
+        "dynamic.a", "regime.a",
+        "dynamic.b", "regime.b", 
+        "dynamic.ab", "regime.ab"        
+       ))
+conf_matrix_smax$diag<-conf_matrix_smax$eqem_om==conf_matrix_smax$EM
+
+head(conf_matrix_smax)
 
 
+conf_matrix_smax$OM2<-dplyr::case_match(conf_matrix_smax$OM,
+    "trendLinearSmax025"~"trend Smax * 0.25",
+       "trendLinearSmax050"~"trend Smax * 0.50",
+       "trendLinearSmax150"~"trend Smax * 1.50", 
+       "trendLinearSmax200"~"trend Smax * 2.00", 
+       "trendLinearSmax300"~"trend Smax * 3.00",
+       "regimeSmax025"~"regime Smax * 0.25",      
+       "regimeSmax050"~"regime Smax * 0.50",      
+       "regimeSmax150"~"regime Smax * 1.50",      
+       "regimeSmax200"~"regime Smax * 2.00",      
+       "regimeSmax300"~"regime Smax * 3.00" )
 
 
+conf_matrix_smax$OM2<-factor(conf_matrix_smax$OM2, levels=c("trend Smax * 0.25",
+       "trend Smax * 0.50",
+       "trend Smax * 1.50", 
+       "trend Smax * 2.00", 
+       "trend Smax * 3.00",
+       "regime Smax * 0.25",      
+       "regime Smax * 0.50",     
+       "regime Smax * 1.50",      
+       "regime Smax * 2.00",      
+       "regime Smax * 3.00"   ))
 
-p=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
+
+pa_aic_smax=ggplot(data =  conf_matrix_smax, mapping = aes(x = OM2, y = EM)) +
   geom_tile(aes(fill = w_AIC), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(w_AIC,2)), vjust = 1,size=6) +
-  ggtitle("AIC sens a half smax")+
+  ggtitle("AIC sens Smax")+
   scale_fill_gradient(low="white", high="#009194")  +
-  geom_segment(data=transform(subset(conf_matrix, !!diag), 
+  geom_segment(data=transform(subset(conf_matrix_smax, !!diag), 
                     simulated=as.numeric(OM), 
                     estimated=as.numeric(EM)), 
                aes(x=simulated-.49, xend=simulated+.49, y=estimated-.49, yend=estimated+.49), 
                color="gray90", linewidth=2)+
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1)) +
   xlab("Simulation Scenario")+ylab("Estimation Model")
-p
+pa_aic_smax
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_smax/AIC_MLE_senssmax.png",
+ plot=pa_aic_smax, width = 9,height = 7)
 
 
 
-p=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
+pa_bic_smax=ggplot(data =  conf_matrix_smax, mapping = aes(x = OM2, y = EM)) +
   geom_tile(aes(fill = BIC), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(BIC,2)), vjust = 1,size=6) +
-  ggtitle("BIC sens a half smax")+
+  ggtitle("BIC sens smax")+
   scale_fill_gradient(low="white", high="#009194")  +
-  geom_segment(data=transform(subset(conf_matrix, !!diag), 
+  geom_segment(data=transform(subset(conf_matrix_smax, !!diag), 
                     simulated=as.numeric(OM), 
                     estimated=as.numeric(EM)), 
                aes(x=simulated-.49, xend=simulated+.49, y=estimated-.49, yend=estimated+.49), 
                color="gray90", linewidth=2)+
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
   xlab("Simulation Scenario")+ylab("Estimation Model")
-p
+pa_bic_smax
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_smax/BIC_MLE_senssmax.png",
+ plot=pa_bic_smax,  width = 9,height = 7)
 
 
 
-p=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
+p_lfo_smax=ggplot(data =  conf_matrix_smax, mapping = aes(x = OM2, y = EM)) +
   geom_tile(aes(fill = LFO), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(LFO,2)), vjust = 1, size=6) +
-  ggtitle("LFO sens a half smax")+
+  ggtitle("LFO")+
   scale_fill_gradient(low="white", high="#009194")  +
-  geom_segment(data=transform(subset(conf_matrix, !!diag), 
+  geom_segment(data=transform(subset(conf_matrix_smax, !!diag), 
                     simulated=as.numeric(OM), 
                     estimated=as.numeric(EM)), 
                aes(x=simulated-.49, xend=simulated+.49, y=estimated-.49, yend=estimated+.49), 
                color="gray90", linewidth=2)+
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
   xlab("Simulation Scenario")+ylab("Estimation Model")
-p
+p_lfo_smax
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_smax/LFO_MLE_senssmax.png",
+ plot=p_lfo_smax,width = 9,height = 7)
 
-reslfo<-readRDS(file = "outs/simest/generic/resstanloo.rds")
+
+
+
+#calculate these 
+conf_matrix_smax$diffsmax_ch<- dplyr::case_match(conf_matrix_smax$OM,
+  "trendLinearSmax025"~"decrease x0.25",
+   "trendLinearSmax050"~"decrease x0.5",
+   "trendLinearSmax150"~"increase x1.5",
+ "trendLinearSmax200"~"increase x2.0", 
+ "trendLinearSmax300"~"increase x3.0", 
+ "regimeSmax025"~"decrease x0.25",     
+ "regimeSmax050"~"decrease x0.5",      
+ "regimeSmax150"~"increase x1.5",      
+ "regimeSmax200"~"increase x2.0",      
+ "regimeSmax300" ~"increase x3.0")   
+
+
+
+
+conf_matrix_smax$diffsmax<- dplyr::case_match(conf_matrix_smax$OM,
+  "trendLinearSmax025"~4,
+   "trendLinearSmax050"~2,
+   "trendLinearSmax150"~1.5,
+ "trendLinearSmax200"~2.0, 
+ "trendLinearSmax300"~3.0, 
+ "regimeSmax025"~4,     
+ "regimeSmax050"~2,      
+ "regimeSmax150"~1.5,      
+ "regimeSmax200"~2.0,      
+ "regimeSmax300" ~3.0)
+
+
+
+conf_matrix_smax$type<- dplyr::case_match(conf_matrix_smax$OM,
+ "trendLinearSmax025"~"decrease trend",
+   "trendLinearSmax050"~"decrease trend",
+   "trendLinearSmax150"~"increase trend",
+ "trendLinearSmax200"~"increase trend", 
+ "trendLinearSmax300"~"increase trend", 
+ "regimeSmax025"~"decrease regime",     
+ "regimeSmax050"~"decrease regime",      
+ "regimeSmax150"~"increase regime",      
+ "regimeSmax200"~"increase regime",      
+ "regimeSmax300" ~"increase regime")   
+
+ 
+conf_matrix_right_smax<-conf_matrix_smax[conf_matrix_smax$EM=="dynamic.b",]
+
+lineAICsmax<-ggplot(conf_matrix_right_smax)+
+geom_point(aes(x=diffsmax,y=w_AIC,color=type),size=4,show.legend = F)+
+geom_line(aes(x=diffsmax,y=w_AIC,color=type,linetype=type),linewidth=1.2)+
+scale_colour_manual(values = c("#95D840FF","#482677FF", "#95D840FF", "#482677FF"))+
+scale_linetype_manual(values = c(1,1,2,2))+
+ylab("     ")+
+xlab("multiplication factor for Smax")+
+coord_cartesian(ylim=c(0.1,0.88))+
+mytheme +
+theme(axis.title=element_text(size=14,face="bold"),legend.key.width = unit(3, "line"))+
+ guides(color=guide_legend(nrow=2, byrow=TRUE)) 
+lineAICsmax
+
+
+
+
+lineAICsmax_wlabel<-ggplot(conf_matrix_right_smax)+
+geom_point(aes(x=diffsmax,y=w_AIC,color=type),size=4,show.legend = F)+
+geom_line(aes(x=diffsmax,y=w_AIC,color=type,linetype=type),linewidth=1.2)+
+scale_colour_manual(values = c("#95D840FF","#482677FF", "#95D840FF", "#482677FF"))+
+scale_linetype_manual(values = c(1,1,2,2))+
+ylab("proportion of correct model assignment with AICc")+
+xlab("multiplication factor for Smax")+
+coord_cartesian(ylim=c(0.1,0.88))+
+mytheme +
+theme(axis.title=element_text(size=14,face="bold"),legend.key.width = unit(3, "line"))
+lineAICsmax_wlabel
+
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_smax/lineAICsenssmax.png",
+ plot=lineAICsmax_wlabel,width = 10,height = 6)
+
+
+
+
+
+
+lineBICsmax<-ggplot(conf_matrix_right_smax)+
+geom_point(aes(x=diffsmax,y=BIC,color=type),size=4,show.legend = F)+
+geom_line(aes(x=diffsmax,y=BIC,color=type,linetype=type),linewidth=1.2)+
+scale_colour_manual(values = c("#95D840FF","#482677FF", "#95D840FF", "#482677FF"))+
+scale_linetype_manual(values = c(1,1,2,2))+
+ylab("      ")+
+xlab("multiplication factor for Smax")+
+mytheme+
+theme(axis.title=element_text(size=14,face="bold"),legend.key.width = unit(3, "line"))+
+ guides(color=guide_legend(nrow=2, byrow=TRUE)) 
+lineBICsmax
+
+
+
+
+
+lineBICsmax_wlabel<-ggplot(conf_matrix_right_smax)+
+geom_point(aes(x=diffsmax,y=BIC,color=type),size=4,show.legend = F)+
+geom_line(aes(x=diffsmax,y=BIC,color=type,linetype=type),linewidth=1.2)+
+scale_colour_manual(values = c("#95D840FF","#482677FF", "#95D840FF", "#482677FF"))+
+scale_linetype_manual(values = c(1,1,2,2))+
+ylab("proportion of correct model assignment with BIC")+
+xlab("multiplication factor for Smax")+
+mytheme+
+theme(axis.title=element_text(size=14,face="bold"),legend.key.width = unit(3, "line"))
+lineBICsmax_wlabel
+
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_smax/lineBICsenssmax.png",
+ plot=lineBICsmax_wlabel,width = 10,height = 6)
+
+
+
+#----------------------------------
+#need to run plots_cluster_confmat_sensa before this works
+
+linesAIC_alpha_smax <- ggarrange(lineAIC_a, lineAICsmax,
+                        nrow = 1, ncol = 2,
+                        common.legend = TRUE,
+                        legend="bottom")
+linesAIC_alpha_smax
+
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/lineAICsens_alpha_smax.png",
+ plot=linesAIC_alpha_smax, width = 13,height = 6)
+
+
+
+
+linesBIC_alpha_smax <- ggarrange(lineBIC_a, lineBICsmax,
+                        nrow = 1, ncol = 2,
+                        common.legend = TRUE,
+                        legend="bottom")
+linesBIC_alpha_smax
+
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/lineBICsens_alpha_smax.png",
+ plot=linesBIC_alpha_smax, width = 13,height = 6)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#LFO
+reslfo<-readRDS(file = "outs/simest/Smax_sensitivity/resstanloo_smax.rds")
 head(reslfo)
 
 #reslfo<-reslfo[reslfo$model %in% c("simple","autocorr","rwa_last5","rwb_last5","rwab_last5",
@@ -738,33 +946,14 @@ head(reslfo)
 #    "hmmab_last3"="hmmab"
 #      ) 
 
-scn<-factor(unique(reslfo$scenario), levels=c(
-  "stationary", 
-  "sigmaShift",
-  "autocorr",
-  "decLinearProd",  
-  "sineProd",
-  "regimeProd",
-  "shiftProd", 
-  "decLinearCap",
-  "regimeCap", 
-  "shiftCap",
-  "decLinearProdshiftCap",
-  "regimeProdCap"  ) )
 
-
-EM=c("stationary",
-     "autocorr",
-     "dynamic.a","regime.a",
-     "dynamic.b","regime.b",
-     "dynamic.ab","regime.ab")
 ##Confusion matrices
 conf_matrix<-expand.grid(EM=EM,OM=scn)
 conf_matrix$LFOmcmc=NA
 
 
 cn3<-list()
-lfomcmc_set<-list()
+lfomcmc_set_a<-list()
 
 
 o=0
@@ -772,12 +961,13 @@ for(a in seq_along(scn)){
 
 
   lfoa=subset(reslfo,scenario==scn[a])
-  lfomcmc_set[[a]]=tidyr::spread(lfoa[,-9],key=model,value=est)
-  nsim<-length(unique( lfomcmc_set[[a]]$iteration))
-  lfomcmc_set[[a]]=lfomcmc_set[[a]][c(15,8,12,14,13,9,11,10)] #reorder estimation models
+  lfomcmc_set_a[[a]]=tidyr::spread(lfoa[,-9],key=model,value=est)
+  head(lfomcmc_set_a[[a]])
+  nsim<-length(unique( lfomcmc_set_a[[a]]$iteration))
+  lfomcmc_set_a[[a]]=lfomcmc_set_a[[a]][c(27,8,18,9,24,15,21,12)] #reorder estimation models
 
-  sc3=apply(lfomcmc_set[[a]],1,which.max)
-  cn3[[a]]=summary(factor(sc3,levels=seq(1:ncol(lfomcmc_set[[a]]))))/nsim
+  sc3=apply(lfomcmc_set_a[[a]],1,which.max)
+  cn3[[a]]=summary(factor(sc3,levels=seq(1:ncol(lfomcmc_set_a[[a]]))))/nsim
 
 
   myseq<-seq(from=o+1, length.out=length(EM))
@@ -788,32 +978,38 @@ for(a in seq_along(scn)){
 
 
 conf_matrix$eqem_om <- dplyr::recode(conf_matrix$OM, 
-      "stationary"="stationary",
-      "autocorr"="autocorr",
-      "sigmaShift"="stationary", 
-      "decLinearProd"="dynamic.a",
-      "sineProd"="dynamic.a",
-      "decLinearCap"="dynamic.b",
-      "decLinearProdshiftCap"="dynamic.ab",
-      "regimeProd"="regime.a",
-      "shiftProd"="regime.a",
-      "regimeCap"="regime.b",
-      "shiftCap"="regime.b", 
-      "regimeProdCap"="regime.ab",
-      )   
+        "trendLinearSmax025"="dynamic.b", 
+       "trendLinearSmax050"="dynamic.b",
+       "trendLinearSmax150"="dynamic.b", 
+       "trendLinearSmax200"="dynamic.b", 
+       "trendLinearSmax300"="dynamic.b",
+       "regimeSmax025"="regime.b",      
+       "regimeSmax050"="regime.b",      
+       "regimeSmax150"="regime.b",      
+       "regimeSmax200"="regime.b",      
+       "regimeSmax300"="regime.b"  
+      ) 
+conf_matrix$eqem_om<-factor(conf_matrix$eqem_om, 
+    levels=c("stationary", 
+        "autocorr", 
+        "dynamic.a", "regime.a",
+        "dynamic.b", "regime.b", 
+        "dynamic.ab", "regime.ab" 
+         
+        
+       ))
 conf_matrix$diag<-conf_matrix$eqem_om==conf_matrix$EM
 
-conf_matrix$EM
 
 
 
 
 
 
-pmclfo=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
+pmclfo_senssmax=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   geom_tile(aes(fill = LFOmcmc), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(LFOmcmc,2)), vjust = 1, size=6) +
-  ggtitle("LFO MCMC")+
+  ggtitle("sens smax LFO MCMC")+
   scale_fill_gradient(low="white", high="#009194")  +
   geom_segment(data=transform(subset(conf_matrix, !!diag), 
                     simulated=as.numeric(OM), 
@@ -822,8 +1018,9 @@ pmclfo=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
                color="gray70", linewidth=2)+
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
   xlab("Simulation Scenario")+ylab("Estimation Model")
-pmclfo
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/LFO_MCMC.png", plot=pmclfo)
+pmclfo_senssmax
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_smax/LFO_MCMC_senssmax.png",
+ plot=pmclfo_senssmax)
 
 
 #lfo with 3 last yrs average
@@ -848,23 +1045,25 @@ conf_matrix$LFO3mcmc<-NA
 
 
 cn4<-list()
-lfomcmc_set3<-list()
+lfomcmc_set3_a<-list()
 
 
 o=0
 for(a in seq_along(scn)){
-
+ 
   lfoa=subset(reslfo3,scenario==scn[a])
-  lfomcmc_set3[[a]]=tidyr::spread(lfoa[,-9],key=model,value=est)
-  nsim<-length(unique( lfomcmc_set3[[a]]$iteration))
-  lfomcmc_set3[[a]]=lfomcmc_set3[[a]][c(15,8,12,14,13,9,11,10)] #reorder estimation models
+  lfomcmc_set3_a[[a]]=tidyr::spread(lfoa[,-9],key=model,value=est)
+  nsim<-length(unique( lfomcmc_set3_a[[a]]$iteration))
+  lfomcmc_set3_a[[a]]=lfomcmc_set3_a[[a]][c(15,8,12,9,14,11,13,10)] #reorder estimation models
 
-  sc4=apply(lfomcmc_set3[[a]],1,which.max)
-  cn3[[a]]=summary(factor(sc4,levels=seq(1:ncol(lfomcmc_set3[[a]]))))/nsim
+  #head(lfomcmc_set3_a[[a]])
+
+  sc4=apply(lfomcmc_set3_a[[a]],1,which.max)
+  cn4[[a]]=summary(factor(sc4,levels=seq(1:ncol(lfomcmc_set3_a[[a]]))))/nsim
 
 
   myseq<-seq(from=o+1, length.out=length(EM))
-  conf_matrix$LFO3mcmc[myseq]<-cn3[[a]]
+  conf_matrix$LFO3mcmc[myseq]<-cn4[[a]]
   o=max(myseq)
 
 }
@@ -876,10 +1075,10 @@ conf_matrix$diag<-conf_matrix$eqem_om==conf_matrix$EM
 
 
 
-pmclfo3=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
+pmclfo3_senssmax=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   geom_tile(aes(fill = LFO3mcmc), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(LFO3mcmc,2)), vjust = 1, size=6) +
-  ggtitle("LFO MCMC avg 3 yrs")+
+  ggtitle("sens smax LFO MCMC avg 3 yrs")+
   scale_fill_gradient(low="white", high="#009194")  +
   geom_segment(data=transform(subset(conf_matrix, !!diag), 
                     simulated=as.numeric(OM), 
@@ -888,8 +1087,9 @@ pmclfo3=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
                color="gray70", linewidth=2)+
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
   xlab("Simulation Scenario")+ylab("Estimation Model")
-pmclfo3
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/LFO_MCMC_3yrs.png", plot=pmclfo3)
+pmclfo3_senssmax
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_smax/LFO_MCMC_3yrs_smax.png",
+ plot=pmclfo3_senssmax)
 
 
 
@@ -916,19 +1116,19 @@ conf_matrix$LFO5mcmc<-NA
 
 
 cn5<-list()
-lfomcmc_set5<-list()
+lfomcmc_set5_a<-list()
 
 
 o=0
 for(a in seq_along(scn)){
 
   lfoa=subset(reslfo5,scenario==scn[a])
-  lfomcmc_set5[[a]]=tidyr::spread(lfoa[,-9],key=model,value=est)
-  nsim<-length(unique( lfomcmc_set5[[a]]$iteration))
-  lfomcmc_set5[[a]]=lfomcmc_set5[[a]][c(15,8,12,14,13,9,11,10)] #reorder estimation models
+  lfomcmc_set5_a[[a]]=tidyr::spread(lfoa[,-9],key=model,value=est)
+  nsim<-length(unique( lfomcmc_set5_a[[a]]$iteration))
+  lfomcmc_set5_a[[a]]=lfomcmc_set5_a[[a]][c(15,8,12,14,13,9,11,10)] #reorder estimation models
 
-  sc5=apply(lfomcmc_set5[[a]],1,which.max)
-  cn5[[a]]=summary(factor(sc5,levels=seq(1:ncol(lfomcmc_set5[[a]]))))/nsim
+  sc5=apply(lfomcmc_set5_a[[a]],1,which.max)
+  cn5[[a]]=summary(factor(sc5,levels=seq(1:ncol(lfomcmc_set5_a[[a]]))))/nsim
 
 
   myseq<-seq(from=o+1, length.out=length(EM))
@@ -944,10 +1144,10 @@ conf_matrix$diag<-conf_matrix$eqem_om==conf_matrix$EM
 
 
 
-pmclfo5=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
+pmclfo5_senssmax=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   geom_tile(aes(fill = LFO5mcmc), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(LFO5mcmc,2)), vjust = 1, size=6) +
-  ggtitle("LFO MCMC avg 5 yrs")+
+  ggtitle("sens smax LFO MCMC avg 5 yrs")+
   scale_fill_gradient(low="white", high="#009194")  +
   geom_segment(data=transform(subset(conf_matrix, !!diag), 
                     simulated=as.numeric(OM), 
@@ -956,16 +1156,18 @@ pmclfo5=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
                color="gray70", linewidth=2)+
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
   xlab("Simulation Scenario")+ylab("Estimation Model")
-pmclfo5
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/LFO_MCMC_5yrs.png", plot=pmclfo5)
+pmclfo5_senssmax
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/LFO_MCMC_5yrs_smax.png",
+ plot=pmclfo5_senssmax)
 
 
 
 
 
-#========================================================================================================
-#sensitivity smax scenario 
-#read in data
+#========================================================
+#old code
+#========================================================
+
 simPar <- read.csv("data/Smax_sensitivity/SimPars.csv")
 
 ## Store relevant object names to help run simulation 
