@@ -19,7 +19,6 @@ mytheme = list(
 
 
 
-
 #========================================================================================================
 #base case
 #read in data
@@ -41,8 +40,6 @@ lfo=subset(res,parameter=='LFO'&method=='MLE')
 
 lfo<-lfo[lfo$model %in% c("simple","autocorr","rwa","rwb","rwab",
     "hmma","hmmb","hmmab"),]
-unique(lfo$model)
-
 
 
 scn<-factor(unique(aic$scenario), levels=c(
@@ -65,6 +62,7 @@ EM=c("stationary",
      "dynamic.a","regime.a",
      "dynamic.b","regime.b",
      "dynamic.ab","regime.ab")
+
 ##Confusion matrices
 conf_matrix<-expand.grid(EM=EM,OM=scn)
 conf_matrix$w_AIC=NA
@@ -118,6 +116,7 @@ for(a in seq_along(scn)){
 
 }
 
+unique(conf_matrix$OM)
 
 conf_matrix$eqem_om <- dplyr::recode(conf_matrix$OM, 
       "stationary"="stationary",
@@ -134,10 +133,6 @@ conf_matrix$eqem_om <- dplyr::recode(conf_matrix$OM,
       "regimeProdCap"="regime.ab",
       )   
 conf_matrix$diag<-conf_matrix$eqem_om==conf_matrix$EM
-
-conf_matrix$EM
-
-
 
 
 
@@ -311,11 +306,8 @@ pmcaic=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   xlab("Simulation Scenario")+ylab("Estimation Model")
 pmcaic
 
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/AIC_MCMC.png", plot=pmcaic)
-
-
-
-
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/AIC_MCMC.png", 
+  plot=pmcaic, width = 10, height = 8)
 
 
 pmcbic=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
@@ -331,42 +323,14 @@ pmcbic=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1)) +
   xlab("Simulation Scenario")+ylab("Estimation Model")
 pmcbic
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/BIC_MCMC.png", plot=pmcbic)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/BIC_HMC.png",
+ plot=pmcbic, width = 10, height = 8)
 
 
 #===================================================================================
 reslfo<-readRDS(file = "outs/simest/generic/resstanloo.rds")
 head(reslfo)
 
-#reslfo<-reslfo[reslfo$model %in% c("simple","autocorr","rwa_last5","rwb_last5","rwab_last5",
-#    "hmma_last5","hmmb_last5","hmmab_last5"),]
-
-#reslfo$model<-dplyr::recode(reslfo$model, 
-#      "simple"="simple",
-#      "autocorr"="autocorr",
-#      "rwa_last5"="rwa",
-#      "rwb_last5"="rwb",
-#      "rwab_last5"="rwab",
-#    "hmma_last5"="hmma",
-#    "hmmb_last5"="hmmb",
-#    "hmmab_last5"="hmmab"
-#      ) 
-
-
-#reslfo<-reslfo[reslfo$model %in% c("simple","autocorr","rwa_last3","rwb_last3","rwab_last3",
-#    "hmma_last3","hmmb_last3","hmmab_last3"),]
-
-
-#reslfo$model<-dplyr::recode(reslfo$model, 
-#      "simple"="simple",
-#      "autocorr"="autocorr",
-#      "rwa_last3"="rwa",
-#      "rwb_last3"="rwb",
-#      "rwab_last3"="rwab",
-#    "hmma_last3"="hmma",
-#    "hmmb_last3"="hmmb",
-#    "hmmab_last3"="hmmab"
-#      ) 
 
 scn<-factor(unique(reslfo$scenario), levels=c(
   "stationary", 
@@ -434,11 +398,6 @@ conf_matrix$eqem_om <- dplyr::recode(conf_matrix$OM,
       )   
 conf_matrix$diag<-conf_matrix$eqem_om==conf_matrix$EM
 
-conf_matrix$EM
-
-
-
-
 
 
 pmclfo=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
@@ -454,7 +413,8 @@ pmclfo=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
   xlab("Simulation Scenario")+ylab("Estimation Model")
 pmclfo
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/LFO_MCMC.png", plot=pmclfo)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/LFO_MCMC.png", 
+  plot=pmclfo, width = 10, height = 8)
 
 
 #lfo with 3 last yrs average
@@ -477,10 +437,8 @@ reslfo3$model<-dplyr::recode(reslfo3$model,
 
 conf_matrix$LFO3mcmc<-NA
 
-
 cn4<-list()
 lfomcmc_set3<-list()
-
 
 o=0
 for(a in seq_along(scn)){
@@ -500,12 +458,7 @@ for(a in seq_along(scn)){
 
 }
 
-
 conf_matrix$diag<-conf_matrix$eqem_om==conf_matrix$EM
-
-
-
-
 
 pmclfo3=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   geom_tile(aes(fill = LFO3mcmc), colour = "white",alpha=0.7) +
@@ -520,8 +473,8 @@ pmclfo3=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
   xlab("Simulation Scenario")+ylab("Estimation Model")
 pmclfo3
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/LFO_MCMC_3yrs.png", plot=pmclfo3)
-
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/LFO_MCMC_3yrs.png",
+ plot=pmclfo3, width = 10, height = 8)
 
 
 
@@ -571,10 +524,6 @@ for(a in seq_along(scn)){
 
 conf_matrix$diag<-conf_matrix$eqem_om==conf_matrix$EM
 
-
-
-
-
 pmclfo5=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   geom_tile(aes(fill = LFO5mcmc), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(LFO5mcmc,2)), vjust = 1, size=6) +
@@ -588,15 +537,9 @@ pmclfo5=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
   xlab("Simulation Scenario")+ylab("Estimation Model")
 pmclfo5
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/LFO_MCMC_5yrs.png", plot=pmclfo5)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/LFO_MCMC_5yrs.png", 
+  plot=pmclfo5, width = 10, height = 8)
 
-
-
-
-
-
-
-#ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/LFOstanbase.png", plot=pmclfo)
 
 
 #========================================================================================================
@@ -628,12 +571,14 @@ aic$mode[aic$convergence>0]<-Inf
 bic$mode[aic$convergence>0]<-Inf
 
 scn<-factor(unique(aic$scenario), levels=c(
-  "trendLinearProd1", 
+  "trendLinearProd1",
+  "trendLinearProd1.3", 
   "trendLinearProd2", 
   "trendLinearProd5",
   "trendLinearProd7",
   "trendLinearProd10",
   "regimeProd1",
+  "regimeProd1.3",
   "regimeProd2",      
   "regimeProd5",      
   "regimeProd7",
@@ -656,7 +601,6 @@ cn1<-list()
 cn2<-list()
 cn3<-list()
 
-
 #summarize model selection
 aic_set=list()
 bic_set=list()
@@ -666,13 +610,10 @@ lfo_set=list()
 o=0
 for(a in seq_along(scn)){
 
-  #head(aic_set[[a]])
-
    #AIC
   aica<-subset(aic,scenario==scn[a])
   aic_set[[a]]=tidyr::spread(aica[,-c(10,11,12,13)],key=model,value=mode)
   aic_set[[a]]=aic_set[[a]][c(15,8,12,9,14,11,13,10)] #reorder estimation models
-
 
   sc1=apply(aic_set[[a]],1,which.min)
   cn1[[a]]=summary(factor(sc1,levels=seq(1:ncol(aic_set[[a]]))))/1000
@@ -698,18 +639,19 @@ for(a in seq_along(scn)){
   conf_matrix$BIC[myseq]<-cn2[[a]]
   conf_matrix$LFO[myseq]<-cn3[[a]]
   o=max(myseq)
-
   
 }
 
 
 conf_matrix$eqem_om <- dplyr::recode(conf_matrix$OM, 
        "trendLinearProd1"="dynamic.a", 
+       "trendLinearProd1.3"="dynamic.a", 
        "trendLinearProd2"="dynamic.a", 
        "trendLinearProd5"="dynamic.a",
        "trendLinearProd7"="dynamic.a",
        "trendLinearProd10"="dynamic.a",
        "regimeProd1"="regime.a",
+       "regimeProd1.3"="regime.a",
        "regimeProd2"="regime.a",      
        "regimeProd5"="regime.a",      
        "regimeProd7"="regime.a",
@@ -721,10 +663,7 @@ conf_matrix$eqem_om<-factor(conf_matrix$eqem_om,
         "autocorr", 
         "dynamic.a", "regime.a",
         "dynamic.b", "regime.b", 
-        "dynamic.ab", "regime.ab" 
-         
-        
-       ))
+        "dynamic.ab", "regime.ab" ))
 conf_matrix$diag<-conf_matrix$eqem_om==conf_matrix$EM
 
 conf_matrix$EM
@@ -745,7 +684,8 @@ pa_aic=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1)) +
   xlab("Simulation Scenario")+ylab("Estimation Model")
 pa_aic
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/AIC_MLE_sensa.png", plot=pa_aic)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/AIC_MLE_sensa.png", 
+  plot=pa_aic,width = 10, height = 8)
 
 
 
@@ -762,7 +702,8 @@ pa_bic=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
   xlab("Simulation Scenario")+ylab("Estimation Model")
 pa_bic
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/BIC_MLE_sensa.png", plot=pa_bic)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/BIC_MLE_sensa.png",
+ plot=pa_bic, width = 10, height = 8)
 
 
 
@@ -779,7 +720,8 @@ p=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
   xlab("Simulation Scenario")+ylab("Estimation Model")
 p
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/LFO_MLE_sensa.png", plot=pa_bic)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/LFO_MLE_sensa.png", 
+  plot=p, width = 10, height = 8)
 
 
 #LFO
@@ -889,11 +831,11 @@ pmclfo_sensa=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
   xlab("Simulation Scenario")+ylab("Estimation Model")
 pmclfo_sensa
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/LFO_MCMC_sensa.png", plot=pmclfo_sensa)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/LFO_MCMC_sensa.png", 
+  plot=pmclfo_sensa, width = 10, height = 8)
 
 
 #lfo with 3 last yrs average
-
 
 reslfo3<-reslfo[reslfo$model %in% c("simple","autocorr","rwa_last3","rwb_last3","rwab_last3",
     "hmma_last3","hmmb_last3","hmmab_last3"),]

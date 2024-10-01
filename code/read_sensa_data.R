@@ -12,12 +12,10 @@ simPar <- read.csv("data/sensitivity/SimPars.csv")
 ## Store relevant object names to help run simulation 
 scenNames <- unique(simPar$scenario)
 
-resa1<-readRDS(file = "outs/simest/sensitivity/res_aq1.rds")
-resa2<-readRDS(file = "outs/simest/sensitivity/res_aq2.rds")
-resa3<-readRDS(file = "outs/simest/sensitivity/res_aq3.rds")
-resa4<-readRDS(file = "outs/simest/sensitivity/res_aq4.rds")
+restmb<-readRDS(file = "outs/simest/sensitivity/res_a.rds")
 
-restmb<-rbind(resa1,resa2,resa3,resa4)
+
+#restmb<-rbind(resa1,resa2,resa3,resa4)
 
 resstana1<-readRDS(file = "outs/simest/sensitivity/resstan_aq1.rds")
 resstana2<-readRDS(file = "outs/simest/sensitivity/resstan_aq2.rds")
@@ -29,11 +27,12 @@ resstan<-rbind(resstana1,resstana2,resstana3,resstana4)
 res<-rbind(restmb,resstan)
 
 res$parameter[res$parameter=="Smax"]<-"smax"
-res$method[res$method=="MCMC"]<-"HMC"
-resparam<-res[res$parameter%in%c("alpha","smax","sigma","smsy","sgen","umsy"),]
+res$parameter[res$parameter=="alpha"]<-"logalpha"
+
+resparam<-res[res$parameter%in%c("logalpha","smax","sigma","smsy","sgen","umsy"),]
 
 #exclude outliers
-resparam$convergence[resparam$parameter=="alpha"&resparam$mode>40]<-1
+resparam$convergence[resparam$parameter=="logalpha"&resparam$mode>40]<-1
 resparam$convergence[resparam$parameter=="smax"&resparam$mode>1e8]<-1
 
 
@@ -46,7 +45,7 @@ convstat<-aggregate(resparam$convergence,
     function(x){sum(x)})
 
 convstatMLE<-convstat[convstat$x==0&convstat$method=="MLE",]
-convstatMCMC<-convstat[convstat$x==0&convstat$method=="HMC",]
+convstatMCMC<-convstat[convstat$x==0&convstat$method=="MCMC",]
 
 
 allconv<-inner_join(convstatMLE[,-3], convstatMCMC[,-3])

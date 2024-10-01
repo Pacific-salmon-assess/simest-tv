@@ -25,12 +25,11 @@ mytheme = list(
 #========================================================================================================
 #sensitivity a scenario
 #read in data
-resa1<-readRDS(file = "outs/simest/sensitivity/res_aq1.rds")
-resa2<-readRDS(file = "outs/simest/sensitivity/res_aq2.rds")
-resa3<-readRDS(file = "outs/simest/sensitivity/res_aq3.rds")
-resa4<-readRDS(file = "outs/simest/sensitivity/res_aq4.rds")
+#resa1<-readRDS(file = "outs/simest/sensitivity/res_a1.rds")
+#resa2<-readRDS(file = "outs/simest/sensitivity/res_a2.rds")
 
-res_a<-rbind(resa1,resa2,resa3,resa4)
+res_a<-readRDS(file = "outs/simest/sensitivity/res_a.rds")
+
 
 
 aic_a=subset(res_a, parameter=='AIC'&method=='MLE')
@@ -118,7 +117,6 @@ for(a in seq_along(scn)){
   conf_matrix_a$LFO[myseq]<-cn3[[a]]
   o=max(myseq)
 
-  
 }
 
 
@@ -146,8 +144,6 @@ conf_matrix_a$eqem_om<-factor(conf_matrix_a$eqem_om,
        ))
 conf_matrix_a$diag<-conf_matrix_a$eqem_om==conf_matrix_a$EM
 
-
-head(conf_matrix_a)
 
 conf_matrix_a$OM2<-dplyr::case_match(conf_matrix_a$OM,
   "trendLinearProd1"~"trend log(a) 1.3 -> 0.0", 
@@ -300,9 +296,9 @@ geom_line(aes(x=difflog_a,y=w_AIC,color=type,linetype=type),linewidth=1.2)+
 scale_colour_manual(values = c("#95D840FF","#482677FF", "#95D840FF", "#482677FF"))+
 scale_linetype_manual(values = c(1,1,2,2))+
 ylab("proportion of correct model assignment with AICc")+
-xlab("difference in log(alpha)")+
+xlab(expression("difference"~"in"~log(alpha)))+
 #scale_color_viridis_d(begin=.1, end=.8) +
-coord_cartesian(ylim=c(0.1,0.88))+
+coord_cartesian(ylim=c(0.0,0.9))+
 mytheme+
 theme(axis.title=element_text(size=14,face="bold"),legend.key.width = unit(3, "line"))+
  guides(color=guide_legend(nrow=2, byrow=TRUE)) 
@@ -318,8 +314,8 @@ geom_line(aes(x=difflog_a,y=BIC,color=type,linetype=type),linewidth=1.2)+
 scale_colour_manual(values = c("#95D840FF","#482677FF", "#95D840FF", "#482677FF"))+
 scale_linetype_manual(values = c(1,1,2,2))+
 ylab("proportion of correct model assignment with BIC")+
-xlab("difference in log(alpha)")+
-coord_cartesian(ylim=c(0.1,0.88))+
+xlab(expression("difference"~"in"~log(alpha)))+
+coord_cartesian(ylim=c(0.0,0.88))+
 mytheme+
 theme(axis.title=element_text(size=14,face="bold"),legend.key.width = unit(3, "line"))+
  guides(color=guide_legend(nrow=2, byrow=TRUE)) 
@@ -548,20 +544,78 @@ pmclfo5_sensa
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/LFO_HMC_5yrs.png", plot=pmclfo5_sensa)
 
 
+#========================================================================================================
+#EDF plots
+
+library(dplyr)
+head(res_a)
+unique(res_a$parameter)
 
 
 
+res_a_edf<-res_a[res_a$parameter=="EDF",]
+res_a_edf<-res_a_edf[res_a_edf$model%in%c("autocorr", "rwa", "rwb", "rwab"),]
+head(res_a_edf)
+length(res_a_edf$mode[res_a_edf$model =="rwa"])
 
+
+
+res_rwb_edf <- res_a|>filter(model =="rwb"&parameter=="EDF") |>
+select (c( iteration,scenario, model, mode))|>
+rename(edf=mode)
+dim(res_rwa_edf)
+head(res_rwa_edf)
+
+res_b_sig<- res_a|>filter(model =="rwb"&parameter=="sigma_b")
+
+
+
+sigb_edf<-left_join(res_b_sig,res_rwb_edf)
+head(siga_edf)
+
+
+edfsig_dist=ggplot(data =  sigb_edf) +
+  geom_point(aes(x=edf,y=mode))+
+    facet_wrap( scenario~ .)
+edfsig_dist
+
+dim(siga_edf[siga_edf$edf>40,])
+
+
+edfsig_dist=ggplot(data =  siga_edf[siga_edf$edf<100,]) +
+  geom_point(aes(x=edf,y=mode))+
+    facet_wrap( scenario~ .)
+edfsig_dist
+
+edf_dist=ggplot(data =  res_a_edf) +
+  geom_histogram(aes(x=mode))+
+  facet_grid( scenario~ )
+  #coord_cartesian(xlim=c(0.0,1000))
+edf_dist
+
+unique(siga_edf$parameter)
+
+aggregate(res_a_edf$mode, list(res_a_edf$model,res_a_edf$scenario), min)
+
+edf_dist=ggplot(data =  res_a_edf) +
+  geom_histogram(aes(x=mode))+
+  facet_grid( scenario~ model)
+  #coord_cartesian(xlim=c(0.0,1000))
+edf_dist
+
+
+
+#========================================================================================================
 #========================================================================================================
 #sensitivity smax scenario 
 #read in data
 
 #read in data
-resb1<-readRDS(file = "outs/simest/Smax_sensitivity/res_smax1.rds")
-resb2<-readRDS(file = "outs/simest/Smax_sensitivity/res_smax2.rds")
-resb240<-readRDS(file = "outs/simest/Smax_sensitivity/res_smax_240.rds")
+#resb1<-readRDS(file = "outs/simest/Smax_sensitivity/res_smax1.rds")
+#resb2<-readRDS(file = "outs/simest/Smax_sensitivity/res_smax2.rds")
 
-restmb_smax<-rbind(resb1,resb2,resb240)
+restmb_smax<-readRDS(file = "outs/simest/Smax_sensitivity/res_smax.rds")
+#<-rbind(resb1,resb2)
 
 
 #res_a <- res_a[res_a$convergence==0,]
@@ -810,7 +864,7 @@ geom_line(aes(x=diffsmax,y=w_AIC,color=type,linetype=type),linewidth=1.2)+
 scale_colour_manual(values = c("#95D840FF","#482677FF", "#95D840FF", "#482677FF"))+
 scale_linetype_manual(values = c(1,1,2,2))+
 ylab("     ")+
-xlab("multiplication factor for Smax")+
+xlab(expression("multiplication"~"factor"~"for"~S[max]))+
 coord_cartesian(ylim=c(0.1,0.88))+
 mytheme +
 theme(axis.title=element_text(size=14,face="bold"),legend.key.width = unit(3, "line"))+
@@ -826,7 +880,7 @@ geom_line(aes(x=diffsmax,y=w_AIC,color=type,linetype=type),linewidth=1.2)+
 scale_colour_manual(values = c("#95D840FF","#482677FF", "#95D840FF", "#482677FF"))+
 scale_linetype_manual(values = c(1,1,2,2))+
 ylab("proportion of correct model assignment with AICc")+
-xlab("multiplication factor for Smax")+
+xlab(expression("multiplication"~"factor"~"for"~S[max]))+
 coord_cartesian(ylim=c(0.1,0.88))+
 mytheme +
 theme(axis.title=element_text(size=14,face="bold"),legend.key.width = unit(3, "line"))
@@ -846,7 +900,7 @@ geom_line(aes(x=diffsmax,y=BIC,color=type,linetype=type),linewidth=1.2)+
 scale_colour_manual(values = c("#95D840FF","#482677FF", "#95D840FF", "#482677FF"))+
 scale_linetype_manual(values = c(1,1,2,2))+
 ylab("      ")+
-xlab("multiplication factor for Smax")+
+xlab(expression("multiplication"~"factor"~"for"~S[max]))+
 mytheme+
 theme(axis.title=element_text(size=14,face="bold"),legend.key.width = unit(3, "line"))+
  guides(color=guide_legend(nrow=2, byrow=TRUE)) 
@@ -862,7 +916,7 @@ geom_line(aes(x=diffsmax,y=BIC,color=type,linetype=type),linewidth=1.2)+
 scale_colour_manual(values = c("#95D840FF","#482677FF", "#95D840FF", "#482677FF"))+
 scale_linetype_manual(values = c(1,1,2,2))+
 ylab("proportion of correct model assignment with BIC")+
-xlab("multiplication factor for Smax")+
+xlab(expression("multiplication"~"factor"~"for"~S[max]))+
 mytheme+
 theme(axis.title=element_text(size=14,face="bold"),legend.key.width = unit(3, "line"))
 lineBICsmax_wlabel

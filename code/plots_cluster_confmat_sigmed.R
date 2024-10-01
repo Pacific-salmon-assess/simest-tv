@@ -7,6 +7,8 @@
 
 library(gridExtra)
 library(ggplot2)
+library(dplyr)
+library(cowplot)
 source("code/utils.R")
 
 
@@ -27,9 +29,9 @@ simPar <- read.csv("data/sigmamed_sensitivity/SimPars.csv")
 ## Store relevant object names to help run simulation 
 scenNames <- unique(simPar$scenario)
 
-res1<-readRDS(file = "outs/simest/sigmamed_sensitivity/res_sigmed.rds")
-res227<-readRDS(file = "outs/simest/sigmamed_sensitivity/res_sigmed_227.rds")
-res<-rbind(res1,res227)#,resstan16,resstan712)
+res<-readRDS(file = "outs/simest/sigmamed_sensitivity/res_sigmed.rds")
+
+#res<-rbind(res1)#,resstan16,resstan712)
 
 res<-res[res$convergence==0,]
 #
@@ -54,8 +56,6 @@ lfo=subset(res,parameter=='LFO'&method=='MLE')
 
 lfo<-lfo[lfo$model %in% c("simple","autocorr","rwa","rwb","rwab",
     "hmma","hmmb","hmmab"),]
-unique(lfo$model)
-
 
 
 scn<-factor(unique(aic$scenario), levels=c(
@@ -211,13 +211,10 @@ ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matric
 # add in base case scenarios for the line plots. 
 
 
-
-
-
-res1siglow<-readRDS(file = "outs/simest/sigmalow_sensitivity/res_siglow1.rds")
-res2siglow<-readRDS(file = "outs/simest/sigmalow_sensitivity/res_siglow2.rds")
-res105siglow<-readRDS(file = "outs/simest/sigmalow_sensitivity/res_siglow_105.rds")
-ressiglow<-rbind(res1siglow,res2siglow,res105siglow)#,resstan16,resstan712)
+ressiglow<-readRDS(file = "outs/simest/sigmalow_sensitivity/res_siglow.rds")
+#res2siglow<-readRDS(file = "outs/simest/sigmalow_sensitivity/res_siglow2.rds")
+#res105siglow<-readRDS(file = "outs/simest/sigmalow_sensitivity/res_siglow_105.rds")
+#ressiglow<-rbind(res1siglow,res2siglow,res105siglow)#,resstan16,resstan712)
 
 unique(ressiglow$scenario)
 
@@ -340,10 +337,10 @@ conf_matrix_siglow$diag<-conf_matrix_siglow$eqem_om==conf_matrix_siglow$EM
 #========================================================================================================
 #base case - sigma=0.6
 
-res1base<-readRDS(file = "outs/simest/generic/resbase1.rds")
-res2base<-readRDS(file = "outs/simest/generic/resbase2.rds")
+resbase<-readRDS(file = "outs/simest/generic/resbase.rds")
+#res2base<-readRDS(file = "outs/simest/generic/resbase2.rds")
 
-resbase<-rbind(res1base,res2base)#,resstan16,resstan712)
+#resbase<-rbind(res1base,res2base)#,resstan16,resstan712)
 
 resbase<-resbase[resbase$convergence==0,]
 
@@ -513,6 +510,25 @@ theme(axis.title=element_text(size=14,face="bold"),legend.key.width = unit(3, "l
  guides(color=guide_legend(nrow=2, byrow=TRUE)) 
 lineAIC_sig
 
+unique( conf_matrix_sigcomp_right$OM2) 
+
+barAIC_sig<-ggplot(conf_matrix_sigcomp_right)+
+geom_bar(stat="identity",aes(x=as.factor(sigma),y=w_AIC,fill=OM2), position=position_dodge())+
+#geom_line(aes(x=sigma,y=w_AIC,color=OM2),linewidth=1.2)+
+#scale_colour_manual(values = c("#95D840FF","#482677FF", "#95D840FF", "#482677FF"))+
+#scale_linetype_manual(values = c(1,1,2,2))+
+ylab("proportion of correct model assignment with AICc")+
+xlab(expression(paste("value of", ~sigma)))+
+scale_fill_viridis_d(begin=.1, end=.8,option = "A", labels = c(expression(shift~up~log(alpha)) , 
+                                                              expression(decline~log(alpha)),
+                                                              expression(shift~down~S[max]),
+                                                              expression(decline~S[max]))) +
+#coord_cartesian(ylim=c(0.1,0.88))+
+mytheme+
+theme(axis.title=element_text(size=14,face="bold"),legend.key.width = unit(1.5, "line"))+
+guides(fill=guide_legend(nrow=2, byrow=TRUE)) 
+barAIC_sig
+
 
 
 lineBIC_sig<-ggplot(conf_matrix_sigcomp_right)+
@@ -530,17 +546,38 @@ guides(color=guide_legend(nrow=2, byrow=TRUE))
 lineBIC_sig
 
 
+barBIC_sig<-ggplot(conf_matrix_sigcomp_right)+
+geom_bar(stat="identity",aes(x=as.factor(sigma),y=BIC,fill=OM2), position=position_dodge())+
+#scale_colour_manual(values = c("#95D840FF","#482677FF", "#95D840FF", "#482677FF"))+
+#scale_linetype_manual(values = c(1,1,2,2))+
+ylab("proportion of correct model assignment with BIC")+
+xlab(expression(paste("value of", ~sigma)))+
+scale_fill_viridis_d(begin=.1, end=.8,option = "A", labels = c(expression(shift~up~log(alpha)) , 
+                                                              expression(decline~log(alpha)),
+                                                              expression(shift~down~S[max]),
+                                                              expression(decline~S[max]))) +
+mytheme +
+theme(axis.title=element_text(size=14,face="bold"),legend.key.width = unit(1.5, "line")) +
+guides(fill=guide_legend(nrow=2, byrow=TRUE)) 
+barBIC_sig
+
 
 #----------------------------------
 #need to run plots_cluster_confmat_sensa before this works
 #require that you run confmat_sens_a first
-linesAIC_alpha_smax <- ggarrange(lineAIC_a, lineAICsmax, lineAIC_sig,
+linesAIC_alpha_smax <- ggarrange(lineAIC_a, lineAICsmax, #lineAIC_sig,
                         nrow = 1, ncol = 2,
                         common.legend = TRUE,
                         legend="bottom")
 linesAIC_alpha_smax
 
+
+
+
 plot_grid(linesAIC_alpha_smax,lineAIC_sig,  rel_widths = c(2, 1) )
+
+
+plot_grid(linesAIC_alpha_smax,barAIC_sig,  rel_widths = c(2, 1) )
 
 
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/lineAICsens_alpha_smax.png",
@@ -557,15 +594,16 @@ linesBIC_alpha_smax
 
 
 linesBIC_alpha_smax_sig<-plot_grid(linesBIC_alpha_smax,lineBIC_sig,  rel_widths = c(2, 1) )
-
+linesBIC_alpha_smax_sig
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/lineBICsens_alpha_smax_sig.png",
  plot=linesBIC_alpha_smax_sig, width = 18,height = 6)
 
 
 
-
-
-
+linesBIC_alpha_smax_sigbar<-plot_grid(linesBIC_alpha_smax,barBIC_sig,  rel_widths = c(2, 1) )
+linesBIC_alpha_smax_sigbar
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/lineBICsens_alpha_smax_sigbar.png",
+ plot=linesBIC_alpha_smax_sigbar, width = 18,height = 6)
 
 
 
@@ -2265,10 +2303,6 @@ pmclfo5=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   xlab("Simulation Scenario")+ylab("Estimation Model")
 pmclfo5
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/sensa_LFO_MCMC_5yrs.png", plot=pmclfo5)
-
-
-
-
 
 
 

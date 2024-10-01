@@ -19,13 +19,7 @@ scenNames <- unique(simPar$scenario)
 #res4<-readRDS(file = "outs/simest/genericER/res_erq4.rds")
 
 
-res1<-readRDS(file = "outs/simest/genericER/resbase_ER1.rds")
-res2<-readRDS(file = "outs/simest/genericER/resbase_ER2.rds")
-
-
-
-restmb<-rbind(res1,res2)#,res3,res4)
-
+restmb<-readRDS(file = "outs/simest/genericER/res_er.rds")
 
 
 resstan1<-readRDS(file = "outs/simest/genericER/resstan_erq1.rds")
@@ -41,11 +35,11 @@ res<-rbind(restmb,resstan)
 
 #res<-resstan
 res$parameter[res$parameter=="Smax"]<-"smax"
-res$method[res$method=="MCMC"]<-"HMC"
-resparam<-res[res$parameter%in%c("alpha","smax","smsy","sgen","umsy"),]
+res$parameter[res$parameter=="alpha"]<-"logalpha"
+resparam<-res[res$parameter%in%c("logalpha","smax","smsy","sgen","umsy"),]
 
 
-resparam$convergence[resparam$parameter=="alpha"&resparam$mode>40]<-1
+resparam$convergence[resparam$parameter=="logalpha"&resparam$mode>40]<-1
 resparam$convergence[resparam$parameter=="smax"&resparam$mode>1e8]<-1
 
 
@@ -56,8 +50,10 @@ convstat<-aggregate(resparam$convergence,
         iteration=resparam$iteration),
     function(x){sum(x)})
 
+
+
 convstatMLE<-convstat[convstat$x==0&convstat$method=="MLE",]
-convstatMCMC<-convstat[convstat$x==0&convstat$method=="HMC",]
+convstatMCMC<-convstat[convstat$x==0&convstat$method=="MCMC",]
 
 
 allconv<-inner_join(convstatMLE[,-3], convstatMCMC[,-3])

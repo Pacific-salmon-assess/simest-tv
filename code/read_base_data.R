@@ -12,11 +12,11 @@ simPar <- read.csv("data/generic/SimPars.csv")
 ## Store relevant object names to help run simulation 
 scenNames <- unique(simPar$scenario)
 
-res1<-readRDS(file = "outs/simest/generic/resbase1.rds")
-res2<-readRDS(file = "outs/simest/generic/resbase2.rds")
+#res1<-readRDS(file = "outs/simest/generic/resbase1.rds")
+#res2<-readRDS(file = "outs/simest/generic/resbase2.rds")
 
 
-restmb<-rbind(res1,res2)
+restmb<-readRDS(file = "outs/simest/generic/resbase.rds")#rbind(res1,res2)
 
 resstan1<-readRDS(file = "outs/simest/generic/resstan1.rds")
 resstan2<-readRDS(file = "outs/simest/generic/resstan2.rds")
@@ -24,11 +24,11 @@ resstan<-rbind(resstan1,resstan2)
 #resstan<-readRDS(file = "outs/simest/generic/resstan.rds")
 
 res<-rbind(restmb,resstan)
-
+unique(res$parameter)
 #res<-resstan
 res$parameter[res$parameter=="Smax"]<-"smax"
-res$method[res$method=="MCMC"]<-"HMC"
-resparam<-res[res$parameter%in%c("alpha","smax","smsy","sgen","umsy"),]
+res$parameter[res$parameter=="alpha"]<-"logalpha"
+resparam<-res[res$parameter%in%c("logalpha","smax","smsy","sgen","umsy"),]
 
 #exclude outliers
 
@@ -44,7 +44,7 @@ convstat<-aggregate(resparam$convergence,
         iteration=resparam$iteration),
     function(x){sum(x)})
 convstatMLE<-convstat[convstat$x==0&convstat$method=="MLE",]
-convstatMCMC<-convstat[convstat$x==0&convstat$method=="HMC",]
+convstatMCMC<-convstat[convstat$x==0&convstat$method=="MCMC",]
 
 
 allconv<-inner_join(convstatMLE[,-3], convstatMCMC[,-3])
@@ -52,8 +52,6 @@ allconv<-inner_join(convstatMLE[,-3], convstatMCMC[,-3])
 convsum<-aggregate(allconv$iteration,
     list(model=allconv$model,scenario=allconv$scenario),
     function(x){length(unique(x))})
-
-
 
 conv_iter<-aggregate(allconv$iteration,
     list(model=allconv$model,scenario=allconv$scenario),

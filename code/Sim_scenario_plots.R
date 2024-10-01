@@ -6,7 +6,7 @@ library(ggplot2)
 library(dplyr)
 library(samEst)
 library(cowplot)
-
+library(ggpubr)
 
 
 mytheme = list(
@@ -134,9 +134,6 @@ datdf$scencode <-factor(datdf$scencode, levels=c("Base1","Base2","Base3",
               "Base7","Base8","Base9",
                "Base10","Base11","Base12"))
 
-
-
-
 SRexample<-  ggplot(SRdf) +
     geom_line(aes(x=spawners,y=recruits, col=as.factor(year)),linewidth=2) +
     mytheme + 
@@ -164,9 +161,9 @@ datdfselec$genericscenario<-dplyr::case_match(datdfselec$scenario,
      "autocorr"~"stationary",
       "decLinearProd"~"linear~decline",
       "sineProd"~"sine~fluctuation",
-      "shiftProd"~"shift~decline",
+      "shiftProd"~"shift~down+up",
     "decLinearCap"~"linear~decline",
-    "shiftCap"~"shift~decline",
+    "shiftCap"~"shift~down",
     "regimeProdCap"~ "shift~-~both",
     "decLinearProdshiftCap"~"mixed~trend"
       )   
@@ -197,9 +194,9 @@ SRdfselec$genericscenario<-dplyr::case_match(SRdfselec$scenario,
       "autocorr"~"stationary",
       "decLinearProd"~"linear~decline",
       "sineProd"~"sine~fluctuation",
-      "shiftProd"~"shift~decline",
+      "shiftProd"~"shift~down+up",
     "decLinearCap"~"linear~decline",
-    "shiftCap"~"shift~decline",
+    "shiftCap"~"shift~down",
     "regimeProdCap"~ "shift~-~both",
     "decLinearProdshiftCap"~"mixed~trend"
       )   
@@ -244,8 +241,6 @@ paramdf<-reshape2::melt(datdf,id.vars=c("iteration","year","CU","spawners","recr
                                 "ER", "obsER", "targetER",   
                                 "sMSY", "sGen", "uMSY", "scenario", "scenario_f","scencode"))
 
-summary(paramdf)
-
 paramdf$simulated<-dplyr::recode(paramdf$scenario, 
       "stationary"="simple",
       "autocorr"="simple",
@@ -260,7 +255,6 @@ paramdf$simulated<-dplyr::recode(paramdf$scenario,
       "regimeProdCap"="hmm",
       "decLinearProdshiftCap"="rw"
       )   
-
 
 
 paramdf$paramch<-dplyr::recode(paramdf$scenario, 
@@ -313,15 +307,10 @@ paramdf$scenario <-factor(paramdf$scenario, levels=c("stationary",
       "regimeProdCap",
       "decLinearProdshiftCap"))
 
-
-
-
 paramdf$scencode <-factor(paramdf$scencode, levels=c("Base1","Base2","Base3",
              "Base4","Base5","Base6",
               "Base7","Base8","Base9",
                "Base10","Base11","Base12"))
-
-head(paramdf)
 
 
 paramtraj<-ggplot(paramdf) +
@@ -374,9 +363,9 @@ paramdfselec$genericscenario<-dplyr::case_match(paramdfselec$scenario,
       "autocorr"~"stationary",
       "decLinearProd"~"linear~decline",
       "sineProd"~"sine~fluctuation",
-      "shiftProd"~"shift~decline",
+      "shiftProd"~"shift~down+up",
     "decLinearCap"~"linear~decline",
-    "shiftCap"~"shift~decline",
+    "shiftCap"~"shift~down",
     "regimeProdCap"~ "shift~-~both",
     "decLinearProdshiftCap"~"mixed~trend"
       )   
@@ -391,8 +380,6 @@ paramdfselec$paramvary<-dplyr::case_match(paramdfselec$scenario,
     "regimeProdCap"~ "both",
     "decLinearProdshiftCap"~"both"
       ) 
-
-
 
 paramdfselec$paramvary<-factor(paramdfselec$paramvary, 
     levels=c(".","log(alpha)","S[max]","both"))
@@ -412,19 +399,11 @@ paramtrajselec<-ggplot(paramdfselec) +
 paramtrajselec
 
 
-
-
-
-
-
-
-
 ggsave(
       filename = "C:/Users/worc/Documents/timevar/Best-Practices-time-varying-salmon-SR-models/figures/scenarios/params_selecmain.png",
       plot = SRexampleselec, 
       width = 8, height = 4
     )
-
 
 
 multi.page.scenario <- ggarrange( paramtrajselec,SRexampleselec,
@@ -495,7 +474,7 @@ SRexampleselec<-  ggplot(SRdfselec) +
 SRexampleselec
 
 
-plot2<-logatrajselec/ smaxtrajselec/SRexampleselec
+plot2 <-plot_grid(logatrajselec, smaxtrajselec, SRexampleselec, ncol=1)
 plot2
 
 ggsave(
@@ -1147,7 +1126,7 @@ alldat_ER <- list()
 for(a in seq_len(nrow(simPar_ER))){
 
 
-  simData_ER[[a]] <- readRDS(paste0("outs/SamSimOutputs/", 
+  simData_ER[[a]] <- readRDS(paste0("outs/SamSimOutputs/simData/", 
                           simPar_ER$nameOM[a],"/",
                           simPar_ER$scenario[a],"/",
                           paste(simPar_ER$nameOM[a],"_", 
@@ -1157,34 +1136,85 @@ for(a in seq_len(nrow(simPar_ER))){
   dat <- simData_ER[[a]] 
   dat <- dat[dat$year>(max(dat$year)-46),]
   dat <- dat[!is.na(dat$obsRecruits),]
-  
-  dat <- dat[dat$iteration==sample(unique(dat$iteration),1),]
+  dat$uMSY <- umsyCalc(dat$alpha)
   dat$scenario <- simPar_ER$scenario[a]
   alldat_ER[[a]]<-dat
   
-  S <- seq(0,750000,by=1000)
-  R <- matrix(NA, ncol=length(unique(dat$year)),nrow=length(S))
-  
-  for(i in unique(dat$year)){
-    
-    alpha<- dat$alpha[dat$year==i]
-    beta<- dat$beta[dat$year==i]
-    R[,which(unique(dat$year)==i)]<-S*exp(alpha-beta*S)
-  }
-  
-  actualSR_ER[[a]]<-data.frame(year=rep(unique(dat$year),
-                                            each=length(S)),
-                                   spawners=S,
-                                   recruits=c(R),
-                                   scenario=simPar_ER$scenario[a])
-  
 
 
-  
-
-  
   
 }
+ERdata <- do.call(rbind, alldat_ER)
+
+head(ERdata)
+ERdata <- ERdata[ERdata$iteration%in%sample(unique(ERdata$iteration),100),]
+unique(ERdata$scenario)
+
+ERdata$ERtrend<-case_match(ERdata$scenario,"decLinearProd_highERLowError"~"highER",
+                                   "decLinearProd_ShiftERLowError"~"ShiftER", 
+                                   "decLinearProd_lowERLowError"~"lowER",
+                                   "incLinearProd_highERLowError"~"highER",  
+                                   "incLinearProd_ShiftERLowError"~"ShiftER",
+                                   "incLinearProd_lowERLowError"~"lowER",  
+                                   "highERHighError"~"highER",               
+                                   "highERLowError"~"highER",               
+                                   "lowERHighError"~"lowER",                
+                                   "lowERLowError"~"lowER",                
+                                    "ShiftERHighError"~"ShiftER",              
+                                    "ShiftERLowError"~"ShiftER",               
+                                    "trendERHighError"~"trendER",              
+                                    "trendERLowError"~"trendER")
+
+
+ERdata$ERerror<-case_match(ERdata$scenario,"decLinearProd_highERLowError"~"LowError",
+                                   "decLinearProd_ShiftERLowError"~"LowError", 
+                                   "incLinearProd_highERLowError"~"LowError",  
+                                   "incLinearProd_ShiftERLowError"~"LowError", 
+                                   "decLinearProd_lowERLowError"~"LowError",
+                                   "incLinearProd_lowERLowError"~"LowError",
+                                   "highERHighError"~"HighError",               
+                                   "highERLowError"~"LowError",               
+                                   "lowERHighError"~"HighError",                
+                                   "lowERLowError"~"LowError",                
+                                    "ShiftERHighError"~"HighError",              
+                                    "ShiftERLowError"~"LowError",               
+                                    "trendERHighError"~"HighError",              
+                                    "trendERLowError"~"LowError")
+
+ERdata$dynamics<-case_match(ERdata$scenario,"decLinearProd_highERLowError"~"decLinear",
+                                   "decLinearProd_ShiftERLowError"~"decLinear", 
+                                   "decLinearProd_lowERLowError"~"decLinear",
+                                   "incLinearProd_highERLowError"~"incLinear",  
+                                   "incLinearProd_ShiftERLowError"~"incLinear", 
+                                   "incLinearProd_lowERLowError"~"incLinear", 
+                                   "highERHighError"~"stationary",               
+                                   "highERLowError"~"stationary",               
+                                   "lowERHighError"~"stationary",                
+                                   "lowERLowError"~"stationary",                
+                                    "ShiftERHighError"~"stationary",              
+                                    "ShiftERLowError"~"stationary",               
+                                    "trendERHighError"~"stationary",              
+                                    "trendERLowError"~"stationary")
+
+
+
+Ertrajectories <- ggplot(ERdata) +
+geom_line(aes(x=year-54,y=ER,group=iteration),alpha=.5, color="gray70") +
+geom_line(data=ERdata[ERdata$iteration==min(ERdata$iteration),],
+    aes(x=year-54,y=targetER),alpha=.5,color="darkred", linewidth=2) +
+geom_line(data=ERdata[ERdata$iteration==min(ERdata$iteration),],
+    aes(x=year-54,y=uMSY),alpha=.5,color="darkblue", linewidth=2) +
+ mytheme + 
+xlab("year") +
+facet_grid(ERerror + dynamics  ~ ERtrend) 
+
+ 
+ggsave(
+  filename = "../Best-Practices-time-varying-salmon-SR-models/figures/scenarios/ERtrend.png", 
+  plot = Ertrajectories, 
+  width = 12, height = 6
+)    
+
 
 
 ggplot(dat) +
@@ -1193,4 +1223,4 @@ ggplot(dat) +
       theme_bw(14) + 
       xlab("year") + 
       scale_color_discrete(name = "Umsy") +
-      labs(title = simPar$nameOM[a])
+      labs(title = simPar_ER$nameOM[a])

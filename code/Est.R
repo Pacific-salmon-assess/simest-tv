@@ -25,8 +25,7 @@ library(dplyr)
 library(here)
 library(rstan)
 #source("sgen_functions.R")
-source("code/utils.R")
-#TODO estimate only for 40 yrs of data.
+source("code/utils.R") #TODO estimate only for 40 yrs of data.
 
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())

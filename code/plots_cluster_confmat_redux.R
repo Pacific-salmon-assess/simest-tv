@@ -31,16 +31,28 @@ scenNames <- unique(simPar$scenario)
 res1<-readRDS(file = "outs/simest/generic/resbase1.rds")
 res2<-readRDS(file = "outs/simest/generic/resbase2.rds")
 
-res<-rbind(res1,res2)#,resstan16,resstan712)
+
+res<-rbind(res1,res2)
+
+aggregate(res$conv_warning,list(res$scenario,res$model),function(x){sum(x,na.rm=T)})
+
+res$iteration[res$scenario=="regimeCap"&res$model=="hmmab"&res$conv_warning==1]
 
 res<-res[res$convergence==0,]
+aic_tva=subset(res,parameter=='AIC'&method=='MLE')
+
+aggregate(aic_tva$conv_warning,list(aic_tva$scenario,aic_tva$model),function(x){sum(x,na.rm=T)})
+
+aic_tva[1:100,]
+
+names(res)
+
 
 
 res_tva<-res[res$model%in%c("simple", "autocorr", "rwa","hmma")&
 res$scenario%in%c("stationary","autocorr","decLinearProd","regimeProd"),]
 
 #head(res_tva)
-
 
 aic_tva=subset(res_tva,parameter=='AIC'&method=='MLE')
 bic_tva=subset(res_tva,parameter=='BIC'&method=='MLE')
@@ -110,7 +122,6 @@ for(a in seq_along(scn)){
 
 }
 
-
 conf_matrix$eqem_om <- dplyr::recode(conf_matrix$OM, 
       "stationary"="stationary",
       "autocorr"="autocorr",
@@ -145,10 +156,10 @@ paic_alphascn=ggplot(data =  conf_matrix, mapping = aes(x = OM2, y = EM)) +
                aes(x=simulated-.49, xend=simulated+.49, y=estimated-.49, yend=estimated+.49), 
                color="gray70", linewidth=2)+
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1)) +
-  xlab(expression(paste("simple and time-varying", ~log(alpha), " scenarios")))+ylab("Estimation Model")
+  xlab(expression(paste("stationary and time-varying", ~log(alpha), " scenarios")))+ylab("Estimation Model")
 paic_alphascn
 
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base_redux/AIC_alphascn_MLE.png", 
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base_redux/AIC_alphascn_MLE_marginal.png", 
   plot=paic_alphascn, width = 6, height = 6)
 
 
@@ -164,10 +175,10 @@ pbic_alphascn=ggplot(data =  conf_matrix, mapping = aes(x = OM2, y = EM)) +
                aes(x=simulated-.49, xend=simulated+.49, y=estimated-.49, yend=estimated+.49), 
                color="gray70", linewidth=2)+
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
-  xlab(expression(paste("simple and time-varying", ~log(alpha), " scenarios")))+ylab("Estimation Model")
+  xlab(expression(paste("stationary and time-varying", ~log(alpha), " scenarios")))+ylab("Estimation Model")
 pbic_alphascn
 
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base_redux/BIC_alphascn_MLE.png", 
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base_redux/BIC_alphascn_MLE_marginal.png", 
   plot=pbic_alphascn, width = 6, height = 6)
 
 
@@ -183,7 +194,7 @@ plfo_alphascn=ggplot(data =  conf_matrix, mapping = aes(x = OM2, y = EM)) +
                aes(x=simulated-.49, xend=simulated+.49, y=estimated-.49, yend=estimated+.49), 
                color="gray70", linewidth=2)+
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
-  xlab(expression(paste("simple and time-varying", ~log(alpha), " scenarios")))+ylab("Estimation Model")
+  xlab(expression(paste("stationary and time-varying", ~log(alpha), " scenarios")))+ylab("Estimation Model")
 plfo_alphascn
 
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base_redux/LFO_alphascn_MLE.png",
@@ -263,7 +274,7 @@ pmclfo_alphascn=ggplot(data =  conf_matrix_lfo, mapping = aes(x = OM2, y = EM)) 
                aes(x=simulated-.49, xend=simulated+.49, y=estimated-.49, yend=estimated+.49), 
                color="gray70", linewidth=2)+
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
-  xlab(expression(paste("simple and time-varying", ~log(alpha), " scenarios")))+ylab("Estimation Model")
+  xlab(expression(paste("stationary and time-varying", ~log(alpha), " scenarios")))+ylab("Estimation Model")
 pmclfo_alphascn
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/LFO_alphascn_MCMC.png", 
   plot=pmclfo_alphascn, width = 6, height = 6)
@@ -376,8 +387,6 @@ conf_matrix_tvb$diag<-conf_matrix_tvb$eqem_om==conf_matrix_tvb$EM
 
 
 
-head(conf_matrix)
-
 conf_matrix_tvb$OM2<-dplyr::case_match(conf_matrix_tvb$OM,
   "stationary"~"stationary",
       "autocorr"~"autocorr",
@@ -404,7 +413,7 @@ paic_smaxscn=ggplot(data =  conf_matrix_tvb, mapping = aes(x = OM2, y = EM)) +
                aes(x=simulated-.49, xend=simulated+.49, y=estimated-.49, yend=estimated+.49), 
                color="gray70", linewidth=2)+
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1)) +
-  xlab(expression(paste("simple and time-varying", ~S[max], ~"or both")))+ylab("Estimation Model")
+  xlab(expression(paste("stationary and time-varying", ~S[max], ~"or both")))+ylab("Estimation Model")
 paic_smaxscn
 
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base_redux/AIC_smaxscn_MLE.png", 
@@ -423,7 +432,7 @@ pbic_smaxscn=ggplot(data =  conf_matrix_tvb, mapping = aes(x = OM2, y = EM)) +
                aes(x=simulated-.49, xend=simulated+.49, y=estimated-.49, yend=estimated+.49), 
                color="gray70", linewidth=2)+
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
-  xlab(expression(paste("simple and time-varying", ~S[max], ~"or both")))+ylab("Estimation Model")
+  xlab(expression(paste("stationary and time-varying", ~S[max], ~"or both")))+ylab("Estimation Model")
 pbic_smaxscn
 
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base_redux/BIC_smaxscn_MLE.png", 
@@ -442,7 +451,7 @@ plfo_smaxscn=ggplot(data =  conf_matrix_tvb, mapping = aes(x = OM2, y = EM)) +
                aes(x=simulated-.49, xend=simulated+.49, y=estimated-.49, yend=estimated+.49), 
                color="gray90", linewidth=2)+
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
-  xlab(expression(paste("simple and time-varying", ~S[max], ~"scenarios")))+ylab("Estimation Model")
+  xlab(expression(paste("stationary and time-varying", ~S[max], ~"scenarios")))+ylab("Estimation Model")
 plfo_smaxscn
 
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base_redux/LFO_smaxscn_MLE.png",
@@ -524,7 +533,7 @@ pmclfo_smaxscn=ggplot(data =  conf_matrix_lfo, mapping = aes(x = OM2, y = EM)) +
                aes(x=simulated-.49, xend=simulated+.49, y=estimated-.49, yend=estimated+.49), 
                color="gray70", linewidth=2)+
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
-  xlab(expression(paste("simple and time-varying", ~S[max], ~"or both")))+ylab("Estimation Model")
+  xlab(expression(paste("stationary and time-varying", ~S[max], ~"or both")))+ylab("Estimation Model")
 pmclfo_smaxscn
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/LFO_smaxscn_MCMC.png", 
   plot=pmclfo_smaxscn, width = 6, height = 6)

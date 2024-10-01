@@ -30,30 +30,22 @@ simPar <- read.csv("data/sigmamed_sensitivity/SimPars.csv")
 ## Store relevant object names to help run simulation 
 scenNames <- unique(simPar$scenario)
 
-res1<-readRDS(file = "outs/simest/sigmamed_sensitivity/res_sigmed.rds")
-res2<-readRDS(file = "outs/simest/sigmamed_sensitivity/res_sigmed_227.rds")
-
-
-restmb<-rbind(res1,res2)
+restmb<-readRDS(file = "outs/simest/sigmamed_sensitivity/res_sigmed.rds")
+#res2<-readRDS(file = "outs/simest/sigmamed_sensitivity/res_sigmed_227.rds")
 
 
 resstan1<-readRDS(file = "outs/simest/sigmamed_sensitivity/resstan_sigmed1.rds")
 resstan2<-readRDS(file = "outs/simest/sigmamed_sensitivity/resstan_sigmed2.rds")
 resstan<-rbind(resstan1,resstan2)
-resstan$method<-"HMC"
-#resstan<-readRDS(file = "outs/simest/generic/resstan.rds")
-dim(resstan)
-unique(res$parameter)
-unique(resstan$scenario)
-head(res)
+
+
 res<-rbind(restmb,resstan)
-#res<-rbind(restmb,resstan)
 
 #res<-resstan
 res$parameter[res$parameter=="Smax"]<-"smax"
+res$parameter[res$parameter=="alpha"]<-"logalpha"
 
-resparam<-res[res$parameter%in%c("alpha","smax","smsy","sgen","umsy","sigma"),]
-unique(resparam$convergence)
+resparam<-res[res$parameter%in%c("logalpha","smax","smsy","sgen","umsy","sigma"),]
 
 convstat<-aggregate(resparam$convergence,
     list(scenario=resparam$scenario,
@@ -95,7 +87,7 @@ df<-reshape2::melt(resparam, id.vars=c("parameter","iteration","scenario","metho
 #df_alpha<-df[df$parameter%in%c("alpha"),]
 df$col<-factor(df$variable,levels=c("median","mode", "sim"))
 unique(df$scenario)
-unique(summarydf_alpha$scenario)
+
 
 df$scenario<-case_match(
 df$scenario,
@@ -119,6 +111,43 @@ df$scenario<-factor(df$scenario,levels=c("stationary",
                                         "regimeProdCap",
                                         "decLinearProdshiftCap"  ))
 
+
+df$scentype<-dplyr::case_match(df$scenario, 
+      "stationary"~"stationary",
+      "decLinearProd"~"log(alpha)",
+      "sineProd"~"log(alpha)",
+      "regimeProd"~"log(alpha)",
+      "decLinearCap"~"S[max]",
+      "regimeCap"~"S[max]",
+      "shiftCap"~"S[max]", 
+      "regimeProdCap"~"both",
+      "decLinearProdshiftCap"~"both"
+      )   
+df$scentype<-factor(df$scentype, levels=c("stationary","log(alpha)",
+    "S[max]","both" )  ) 
+
+
+
+df$scendesc<-dplyr::case_match(df$scenario, 
+      "stationary"~".",
+      "decLinearProd"~"linear~decline",
+      "sineProd"~"sine~trend",
+      "regimeProd"~"shift~up+down",
+      "decLinearCap"~"linear~decline",
+      "regimeCap"~"shift~up+down",
+      "shiftCap"~"shift~down", 
+      "regimeProdCap"~"regime~both",
+      "decLinearProdshiftCap"~"trend+shift"
+      )   
+
+
+df$scendesc<-factor(df$scendesc, levels=c(".","linear~decline",
+    "sine~trend","shift~up+down","shift~down",
+    "regime~both","trend+shift") ) 
+     
+
+
+
 unique(df$model)
 df$model<-factor(df$model,levels=c("simple",
                                    "autocorr", 
@@ -130,27 +159,41 @@ df$model<-factor(df$model,levels=c("simple",
                                    "hmmab"  ))
 
 
-unique(df$scenario)
 
-df_alpha_sim<- df[df$parameter=="alpha"&df$variable=="sim",]
+summarydf<-aggregate(df$value,by=list(scenario=df$scenario, 
+    parameter=df$parameter,
+    variable=df$variable,
+    method=df$method, 
+    model=df$model,
+    by=df$by,
+    scentype=df$scentype,
+    scendesc=df$scendesc ),
+    function(x) {quantile(x,probs = c(0.025, .5, 0.975),na.rm=TRUE)})
+summarydf<-do.call(data.frame, summarydf)
 
-df_alpha_est<- df[df$parameter=="alpha"&df$variable=="mode",]
+summarydf_alpha<- summarydf[summarydf$parameter=="logalpha"&summarydf$variable=="mode",]
 
-summarydf_alpha<-aggregate(df_alpha_est$value,by=list(scenario=df_alpha_est$scenario, 
-    method=df_alpha_est$method, 
-    model=df_alpha_est$model,
-    by=df_alpha_est$by ),
-    function(x) {quantile(x,probs = c(0.025, .5, 0.975))})
-summarydf_alpha<-do.call(data.frame, summarydf_alpha)
-
-summarydf_alpha_sim<-aggregate(df_alpha_sim$value,by=list(scenario=df_alpha_est$scenario, 
-    method=df_alpha_est$method, 
-    model=df_alpha_est$model,
-    by=df_alpha_est$by ),
-    function(x) {unique(x)})
+summarydf_alpha_sim<- summarydf[summarydf$parameter=="logalpha"&summarydf$variable=="sim",]
 
 
-unique(df_alpha_sim$scenario)
+summarydf[summarydf$parameter=="sigma"&summarydf$variable=="sim",]
+
+plotalpha<-ggplot() + 
+geom_pointrange(data=summarydf_alpha,aes(x=by-54,y= x.50.,ymin = x.2.5., ymax = x.97.5., col=method),alpha=.6)+
+geom_line(data=summarydf_alpha_sim,aes(x=by-54,y= x.50.),color="black", alpha=.6,linewidth=1.2)+
+scale_color_viridis_d(begin=.1, end=.8) +
+scale_fill_viridis_d(begin=.1, end=.8) +
+coord_cartesian(ylim = c(0.4,2.3))+ 
+mytheme+ 
+ylab(expression(log(alpha))) +
+xlab("year") +
+ggtitle(expression(paste(sigma,"=0.3"))) +
+facet_grid(scentype+scendesc~model, scales="free_y",labeller =  label_parsed)#,
+plotalpha
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/sig_med/compareMCMC_MLE_sigmed_alpha.png",
+    plot=plotalpha, width = 15,height = 14)
+
+
 
 summarydf_alpha_sim1<-summarydf_alpha_sim[summarydf_alpha_sim$scenario%in%c( "decLinearProd",        
 "regimeProd",     "sineProd",   "stationary" ),]#&summarydf_alpha_sim$model%in%c( "hmma","hmmb" "hmmab", "rwa",  "rwb", "rwab", "simple","autocorr" ),]
@@ -198,23 +241,28 @@ ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/si
 #b estimates
 
 
-df_smax_sim<- df[df$parameter=="smax"&df$variable=="sim",]
-df_smax_est<- df[df$parameter=="smax"&df$variable=="mode",]
+summarydf_smax<- summarydf[summarydf$parameter=="smax"&summarydf$variable=="mode",]
+
+summarydf_smax_sim<- summarydf[summarydf$parameter=="smax"&summarydf$variable=="sim",]
 
 
-summarydf_smax<-aggregate(df_smax_est$value,by=list(scenario=df_smax_est$scenario, 
-    method=df_smax_est$method, 
-    model=df_smax_est$model,
-    by=df_smax_est$by ),
-    function(x) {quantile(x,probs = c(0.025, .5, 0.975))})
-summarydf_smax<-do.call(data.frame, summarydf_smax)
 
-summarydf_smax_sim<-aggregate(df_smax_sim$value,by=list(scenario=df_smax_est$scenario, 
-    method=df_smax_est$method, 
-    model=df_smax_est$model,
-    by=df_smax_est$by ),
-    function(x) {unique(x)})
+plotsmax<-ggplot() + 
+geom_pointrange(data=summarydf_smax,aes(x=by-54,y= x.50./1000,ymin = x.2.5./1000, 
+    ymax = x.97.5./1000, col=method),alpha=.6)+
+geom_line(data=summarydf_smax_sim,aes(x=by-54,y= x.50./1000),color="black", alpha=.6,linewidth=1.2)+
+scale_color_viridis_d(begin=.1, end=.8) +
+scale_fill_viridis_d(begin=.1, end=.8) +
+mytheme + 
+ylab(expression(S[max]~"(1000s)")) +
+xlab("year") +
+ggtitle(expression(paste(sigma,"=0.3"))) +
+coord_cartesian(ylim = c(60000,400000)/1000)+ 
+facet_grid(scentype+scendesc~model, scales="free_y",labeller =  label_parsed)
+plotsmax
 
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/sig_med/compareMCMC_MLE_sigmed_smax.png",
+    plot=plotsmax, width = 15,height = 14)
 
 
 
@@ -266,40 +314,28 @@ dim(summarydf_smax2)
 #smsy estimates
 
 
-df_smsy_sim<- df[df$parameter=="smsy"&df$variable=="sim",]
+summarydf_smsy<- summarydf[summarydf$parameter=="smsy"&summarydf$variable=="mode",]
 
-df_smsy_est<- df[df$parameter=="smsy"&df$variable=="mode",]
-
-tdf<-df_smsy_est[df_smsy_est$model=="hmmab"&df_smsy_est$scenario=="sineProd"&df_smsy_est$iteration==40,]
-
-sdf<-df_smsy_sim[df_smsy_sim$method=="MLE"&df_smsy_sim$model=="hmmab"&
-df_smsy_sim$scenario=="sineProd"&df_smsy_sim$iteration==40,]
+summarydf_smsy_sim<- summarydf[summarydf$parameter=="smsy"&summarydf$variable=="sim",]
 
 
-summarydf_smsy<-aggregate(df_smsy_est$value,by=list(scenario=df_smsy_est$scenario, 
-    method=df_smsy_est$method, 
-    model=df_smsy_est$model,
-    by=df_smsy_est$by ),
-    function(x) {quantile(x,probs = c(0.025, .5, 0.975))})
-summarydf_smsy<-do.call(data.frame, summarydf_smsy)
 
-summary(df_smsy_sim)
+plotsmsy<-ggplot() + 
+geom_pointrange(data=summarydf_smsy,aes(x=by-54,y= x.50./1000,ymin = x.2.5./1000, 
+    ymax = x.97.5./1000, col=method),alpha=.6)+
+geom_line(data=summarydf_smsy_sim,aes(x=by-54,y= x.50./1000),color="black", alpha=.6,linewidth=1.2)+
+scale_color_viridis_d(begin=.1, end=.8) +
+scale_fill_viridis_d(begin=.1, end=.8) +
+mytheme + 
+ylab(expression(S[MSY]~"(1000s)")) +
+xlab("year") +
+ggtitle(expression(paste(sigma,"=0.3"))) +
+coord_cartesian(ylim = c(20000,150000)/1000)+ 
+facet_grid(scentype+scendesc~model, scales="free_y",labeller =  label_parsed)
+plotsmsy
 
-summarydf_smsy_sim<-aggregate(df_smsy_sim$value,by=list(scenario=df_smsy_est$scenario, 
-    method=df_smsy_est$method, 
-    model=df_smsy_est$model,
-    by=df_smsy_est$by ),
-    function(x) {unique(x)})
-
-summarydf_smsy_sim<-summarydf_smsy_sim[summarydf_smsy_sim$method=="MLE",]
-
-summarydf_smsy<-aggregate(df_smsy_est$value,by=list(scenario=df_smsy_est$scenario, 
-    method=df_smsy_est$method, 
-    model=df_smsy_est$model,
-    by=df_smsy_est$by ),
-    function(x) {quantile(x,probs = c(0.025, .5, 0.975))})
-summarydf_smsy<-do.call(data.frame, summarydf_smsy)
-
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/MCMC_MLE_comp/sig_med/compareMCMC_MLE_sigmed_smsy.png",
+    plot=plotsmsy, width = 15,height = 14)
 
 
 
