@@ -869,7 +869,7 @@ geom_hline(yintercept=0,color="black", alpha=.6,linewidth=1.2)+
  coord_cartesian(ylim = c(0,5.5))+ 
    xlab("estimation model") +
  geom_text(data = meanabspbiasdf_redux, aes(x=model2,y=Inf,hjust=.5,
-                vjust=1.7,label=labels), size=5)+
+                vjust=1.7,label=labels), size=4.5)+
 mytheme
 psmsy_erscn_boxplot_abs
 
@@ -888,7 +888,7 @@ multi.page.abs.smsy_erbxp_title
 
 
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/summary_figs/bias_trends_boxplot_smsy_ERscn.png",
-    plot=multi.page.abs.smsy_erbxp_title, width = 12,height = 9, bg = "white")
+    plot=multi.page.abs.smsy_erbxp_title, width = 15,height = 9, bg = "white")
 
 
 

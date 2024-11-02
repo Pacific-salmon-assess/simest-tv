@@ -3,10 +3,9 @@
 #November 2022
 #============================================
 
-
-
 library(gridExtra)
 library(ggplot2)
+library(ggpubr)
 source("code/utils.R")
 
 
@@ -25,13 +24,9 @@ mytheme = list(
 simPar <- read.csv("data/generic/SimPars.csv")
 
 ## Store relevant object names to help run simulation 
-scenNames <- unique(simPar$scenario)
 
-res1<-readRDS(file = "outs/simest/generic/resbase1.rds")
-res2<-readRDS(file = "outs/simest/generic/resbase2.rds")
 
-res<-rbind(res1,res2)
-
+res<-readRDS(file = "outs/simest/generic/resbase.rds")
 res<-res[res$convergence==0,]
 
 aic=subset(res,parameter=='AIC'&method=='MLE')
@@ -40,7 +35,6 @@ lfo=subset(res,parameter=='LFO'&method=='MLE')
 
 lfo<-lfo[lfo$model %in% c("simple","autocorr","rwa","rwb","rwab",
     "hmma","hmmb","hmmab"),]
-
 
 scn<-factor(unique(aic$scenario), levels=c(
   "stationary", 
@@ -116,8 +110,6 @@ for(a in seq_along(scn)){
 
 }
 
-unique(conf_matrix$OM)
-
 conf_matrix$eqem_om <- dplyr::recode(conf_matrix$OM, 
       "stationary"="stationary",
       "autocorr"="autocorr",
@@ -135,11 +127,62 @@ conf_matrix$eqem_om <- dplyr::recode(conf_matrix$OM,
 conf_matrix$diag<-conf_matrix$eqem_om==conf_matrix$EM
 
 
+conf_matrix$scentype<-dplyr::case_match(conf_matrix$OM, 
+      "stationary"~"stationary",
+      "autocorr"~"autocorrelation",
+      "sigmaShift"~"sigma", 
+      "decLinearProd"~"log(alpha)",
+      "sineProd"~"log(alpha)",
+      "regimeProd"~"log(alpha)",
+      "shiftProd"~"log(alpha)",
+      "decLinearCap"~"Smax",
+      "regimeCap"~"Smax",
+      "shiftCap"~"Smax", 
+      "regimeProdCap"~"both",
+      "decLinearProdshiftCap"~"both"
+      )   
 
-paic=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
+conf_matrix$scendesc<-dplyr::case_match(conf_matrix$OM, 
+      "stationary"~"",
+      "autocorr"~"",
+      "sigmaShift"~"shift up", 
+      "decLinearProd"~"linear decline",
+      "sineProd"~"sine trend",
+      "regimeProd"~"shift up + down",
+      "shiftProd"~"shift down + up",
+      "decLinearCap"~"linear decline",
+      "regimeCap"~"shift up + down",
+      "shiftCap"~"shift down", 
+      "regimeProdCap"~"regime both",
+      "decLinearProdshiftCap"~"trend & shift"
+      )   
+ regimeProd shiftProd decLinearCap regimeCap shiftCap decLinearProdshiftCap regimeProdCap
+
+conf_matrix$fullname <- apply( conf_matrix[ , c("scendesc", "scentype") ] , 1 , paste , collapse = " " )
+
+
+conf_matrix$fullname<-factor(conf_matrix$fullname, levels=c(
+  " stationary",
+  "shift up sigma",
+  " autocorrelation",           
+  "linear decline log(alpha)",
+  "sine trend log(alpha)",  
+  "shift up + down log(alpha)", 
+  "shift down + up log(alpha)",       
+  "linear decline Smax",
+  "shift up + down Smax",              
+  "shift down Smax",           
+  "regime both both",           
+ "trend & shift both"         
+ ) )
+
+
+
+paic=ggplot(data = conf_matrix, mapping = aes(x = fullname, y = EM)) +
   geom_tile(aes(fill = w_AIC), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(w_AIC,2)), vjust = 1,size=6) +
   ggtitle("AIC")+
+  scale_x_discrete(labels = ~ stringr::str_wrap(as.character(.x), 15))+
   scale_fill_gradient(low="white", high="#009194")  +
   geom_segment(data=transform(subset(conf_matrix, !!diag), 
                     simulated=as.numeric(OM), 
@@ -150,15 +193,17 @@ paic=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   xlab("Simulation Scenario")+ylab("Estimation Model")
 paic
 
+
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/AIC_MLE.png", 
   plot=paic, width = 10, height = 8)
 
 
 
-pbic=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
+pbic=ggplot(data =  conf_matrix, mapping = aes(x = fullname, y = EM)) +
   geom_tile(aes(fill = BIC), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(BIC,2)), vjust = 1,size=6) +
   ggtitle("BIC")+
+  scale_x_discrete(labels = ~ stringr::str_wrap(as.character(.x), 15))+
   scale_fill_gradient(low="white", high="#009194")  +
   geom_segment(data=transform(subset(conf_matrix, !!diag), 
                     simulated=as.numeric(OM), 
@@ -199,10 +244,7 @@ ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matric
 resstan1<-readRDS(file = "outs/simest/generic/resstan1.rds")
 resstan2<-readRDS(file = "outs/simest/generic/resstan2.rds")
 resstan<-rbind(resstan1,resstan2)
-head(resstan)
 
-
-unique(resstan$parameter)
 
 aic=subset(resstan,parameter=='AIC')
 bic=subset(resstan,parameter=='BIC')
@@ -353,13 +395,12 @@ EM=c("stationary",
      "dynamic.b","regime.b",
      "dynamic.ab","regime.ab")
 ##Confusion matrices
-conf_matrix<-expand.grid(EM=EM,OM=scn)
-conf_matrix$LFOmcmc=NA
+conf_matrix_lfo<-expand.grid(EM=EM,OM=scn)
+conf_matrix_lfo$LFOmcmc=NA
 
 
 cn3<-list()
 lfomcmc_set<-list()
-
 
 o=0
 for(a in seq_along(scn)){
@@ -369,20 +410,18 @@ for(a in seq_along(scn)){
   lfomcmc_set[[a]]=tidyr::spread(lfoa[,-9],key=model,value=est)
   nsim<-length(unique( lfomcmc_set[[a]]$iteration))
   lfomcmc_set[[a]]=lfomcmc_set[[a]][c(15,8,12,14,13,9,11,10)] #reorder estimation models
-  head(lfomcmc_set[[a]])
 
   sc3=apply(lfomcmc_set[[a]],1,which.max)
   cn3[[a]]=summary(factor(sc3,levels=seq(1:ncol(lfomcmc_set[[a]]))))/nsim
 
-
   myseq<-seq(from=o+1, length.out=length(EM))
-  conf_matrix$LFOmcmc[myseq]<-cn3[[a]]
+  conf_matrix_lfo$LFOmcmc[myseq]<-cn3[[a]]
   o=max(myseq)
 
 }
 
 
-conf_matrix$eqem_om <- dplyr::recode(conf_matrix$OM, 
+conf_matrix_lfo$eqem_om <- dplyr::recode(conf_matrix_lfo$OM, 
       "stationary"="stationary",
       "autocorr"="autocorr",
       "sigmaShift"="stationary", 
@@ -396,15 +435,65 @@ conf_matrix$eqem_om <- dplyr::recode(conf_matrix$OM,
       "shiftCap"="regime.b", 
       "regimeProdCap"="regime.ab",
       )   
-conf_matrix$diag<-conf_matrix$eqem_om==conf_matrix$EM
+conf_matrix_lfo$diag<-conf_matrix_lfo$eqem_om==conf_matrix_lfo$EM
 
 
+conf_matrix_lfo$scentype<-dplyr::case_match(conf_matrix_lfo$OM, 
+      "stationary"~"stationary",
+      "autocorr"~"autocorrelation",
+      "sigmaShift"~"sigma", 
+      "decLinearProd"~"log(alpha)",
+      "sineProd"~"log(alpha)",
+      "regimeProd"~"log(alpha)",
+      "shiftProd"~"log(alpha)",
+      "decLinearCap"~"Smax",
+      "regimeCap"~"Smax",
+      "shiftCap"~"Smax", 
+      "regimeProdCap"~"both",
+      "decLinearProdshiftCap"~"both"
+      )   
 
-pmclfo=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
+conf_matrix_lfo$scendesc<-dplyr::case_match(conf_matrix_lfo$OM, 
+      "stationary"~"",
+      "autocorr"~"",
+      "sigmaShift"~"shift up", 
+      "decLinearProd"~"linear decline",
+      "sineProd"~"sine trend",
+      "regimeProd"~"shift up + down",
+      "shiftProd"~"shift down + up",
+      "decLinearCap"~"linear decline",
+      "regimeCap"~"shift up + down",
+      "shiftCap"~"shift down", 
+      "regimeProdCap"~"regime both",
+      "decLinearProdshiftCap"~"trend & shift"
+      )   
+ 
+conf_matrix_lfo$fullname <- apply( conf_matrix_lfo[ , c("scendesc", "scentype") ] ,
+                                   1 , paste , collapse = " " )
+
+
+conf_matrix_lfo$fullname<-factor(conf_matrix_lfo$fullname, levels=c(
+  " stationary",
+  "shift up sigma",
+  " autocorrelation",           
+  "linear decline log(alpha)",
+  "sine trend log(alpha)",  
+  "shift up + down log(alpha)", 
+  "shift down + up log(alpha)",       
+  "linear decline Smax",
+  "shift up + down Smax",              
+  "shift down Smax",           
+  "regime both both",           
+ "trend & shift both"         
+ ) )
+
+
+pmclfo=ggplot(data =  conf_matrix_lfo, mapping = aes(x = fullname, y = EM)) +
   geom_tile(aes(fill = LFOmcmc), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(LFOmcmc,2)), vjust = 1, size=6) +
   ggtitle("LFO MCMC")+
   scale_fill_gradient(low="white", high="#009194")  +
+  scale_x_discrete(labels = ~ stringr::str_wrap(as.character(.x), 15))+
   geom_segment(data=transform(subset(conf_matrix, !!diag), 
                     simulated=as.numeric(OM), 
                     estimated=as.numeric(EM)), 
@@ -416,6 +505,11 @@ pmclfo
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/LFO_MCMC.png", 
   plot=pmclfo, width = 10, height = 8)
 
+
+
+multi.confusion <- ggarrange(paic,pbic, pmclfo,
+                        nrow = 2, ncol = 2)
+multi.confusion
 
 #lfo with 3 last yrs average
 

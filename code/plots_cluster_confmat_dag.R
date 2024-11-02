@@ -13,12 +13,9 @@ source("code/utils.R")
 mytheme = list(
     theme_classic(16)+
         theme(panel.background = element_blank(),strip.background = element_rect(colour=NA, fill=NA),panel.border = element_rect(fill = NA, color = "black"),
-              legend.title = element_blank(),legend.position="bottom", strip.text = element_text(face="bold", size=12),
+              legend.position="bottom", strip.text = element_text(face="bold", size=12),
               axis.text=element_text(face="bold"),axis.title = element_text(face="bold"),plot.title = element_text(face = "bold", hjust = 0.5,size=15))
 )
-
-
-
 
 #========================================================================================================
 #base case
@@ -28,12 +25,9 @@ simPar <- read.csv("data/generic/SimPars.csv")
 ## Store relevant object names to help run simulation 
 scenNames <- unique(simPar$scenario)
 
-res1<-readRDS(file = "outs/simest/generic/resbase1.rds")
-res2<-readRDS(file = "outs/simest/generic/resbase2.rds")
-
-res<-rbind(res1,res2)#,resstan16,resstan712)
-
+res<-readRDS(file = "outs/simest/generic/resbase.rds")
 res<-res[res$convergence==0,]
+
 
 aic=subset(res,parameter=='AIC'&method=='MLE')
 bic=subset(res,parameter=='BIC'&method=='MLE')
@@ -41,21 +35,6 @@ lfo=subset(res,parameter=='LFO'&method=='MLE')
 
 lfo<-lfo[lfo$model %in% c("simple","autocorr","rwa","rwb","rwab",
     "hmma","hmmb","hmmab"),]
-unique(lfo$model)
-
-
-#lfo$model<-dplyr::recode(lfo$model, 
-#      "simple"="simple",
-#      "autocorr"="autocorr",
-#      "rwa_last5"="rwa",
-#      "rwb_last5"="rwb",
-#      "rwab_last5"="rwab",
-#    "hmma_last5"="hmma",
-#    "hmmb_last5"="hmmb",
-#    "hmmab_last5"="hmmab"
-#      )   
-
-
 
 scn<-factor(unique(aic$scenario), levels=c(
   "stationary", 
@@ -70,7 +49,6 @@ scn<-factor(unique(aic$scenario), levels=c(
   "shiftCap",
   "decLinearProdshiftCap",
   "regimeProdCap" ) )
-
 
 EM=c("stationary",
      "autocorr",
@@ -174,8 +152,6 @@ conf_matrix$eqem_om <- dplyr::recode(conf_matrix$OM,
       )   
 conf_matrix$diag<-conf_matrix$eqem_om==conf_matrix$EM
 
-conf_matrix$EM
-
 
 
 
@@ -195,6 +171,7 @@ paic=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
 paic
 
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/AIC_MLE.png", plot=paic)
+
 
 
 
@@ -241,6 +218,225 @@ write.csv(bict,'./outs/BIC_model_weights_topmodels.csv')
 
 lfot=do.call(rbind.data.frame, mwlfo_set)
 write.csv(lfot,'./outs/LFO_model_weights_topmodels.csv')
+
+
+
+dim(conf_matrix)
+dim(aict)
+
+head(aict)
+aict$EM<-dplyr::case_match(aict$sc1, 
+       1~"stationary",
+      2~"autocorr",
+      3~"dynamic.a", 
+      4~"regime.a",
+      5~"dynamic.b",
+      6~"regime.b",
+      7~"dynamic.ab",
+      8~"regime.ab")  
+
+aicw_conf_matrix<-dplyr::left_join(conf_matrix,aict)
+
+aicw_conf_matrix$scentype<-dplyr::case_match(aicw_conf_matrix$OM, 
+      "stationary"~"stationary",
+      "autocorr"~"autocorrelation",
+      "sigmaShift"~"sigma", 
+      "decLinearProd"~"log(alpha)",
+      "sineProd"~"log(alpha)",
+      "regimeProd"~"log(alpha)",
+      "shiftProd"~"log(alpha)",
+      "decLinearCap"~"Smax",
+      "regimeCap"~"Smax",
+      "shiftCap"~"Smax", 
+      "regimeProdCap"~"both",
+      "decLinearProdshiftCap"~"both"
+      )   
+
+aicw_conf_matrix$scendesc<-dplyr::case_match(aicw_conf_matrix$OM, 
+      "stationary"~"",
+      "autocorr"~"",
+      "sigmaShift"~"shift up", 
+      "decLinearProd"~"linear decline",
+      "sineProd"~"sine trend",
+      "regimeProd"~"shift up + down",
+      "shiftProd"~"shift down + up",
+      "decLinearCap"~"linear decline",
+      "regimeCap"~"shift up + down",
+      "shiftCap"~"shift down", 
+      "regimeProdCap"~"regime both",
+      "decLinearProdshiftCap"~"trend & shift"
+      )   
+ 
+aicw_conf_matrix$fullname <- apply( aicw_conf_matrix[ , c("scendesc", "scentype") ] , 1 , paste , collapse = " " )
+
+
+aicw_conf_matrix$fullname<-factor(aicw_conf_matrix$fullname, levels=c(
+  " stationary",
+  "shift up sigma",
+  " autocorrelation",           
+  "linear decline log(alpha)",
+  "sine trend log(alpha)",  
+  "shift up + down log(alpha)", 
+  "shift down + up log(alpha)",       
+  "linear decline Smax",
+  "shift up + down Smax",              
+  "shift down Smax",           
+  "regime both both",           
+ "trend & shift both"         
+ ) )
+
+aicw_conf_matrix$EM<-factor(aicw_conf_matrix$EM, levels=c(
+       "stationary",
+     "autocorr",
+      "dynamic.a", 
+      "regime.a",
+     "dynamic.b",
+      "regime.b",
+      "dynamic.ab",
+      "regime.ab")  )
+
+aicw_conf_matrix$OM<-factor(aicw_conf_matrix$OM, levels=c(
+      "stationary", 
+  "sigmaShift",
+  "autocorr",
+  "decLinearProd",  
+  "sineProd",
+  "regimeProd",
+  "shiftProd", 
+  "decLinearCap",
+  "regimeCap", 
+  "shiftCap",
+  "decLinearProdshiftCap",
+  "regimeProdCap" )  )
+
+transform(subset(conf_matrix, !!diag), 
+                    simulated=as.numeric(OM), 
+                    estimated=as.numeric(EM))
+
+
+paicw=ggplot(data = aicw_conf_matrix, mapping = aes(x = fullname, y = EM)) +
+  geom_tile(aes(fill = m), colour = "white",alpha=0.7) +
+  geom_text(aes(label = round(w_AIC,3)), vjust = 1,size=6) +
+  ggtitle("AIC model selection proportions and model weights")+
+  scale_x_discrete(labels = ~ stringr::str_wrap(as.character(.x), 15))+
+  scale_fill_gradient(low="white", high="#009194")  +
+  geom_segment(data=transform(subset(aicw_conf_matrix, !!diag), 
+                    simulated=as.numeric(as.factor(OM)), 
+                    estimated=as.numeric(EM)), 
+               aes(x=simulated-.49, xend=simulated+.49, y=estimated-.49, yend=estimated+.49), 
+               color="gray90", linewidth=2)+
+  mytheme + theme( axis.text.x = element_text(angle = 45,  hjust=1)) +
+  guides(fill=guide_legend("mean weight when model is selected")) +
+  xlab("Simulation Scenario")+ylab("Estimation Model")
+paicw
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/AIC_MLE_weights.png",
+ plot=paicw, width = 9,height = 7)
+
+#BIC weights
+
+bict$EM<-dplyr::case_match(bict$sc2, 
+       1~"stationary",
+      2~"autocorr",
+      3~"dynamic.a", 
+      4~"regime.a",
+      5~"dynamic.b",
+      6~"regime.b",
+      7~"dynamic.ab",
+      8~"regime.ab")  
+
+bicw_conf_matrix<-dplyr::left_join(conf_matrix,bict)
+
+bicw_conf_matrix$scentype<-dplyr::case_match(bicw_conf_matrix$OM, 
+      "stationary"~"stationary",
+      "autocorr"~"autocorrelation",
+      "sigmaShift"~"sigma", 
+      "decLinearProd"~"log(alpha)",
+      "sineProd"~"log(alpha)",
+      "regimeProd"~"log(alpha)",
+      "shiftProd"~"log(alpha)",
+      "decLinearCap"~"Smax",
+      "regimeCap"~"Smax",
+      "shiftCap"~"Smax", 
+      "regimeProdCap"~"both",
+      "decLinearProdshiftCap"~"both"
+      )   
+
+bicw_conf_matrix$scendesc<-dplyr::case_match(bicw_conf_matrix$OM, 
+      "stationary"~"",
+      "autocorr"~"",
+      "sigmaShift"~"shift up", 
+      "decLinearProd"~"linear decline",
+      "sineProd"~"sine trend",
+      "regimeProd"~"shift up + down",
+      "shiftProd"~"shift down + up",
+      "decLinearCap"~"linear decline",
+      "regimeCap"~"shift up + down",
+      "shiftCap"~"shift down", 
+      "regimeProdCap"~"regime both",
+      "decLinearProdshiftCap"~"trend & shift"
+      )   
+ 
+bicw_conf_matrix$fullname <- apply( bicw_conf_matrix[ , c("scendesc", "scentype") ] , 1 , paste , collapse = " " )
+
+bicw_conf_matrix$fullname<-factor(bicw_conf_matrix$fullname, levels=c(
+  " stationary",
+  "shift up sigma",
+  " autocorrelation",           
+  "linear decline log(alpha)",
+  "sine trend log(alpha)",  
+  "shift up + down log(alpha)", 
+  "shift down + up log(alpha)",       
+  "linear decline Smax",
+  "shift up + down Smax",              
+  "shift down Smax",           
+  "regime both both",           
+ "trend & shift both"         
+ ) )
+
+bicw_conf_matrix$EM<-factor(bicw_conf_matrix$EM, levels=c(
+       "stationary",
+     "autocorr",
+      "dynamic.a", 
+      "regime.a",
+     "dynamic.b",
+      "regime.b",
+      "dynamic.ab",
+      "regime.ab")  )
+
+
+bicw_conf_matrix$OM<-factor(bicw_conf_matrix$OM, levels=c(
+      "stationary", 
+  "sigmaShift",
+  "autocorr",
+  "decLinearProd",  
+  "sineProd",
+  "regimeProd",
+  "shiftProd", 
+  "decLinearCap",
+  "regimeCap", 
+  "shiftCap",
+  "decLinearProdshiftCap",
+  "regimeProdCap" )  )
+
+
+pbicw=ggplot(data = bicw_conf_matrix, mapping = aes(x = fullname, y = EM)) +
+  geom_tile(aes(fill = m), colour = "white",alpha=0.7) +
+  geom_text(aes(label = round(BIC,3)), vjust = 1,size=6) +
+  ggtitle("BIC model selection proportions and model weights")+
+  scale_x_discrete(labels = ~ stringr::str_wrap(as.character(.x), 15))+
+  scale_fill_gradient(low="white", high="#009194")  +
+  geom_segment(data=transform(subset(bicw_conf_matrix, !!diag), 
+                    simulated=as.numeric(OM), 
+                    estimated=as.numeric(EM)), 
+               aes(x=simulated-.49, xend=simulated+.49, y=estimated-.49, yend=estimated+.49), 
+               color="gray90", linewidth=2)+
+  mytheme + theme( axis.text.x = element_text(angle = 45,  hjust=1)) +
+  guides(fill=guide_legend("mean weight when model is selected")) +
+  xlab("Simulation Scenario")+ylab("Estimation Model")
+pbicw
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/BIC_MLE_weights.png",
+ plot=paicw, width = 11,height = 7)
+
 
 
 #---------------------------------------------------------------------------------------------
@@ -1367,7 +1563,8 @@ pmclfo=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
                     estimated=as.numeric(EM)), 
                aes(x=simulated-.49, xend=simulated+.49, y=estimated-.49, yend=estimated+.49), 
                color="gray70", linewidth=2)+
-  mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
+  mytheme + theme(legend.position="none", 
+    axis.text.x = element_text(angle = 45,  hjust=1))+
   xlab("Simulation Scenario")+ylab("Estimation Model")
 pmclfo
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/base/LFO_MCMC.png", plot=pmclfo)

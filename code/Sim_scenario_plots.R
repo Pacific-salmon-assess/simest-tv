@@ -34,7 +34,10 @@ for(a in seq_len(nrow(simPar))){
                           simPar$scenario[a],"/",
                           paste(simPar$nameOM[a],"_", 
                           simPar$nameMP[a], "_", 
-                          "CUsrDat.RData",sep="")))$srDatout
+                          "CUaboveLB.RData",sep="")))
+
+                          #"CUsrDat.RData",sep="")))$srDatout
+
 
   dat<-simData[[a]] 
   dat<-dat[dat$year>(max(dat$year)-46),]

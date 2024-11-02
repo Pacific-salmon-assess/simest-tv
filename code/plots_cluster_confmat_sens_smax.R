@@ -24,14 +24,8 @@ mytheme = list(
 #========================================================================================================
 #sensitivity smax scenario
 #read in data
-resb1<-readRDS(file = "outs/simest/Smax_sensitivity/res_smax1.rds")
-resb2<-readRDS(file = "outs/simest/Smax_sensitivity/res_smax2.rds")
-resb240<-readRDS(file = "outs/simest/Smax_sensitivity/res_smax_240.rds")
 
-restmb_smax<-rbind(resb1,resb2,resb240)
-
-
-#res_a <- res_a[res_a$convergence==0,]
+restmb_smax<-readRDS(file = "outs/simest/Smax_sensitivity/res_smax.rds")
 
 aic_smax=subset(restmb_smax, parameter=='AIC'&method=='MLE')
 bic_smax=subset(restmb_smax, parameter=='BIC'&method=='MLE')
@@ -146,12 +140,34 @@ conf_matrix_smax$diag<-conf_matrix_smax$eqem_om==conf_matrix_smax$EM
 conf_matrix_smax$EM
 
 
+conf_matrix_smax$OM2<-dplyr::case_match(conf_matrix_smax$OM,
+  "trendLinearSmax025" ~ "trend 25% Smax",
+  "trendLinearSmax050" ~ "trend 50% Smax",
+  "trendLinearSmax150" ~ "trend 150% Smax",
+  "trendLinearSmax200" ~ "trend 200% Smax",
+  "trendLinearSmax300" ~ "trend 300% Smax",
+  "regimeSmax025" ~ "regime 25% Smax",
+  "regimeSmax050" ~ "regime 50% Smax",
+  "regimeSmax150" ~ "regime 150% Smax",
+  "regimeSmax200" ~ "regime 200% Smax",
+  "regimeSmax300"~ "regime 300% Smax")
+
+conf_matrix_a$OM2<-factor(conf_matrix_a$OM2, levels=c( "trend 25% Smax", 
+ "trend 50% Smax",
+  "trend 150% Smax", 
+  "trend 200% Smax",
+  "trend 300% Smax",
+  "regime 25% Smax",
+  "regime 50% Smax", 
+  "regime 150% Smax",
+  "regime 200% Smax",      
+  "regime 300% Smax"))
 
 
-pa_aic_smax=ggplot(data =  conf_matrix_smax, mapping = aes(x = OM, y = EM)) +
+pa_aic_smax=ggplot(data =  conf_matrix_smax, mapping = aes(x = OM2, y = EM)) +
   geom_tile(aes(fill = w_AIC), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(w_AIC,2)), vjust = 1,size=6) +
-  ggtitle("AIC sens a")+
+  ggtitle(expression("AIC Sensitivity"~S[max]))+
   scale_fill_gradient(low="white", high="#009194")  +
   geom_segment(data=transform(subset(conf_matrix_smax, !!diag), 
                     simulated=as.numeric(OM), 
@@ -162,14 +178,13 @@ pa_aic_smax=ggplot(data =  conf_matrix_smax, mapping = aes(x = OM, y = EM)) +
   xlab("Simulation Scenario")+ylab("Estimation Model")
 pa_aic_smax
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_smax/AIC_MLE_senssmax.png",
- plot=pa_aic_smax)
+ plot=pa_aic_smax,  width = 9,height = 7)
 
 
-
-pa_bic_smax=ggplot(data =  conf_matrix_smax, mapping = aes(x = OM, y = EM)) +
+pa_bic_smax=ggplot(data =  conf_matrix_smax, mapping = aes(x = OM2, y = EM)) +
   geom_tile(aes(fill = BIC), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(BIC,2)), vjust = 1,size=6) +
-  ggtitle("BIC sens smax")+
+  ggtitle(expression("BIC Sensitivity"~S[max]))+
   scale_fill_gradient(low="white", high="#009194")  +
   geom_segment(data=transform(subset(conf_matrix_smax, !!diag), 
                     simulated=as.numeric(OM), 
@@ -180,7 +195,7 @@ pa_bic_smax=ggplot(data =  conf_matrix_smax, mapping = aes(x = OM, y = EM)) +
   xlab("Simulation Scenario")+ylab("Estimation Model")
 pa_bic_smax
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_smax/BIC_MLE_senssmax.png",
- plot=pa_bic_smax)
+ plot=pa_bic_smax,  width = 9,height = 7)
 
 
 
@@ -260,25 +275,54 @@ mytheme +
 theme(axis.title=element_text(size=14,face="bold"))
 lineAICsmax
 
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/lineAICsenssmax.png",
- plot=lineAIC)
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_smax/lineAICsenssmax.png",
+ plot=lineAICsmax,width = 10,height = 6)
 
 
 
-lineBICsmax<-ggplot(conf_matrix_right)+
+lineBICsmax<-ggplot(conf_matrix_right_smax)+
 geom_point(aes(x=diffsmax,y=BIC,color=type),size=3)+
 geom_line(aes(x=diffsmax,y=BIC,color=type,linetype=type),linewidth=1.2)+
 scale_colour_manual(values = c("#95D840FF","#482677FF", "#95D840FF", "#482677FF"))+
 scale_linetype_manual(values = c(1,1,3,3))+
 ylab("% of correct model assignment with BIC")+
-xlab("multiplication factor for Smax")+
+xlab(expression("multiplication factor for"~ S[max]))+
 #scale_color_viridis_d(begin=.1, end=.8) +
 mytheme
 lineBICsmax
 
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/lineBICsenssmax.png",
- plot=lineBIC)
+ plot=lineBICsmax)
 
+
+#different colous schemes
+lineAICsmax_br<-ggplot(conf_matrix_right_smax)+
+geom_point(aes(x=diffsmax,y=w_AIC,color=type),size=3)+
+geom_line(aes(x=diffsmax,y=w_AIC,color=type,linetype=type),linewidth=1.2)+
+scale_colour_manual(values = c("#B2182B","#B2182B","#2166AC",  "#2166AC"))+
+scale_linetype_manual(values = c(2,1,2,1))+
+#scale_colour_manual(values = c("#95D840FF","#482677FF", "#95D840FF", "#482677FF"))+
+#scale_linetype_manual(values = c(1,1,2,2))+
+ylab("     ")+
+xlab(expression("multiplication factor for"~ S[max]))+
+coord_cartesian(ylim=c(0.1,0.88))+
+mytheme +
+theme(axis.title=element_text(size=14,face="bold"))
+lineAICsmax_br
+
+
+
+
+lineBICsmax_br<-ggplot(conf_matrix_right_smax)+
+geom_point(aes(x=diffsmax,y=BIC,color=type),size=4)+
+geom_line(aes(x=diffsmax,y=BIC,color=type,linetype=type),linewidth=1.2)+
+scale_colour_manual(values = c("#B2182B","#B2182B","#2166AC",  "#2166AC"))+
+scale_linetype_manual(values = c(2,1,2,1))+
+ylab("     ")+
+xlab(expression("multiplication factor for"~ S[max]))+
+#scale_color_viridis_d(begin=.1, end=.8) +
+mytheme
+lineBICsmax_br
 
 
 #----------------------------------
@@ -294,9 +338,19 @@ ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matric
  plot=linesAIC_alpha_smax)
 
 
+#blue and red colors
 
 
 
+
+linesBIC_alpha_smax_br <- ggarrange(lineBIC_a_br, lineBICsmax_br,
+                        nrow = 1, ncol = 2,
+                        common.legend = TRUE,
+                        legend="bottom")
+linesBIC_alpha_smax_br
+
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/lineBICsens_alpha_smax_br.png",
+ plot=linesBIC_alpha_smax_br)
 
 
 
@@ -351,10 +405,8 @@ head(reslfo)
 conf_matrix<-expand.grid(EM=EM,OM=scn)
 conf_matrix$LFOmcmc=NA
 
-
 cn3<-list()
 lfomcmc_set_a<-list()
-
 
 o=0
 for(a in seq_along(scn)){
@@ -376,7 +428,6 @@ for(a in seq_along(scn)){
 
 }
 
-
 conf_matrix$eqem_om <- dplyr::recode(conf_matrix$OM, 
         "trendLinearSmax025"="dynamic.b", 
        "trendLinearSmax050"="dynamic.b",
@@ -395,21 +446,40 @@ conf_matrix$eqem_om<-factor(conf_matrix$eqem_om,
         "dynamic.a", "regime.a",
         "dynamic.b", "regime.b", 
         "dynamic.ab", "regime.ab" 
-         
-        
+                 
        ))
 conf_matrix$diag<-conf_matrix$eqem_om==conf_matrix$EM
 
 
 
+conf_matrix$OM2<-dplyr::case_match(conf_matrix$OM,
+  "trendLinearSmax025" ~ "trend 25% Smax",
+  "trendLinearSmax050" ~ "trend 50% Smax",
+  "trendLinearSmax150" ~ "trend 150% Smax",
+  "trendLinearSmax200" ~ "trend 200% Smax",
+  "trendLinearSmax300" ~ "trend 300% Smax",
+  "regimeSmax025" ~ "regime 25% Smax",
+  "regimeSmax050" ~ "regime 50% Smax",
+  "regimeSmax150" ~ "regime 150% Smax",
+  "regimeSmax200" ~ "regime 200% Smax",
+  "regimeSmax300"~ "regime 300% Smax")
+
+conf_matrix$OM2<-factor(conf_matrix$OM2, levels=c( "trend 25% Smax", 
+ "trend 50% Smax",
+  "trend 150% Smax", 
+  "trend 200% Smax",
+  "trend 300% Smax",
+  "regime 25% Smax",
+  "regime 50% Smax", 
+  "regime 150% Smax",
+  "regime 200% Smax",      
+  "regime 300% Smax"))
 
 
-
-
-pmclfo_senssmax=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
+pmclfo_senssmax=ggplot(data =  conf_matrix, mapping = aes(x = OM2, y = EM)) +
   geom_tile(aes(fill = LFOmcmc), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(LFOmcmc,2)), vjust = 1, size=6) +
-  ggtitle("sens smax LFO MCMC")+
+  ggtitle(expression("LFO Sensitivity"~S[max]))+
   scale_fill_gradient(low="white", high="#009194")  +
   geom_segment(data=transform(subset(conf_matrix, !!diag), 
                     simulated=as.numeric(OM), 
@@ -420,7 +490,7 @@ pmclfo_senssmax=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   xlab("Simulation Scenario")+ylab("Estimation Model")
 pmclfo_senssmax
 ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_smax/LFO_MCMC_senssmax.png",
- plot=pmclfo_senssmax)
+ plot=pmclfo_senssmax,  width = 9,height = 7)
 
 
 #lfo with 3 last yrs average

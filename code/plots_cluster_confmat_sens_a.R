@@ -25,8 +25,6 @@ mytheme = list(
 #========================================================================================================
 #sensitivity a scenario
 #read in data
-#resa1<-readRDS(file = "outs/simest/sensitivity/res_a1.rds")
-#resa2<-readRDS(file = "outs/simest/sensitivity/res_a2.rds")
 
 res_a<-readRDS(file = "outs/simest/sensitivity/res_a.rds")
 
@@ -146,36 +144,36 @@ conf_matrix_a$diag<-conf_matrix_a$eqem_om==conf_matrix_a$EM
 
 
 conf_matrix_a$OM2<-dplyr::case_match(conf_matrix_a$OM,
-  "trendLinearProd1"~"trend log(a) 1.3 -> 0.0", 
-  "trendLinearProd1.3"~"trend log(a) 1.3 -> 0.3",
-       "trendLinearProd2"~"trend log(a) 1.3 -> 0.6", 
-       "trendLinearProd5"~"trend log(a) 1.3 -> 1.6",
-       "trendLinearProd7"~"trend log(a) 1.3 -> 2.0",
-       "trendLinearProd10"~"trend log(a) 1.3 -> 2.3",
-       "regimeProd1"~"regime log(a) 1.3 -> 0.0", 
-       "regimeProd1.3"~"regime log(a) 1.3 -> 0.3",
-       "regimeProd2"~"regime log(a) 1.3 -> 0.6",      
-       "regimeProd5"~"regime log(a) 1.3 -> 1.6",      
-       "regimeProd7"~"regime log(a) 1.3 -> 2.0",
-       "regimeProd10"~"regime log(a) 1.3 -> 2.3")
+  "trendLinearProd1"~"trend log(a) 1.3 -> 0.03", 
+  "trendLinearProd1.3"~"trend log(a) 1.3 -> 0.30",
+       "trendLinearProd2"~"trend log(a) 1.3 -> 0.69", 
+       "trendLinearProd5"~"trend log(a) 1.3 -> 1.61",
+       "trendLinearProd7"~"trend log(a) 1.3 -> 1.95",
+       "trendLinearProd10"~"trend log(a) 1.3 -> 2.30",
+       "regimeProd1"~"regime log(a) 1.3 -> 0.03", 
+       "regimeProd1.3"~"regime log(a) 1.3 -> 0.30",
+       "regimeProd2"~"regime log(a) 1.3 -> 0.69",      
+       "regimeProd5"~"regime log(a) 1.3 -> 1.61",      
+       "regimeProd7"~"regime log(a) 1.3 -> 1.95",
+       "regimeProd10"~"regime log(a) 1.3 -> 2.30")
 
-conf_matrix_a$OM2<-factor(conf_matrix_a$OM2, levels=c( "trend log(a) 1.3 -> 0.0", 
- "trend log(a) 1.3 -> 0.3",
-  "trend log(a) 1.3 -> 0.6", 
-  "trend log(a) 1.3 -> 1.6",
-  "trend log(a) 1.3 -> 2.0",
-  "trend log(a) 1.3 -> 2.3",
-  "regime log(a) 1.3 -> 0.0", 
-  "regime log(a) 1.3 -> 0.3",
-  "regime log(a) 1.3 -> 0.6",      
-  "regime log(a) 1.3 -> 1.6",      
-   "regime log(a) 1.3 -> 2.0",
-   "regime log(a) 1.3 -> 2.3"))
+conf_matrix_a$OM2<-factor(conf_matrix_a$OM2, levels=c( "trend log(a) 1.3 -> 0.03", 
+ "trend log(a) 1.3 -> 0.30",
+  "trend log(a) 1.3 -> 0.69", 
+  "trend log(a) 1.3 -> 1.61",
+  "trend log(a) 1.3 -> 1.95",
+  "trend log(a) 1.3 -> 2.30",
+  "regime log(a) 1.3 -> 0.03", 
+  "regime log(a) 1.3 -> 0.30",
+  "regime log(a) 1.3 -> 0.69",      
+  "regime log(a) 1.3 -> 1.61",      
+   "regime log(a) 1.3 -> 1.95",
+   "regime log(a) 1.3 -> 2.30"))
 
 pa_aic_a=ggplot(data =  conf_matrix_a, mapping = aes(x = OM2, y = EM)) +
   geom_tile(aes(fill = w_AIC), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(w_AIC,2)), vjust = 1,size=6) +
-  ggtitle("AIC sens a")+
+  ggtitle(expression("AIC Sensitivity"~log(alpha)))+
   scale_fill_gradient(low="white", high="#009194")  +
   geom_segment(data=transform(subset(conf_matrix_a, !!diag), 
                     simulated=as.numeric(OM), 
@@ -193,7 +191,7 @@ ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matric
 pa_bic_a=ggplot(data =  conf_matrix_a, mapping = aes(x = OM2, y = EM)) +
   geom_tile(aes(fill = BIC), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(BIC,2)), vjust = 1,size=6) +
-  ggtitle("BIC sens a")+
+  ggtitle(expression("BIC Sensitivity"~log(alpha)))+
   scale_fill_gradient(low="white", high="#009194")  +
   geom_segment(data=transform(subset(conf_matrix_a, !!diag), 
                     simulated=as.numeric(OM), 
@@ -324,6 +322,45 @@ ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matric
  plot=lineBIC_a,width = 10,height = 6)
 
 
+#other colour scheme
+#library(RColorBrewer)
+#cols <- colorRampPalette(brewer.pal(11, "RdBu"))(11)
+lineAIC_a_br<-ggplot(conf_matrix_right_a)+
+geom_point(aes(x=difflog_a,y=w_AIC,color=type),size=4,show.legend = F)+
+geom_line(aes(x=difflog_a,y=w_AIC,color=type,linetype=type),linewidth=1.2)+
+#scale_colour_manual(values = c("#95D840FF","#482677FF", "#95D840FF", "#482677FF"))+
+#scale_colour_manual(values = c("#EF8A62","#67A9CF", "#EF8A62", "#67A9CF"))+
+scale_colour_manual(values = c("#B2182B","#B2182B","#2166AC",  "#2166AC"))+
+scale_linetype_manual(values = c(2,1,2,1))+
+ylab("proportion of correct model assignment with AICc")+
+xlab(expression("difference"~"in"~log(alpha)))+
+#scale_color_viridis_d(begin=.1, end=.8) +
+coord_cartesian(ylim=c(0.0,0.9))+
+mytheme+
+theme(axis.title=element_text(size=14,face="bold"),legend.key.width = unit(3, "line"))+
+ guides(color=guide_legend(nrow=2, byrow=TRUE)) 
+lineAIC_a_br
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/lineAICsensa_br.png",
+ plot=lineAIC_a_br,width = 10,height = 6)
+
+
+lineBIC_a_br<-ggplot(conf_matrix_right_a)+
+geom_point(aes(x=difflog_a,y=BIC,color=type),size=4,show.legend = F)+
+geom_line(aes(x=difflog_a,y=BIC,color=type,linetype=type),linewidth=1.2)+
+scale_colour_manual(values = c("#B2182B","#B2182B","#2166AC",  "#2166AC"))+
+scale_linetype_manual(values = c(2,1,2,1))+
+ylab("proportion of correct model assignment with BIC")+
+xlab(expression("difference"~"in"~log(alpha)))+
+coord_cartesian(ylim=c(0.0,0.88))+
+mytheme+
+theme(axis.title=element_text(size=14,face="bold"),legend.key.width = unit(3, "line"))+
+ guides(color=guide_legend(nrow=2, byrow=TRUE)) 
+lineBIC_a_br
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/lineBICsensa_br.png",
+ plot=lineBIC_a_br,width = 10,height = 6)
+
+
+
 
 #LFO
 reslfo<-readRDS(file = "outs/simest/sensitivity/resstanloo_a.rds")
@@ -340,7 +377,6 @@ lfomcmc_set_a<-list()
 
 o=0
 for(a in seq_along(scn)){
-
 
   lfoa=subset(reslfo,scenario==scn[a])
   lfomcmc_set_a[[a]]=tidyr::spread(lfoa[,-9],key=model,value=est)
@@ -386,14 +422,40 @@ conf_matrix$diag<-conf_matrix$eqem_om==conf_matrix$EM
 
 
 
+conf_matrix$OM2<-dplyr::case_match(conf_matrix$OM,
+  "trendLinearProd1"~"trend log(a) 1.3 -> 0.03", 
+  "trendLinearProd1.3"~"trend log(a) 1.3 -> 0.30",
+       "trendLinearProd2"~"trend log(a) 1.3 -> 0.69", 
+       "trendLinearProd5"~"trend log(a) 1.3 -> 1.61",
+       "trendLinearProd7"~"trend log(a) 1.3 -> 1.95",
+       "trendLinearProd10"~"trend log(a) 1.3 -> 2.30",
+       "regimeProd1"~"regime log(a) 1.3 -> 0.03", 
+       "regimeProd1.3"~"regime log(a) 1.3 -> 0.30",
+       "regimeProd2"~"regime log(a) 1.3 -> 0.69",      
+       "regimeProd5"~"regime log(a) 1.3 -> 1.61",      
+       "regimeProd7"~"regime log(a) 1.3 -> 1.95",
+       "regimeProd10"~"regime log(a) 1.3 -> 2.30")
+
+conf_matrix$OM2<-factor(conf_matrix$OM2, levels=c( "trend log(a) 1.3 -> 0.03", 
+ "trend log(a) 1.3 -> 0.30",
+  "trend log(a) 1.3 -> 0.69", 
+  "trend log(a) 1.3 -> 1.61",
+  "trend log(a) 1.3 -> 1.95",
+  "trend log(a) 1.3 -> 2.30",
+  "regime log(a) 1.3 -> 0.03", 
+  "regime log(a) 1.3 -> 0.30",
+  "regime log(a) 1.3 -> 0.69",      
+  "regime log(a) 1.3 -> 1.61",      
+   "regime log(a) 1.3 -> 1.95",
+   "regime log(a) 1.3 -> 2.30"))
 
 
 
 
-pmclfo_sensa=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
+pmclfo_sensa=ggplot(data =  conf_matrix, mapping = aes(x = OM2, y = EM)) +
   geom_tile(aes(fill = LFOmcmc), colour = "white",alpha=0.7) +
   geom_text(aes(label = round(LFOmcmc,2)), vjust = 1, size=6) +
-  ggtitle("sens a LFO")+
+  ggtitle(expression("LFO Sensitivity"~log(alpha)))+
   scale_fill_gradient(low="white", high="#009194")  +
   geom_segment(data=transform(subset(conf_matrix, !!diag), 
                     simulated=as.numeric(OM), 
@@ -403,7 +465,7 @@ pmclfo_sensa=ggplot(data =  conf_matrix, mapping = aes(x = OM, y = EM)) +
   mytheme + theme(legend.position="none", axis.text.x = element_text(angle = 45,  hjust=1))+
   xlab("Simulation Scenario")+ylab("Estimation Model")
 pmclfo_sensa
-ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/LFO_HMC_sensa.png",
+ggsave("../Best-Practices-time-varying-salmon-SR-models/figures/confusion_matrices/sens_a/LFO_MCMC_sensa.png",
  plot=pmclfo_sensa,  width = 9,height = 7)
 
 
