@@ -423,7 +423,7 @@ df_pbiasq$type[df_pbiasq$scenario%in%c("decLinearProdshiftCap" )]<-"combo"
 
 
 
-df_alpha_pbiasq<-df_pbiasq[df_pbiasq$parameter=="alpha",]
+df_alpha_pbiasq<-df_pbiasq[df_pbiasq$parameter=="logalpha",]
 ggplot(df_alpha_pbiasq) + 
 coord_cartesian(ylim = c(-100,100))+ 
 geom_ribbon(aes(x=by,ymin =  x.10., ymax=x.90.,fill=type,group=scenario),alpha=0.2)+
