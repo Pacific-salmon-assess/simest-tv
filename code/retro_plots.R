@@ -31,7 +31,7 @@ la_retro<- subset(la_retro,endyr %in% seq(min(la_retro$endyr),max(la_retro$endyr
 la_retro<- la_retro[order(la_retro$model,la_retro$endyr),]
 
 sim=subset(resparam,scenario=='regimeProd'&parameter=='logalpha')
-la_simregprod=data.frame(sim=sim$sim[match(seq(min(sim$by),max(sim$by)),sim$by)],by=seq(min(sim$by),max(sim$by))-50)
+la_simregprod=data.frame(sim=sim$sim[match(seq(min(sim$by),max(sim$by)),sim$by)],by=seq(min(sim$by),max(sim$by))-55)
 
 la_regprod=la_retro[la_retro$scenario=='regimeProd',]
 la_regprod$plotMod=dplyr::recode_factor(factor(la_regprod$model),
@@ -52,7 +52,7 @@ gregprod<-ggplot(la_regprod) +
 gregprod  
 
 sim=subset(resparam,scenario=='shiftProd'&parameter=='logalpha')
-la_simshiftprod=data.frame(sim=sim$sim[match(seq(min(sim$by),max(sim$by)),sim$by)],by=seq(min(sim$by),max(sim$by))-50)
+la_simshiftprod=data.frame(sim=sim$sim[match(seq(min(sim$by),max(sim$by)),sim$by)],by=seq(min(sim$by),max(sim$by))-45)
 
 la_shiftprod=la_retro[la_retro$scenario=='shiftProd',]
 la_shiftprod$plotMod=dplyr::recode_factor(factor(la_regprod$model),
@@ -89,6 +89,59 @@ comb2<-cowplot::plot_grid(comb, legend,
 comb2
 ggsave("outs/figures/retrospective_logalpha.png",plot=comb2,width=14,height=6)
 
+
+##Guidance doc  version###
+sms_retro<-res2[res2$parameter=="smsy"&res2$model %in%c('rwa'),]
+sms_retro<- subset(sms_retro,endyr %in% seq(min(sms_retro$endyr),max(sms_retro$endyr),by=2))
+sms_retro<- sms_retro[order(sms_retro$model,sms_retro$endyr),]
+
+sim1=subset(resparam,scenario=='regimeProd'&parameter=='smsy')
+sms_simregprod=data.frame(sim=c(sim1$sim[match(seq(min(sim1$by),max(sim1$by)),sim1$by)],rep(sim1$sim[1],5)),by=seq(min(sim1$by),max(sim1$by+5))-55)
+
+sim2=subset(resparam,scenario=='shiftProd'&parameter=='smsy')
+sms_simshiftprod=data.frame(sim=c(sim2$sim[match(seq(min(sim2$by),max(sim2$by)),sim2$by)],rep(sim2$sim[1],5)),by=seq(min(sim2$by),max(sim2$by+5))-55)
+
+sms_gd1=sms_retro[sms_retro$scenario%in%c('regimeProd'),]
+
+gregprod<-ggplot(sms_gd1) + 
+  geom_line(aes(x=by-50,y= median.est,color=factor(endyr),group=factor(endyr)),linewidth=1.2)+
+  geom_line(data=sms_simregprod,aes(x=by,y=sim),linewidth=1.5)+
+  scale_color_viridis_d('years of data') +
+  mytheme+ 
+  ylab("Smsy estimate") +
+  xlab("year")
+
+gregprod
+
+sms_gd2=sms_retro[sms_retro$scenario%in%c('shiftProd'),]
+
+gshiftprod<-ggplot(sms_gd2) + 
+  geom_line(aes(x=by-50,y= median.est,color=factor(endyr),group=factor(endyr)),linewidth=1.2)+
+  geom_line(data=sms_simshiftprod,aes(x=by,y=sim),linewidth=1.5)+
+  scale_color_viridis_d('years of data') +
+  mytheme+ 
+  ylab("Smsy estimate") +
+  xlab("year")
+
+gshiftprod
+
+legend <- cowplot::get_legend(
+  # create some space to the left of the legend
+  gregprod
+)
+
+comb<-cowplot::plot_grid(
+  gregprod+ theme(legend.position="none"), gshiftprod+ theme(legend.position="none"),
+  align = "hv", axis = "bt",
+  rel_heights = c(.5,.5),
+  nrow=2
+)
+comb2<-cowplot::plot_grid(comb, legend,
+                          align = "h", axis = "bt",
+                          rel_widths = c(.8,.2)
+)
+comb2
+ggsave("outs/figures/retrospective_smsy_gd.png",plot=comb2,width=8,height=6)
 
 
 #SMSY####
